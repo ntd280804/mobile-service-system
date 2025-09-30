@@ -1,0 +1,74 @@
+﻿@model List<WebApp.Areas.Admin.Controllers.EmployeeController.EmployeeDto>
+
+@{
+    ViewData["Title"] = "Danh sách nhân viên";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+<a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="Register">Thêm mới</a>
+<table class="table table-bordered table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>#</th>
+            <th>Full Name</th>
+            <th>Username</th>
+            <th>Status</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Actions</th> <!-- Thêm cột hành động -->
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var emp in Model)
+            {
+                <tr>
+                    <td>@emp.EmpId</td>
+                    <td>@emp.FullName</td>
+                    <td>@emp.Username</td>
+                    <td>@emp.Status</td>
+                    <td>@emp.Email</td>
+                    <td>@emp.Phone</td>
+                    <td>@emp.Role</td>
+                    <td>
+                        <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", "Employee", new { id = emp.EmpId })">Edit</a>
+
+                        @if (emp.Status == "ACTIVE")
+                        {
+                            <form method="post" asp-action="Lock" asp-controller="Employee" class="d-inline">
+                                <input type="hidden" name="username" value="@emp.Username" />
+                                <button type="submit" class="btn btn-sm btn-warning">Lock</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-action="Unlock" asp-controller="Employee" class="d-inline">
+                                <input type="hidden" name="username" value="@emp.Username" />
+                                <button type="submit" class="btn btn-sm btn-success">Unlock</button>
+                            </form>
+                        }
+
+                        <a class="btn btn-sm btn-danger" href="@Url.Action("Delete", "Employee", new { id = emp.EmpId })" onclick="return confirm('Bạn có chắc muốn xóa nhân viên này?');">Delete</a>
+                    </td>
+
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7" class="text-center">Không có nhân viên nào.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

@@ -1,0 +1,332 @@
+
+--------------------------------------------------------------------------------
+-- E. Hash password function (DBMS_CRYPTO)
+--    trả về HEX string (64 hex chars)
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION HASH_PASSWORD(p_password VARCHAR2) RETURN VARCHAR2 IS
+    v_raw RAW(32);
+BEGIN
+    v_raw := DBMS_CRYPTO.HASH(UTL_I18N.STRING_TO_RAW(p_password, 'AL32UTF8'),
+                              DBMS_CRYPTO.HASH_SH256);
+    RETURN RAWTOHEX(v_raw);
+END;
+/
+
+-- Nếu DBMS_CRYPTO không có quyền cho schema, grant bằng SYS: GRANT EXECUTE ON DBMS_CRYPTO TO <schema>;
+
+--------------------------------------------------------------------------------
+-- F. Procedure REGISTER_USER: sinh keypair bằng Java, lưu public & private
+--------------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE REGISTER_USER(
+    p_username IN VARCHAR2,
+    p_password IN VARCHAR2,
+    p_email    IN VARCHAR2,
+    p_phone    IN VARCHAR2
+)
+AS
+    v_hash VARCHAR2(256);
+    v_pub  VARCHAR2(32767);
+    v_priv VARCHAR2(32767);
+    v_userid NUMBER;
+BEGIN
+    -- hash mật khẩu
+    v_hash := HASH_PASSWORD(p_password);
+
+    -- sinh cặp RSA (Java)
+    RSA_GENERATE_KEYPAIR(2048);
+
+    -- lấy public/private từ Java
+    v_pub := RSA_GET_PUBLIC_KEY();
+    v_priv := RSA_GET_PRIVATE_KEY();
+
+    -- insert user + public key
+    INSERT INTO USERS(USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE)
+    VALUES (p_username, v_hash, v_pub, p_email, p_phone)
+    RETURNING USER_ID INTO v_userid;
+
+    -- lưu private key (CLOB) vào USER_KEYS
+    INSERT INTO USER_KEYS(USER_ID, PRIVATE_KEY) VALUES (v_userid, v_priv);
+
+    -- audit
+    INSERT INTO LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'REGISTERED');
+    COMMIT;
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        INSERT INTO LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'DUPLICATE');
+        COMMIT;
+    WHEN OTHERS THEN
+        INSERT INTO LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'FAILED_REGISTER');
+        COMMIT;
+END;
+/
+
+--------------------------------------------------------------------------------
+-- G. Function GET_PRIVATE_KEY: chỉ NGCHOAN (schema/user) được xem
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION GET_PRIVATE_KEY(p_userid IN NUMBER) RETURN CLOB AS
+    v_priv CLOB;
+BEGIN
+    IF SYS_CONTEXT('USERENV','SESSION_USER') <> 'NGCHOAN' THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Access denied: only NGCHOAN can view private keys');
+    END IF;
+
+    SELECT PRIVATE_KEY INTO v_priv FROM USER_KEYS WHERE USER_ID = p_userid;
+    RETURN v_priv;
+END;
+/
+
+--------------------------------------------------------------------------------
+-- H. Function LOGIN (xác thực) + ghi audit
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION LOGIN(p_username IN VARCHAR2, p_password IN VARCHAR2) RETURN VARCHAR2 AS
+    PRAGMA AUTONOMOUS_TRANSACTION;
+    v_hash VARCHAR2(256);
+    v_db_hash VARCHAR2(256);
+    v_role USERS.ROLE%TYPE;
+    v_status USERS.STATUS%TYPE;
+BEGIN
+    v_hash := HASH_PASSWORD(p_password);
+
+    SELECT PASSWORD_HASH, ROLE, STATUS INTO v_db_hash, v_role, v_status
+    FROM USERS WHERE USERNAME = p_username;
+
+    IF v_status = 'LOCKED' THEN
+        INSERT INTO LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'LOCKED');
+        COMMIT;
+        RETURN 'ACCOUNT LOCKED';
+    END IF;
+
+    IF v_db_hash = v_hash THEN
+        INSERT INTO LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'SUCCESS');
+        COMMIT;
+        RETURN v_role;
+    ELSE
+        INSERT INTO LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'FAIL');
+        COMMIT;
+        RETURN 'DENIED';
+    END IF;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        INSERT INTO LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'NO USER');
+        COMMIT;
+        RETURN 'NO USER';
+END;
+/
+
+--------------------------------------------------------------------------------
+-- I. Trigger khóa account: nếu >=3 fail trong 10 phút
+--------------------------------------------------------------------------------
+CREATE OR REPLACE TRIGGER TRG_LOCK_ACCOUNT
+AFTER INSERT ON LOGIN_AUDIT
+FOR EACH ROW
+DECLARE
+    v_fail_count NUMBER;
+BEGIN
+    IF :NEW.STATUS = 'FAIL' THEN
+        SELECT COUNT(*) INTO v_fail_count
+        FROM LOGIN_AUDIT
+        WHERE USERNAME = :NEW.USERNAME
+          AND STATUS = 'FAIL'
+          AND LOGIN_TIME > SYSTIMESTAMP - INTERVAL '10' MINUTE;
+
+        IF v_fail_count >= 3 THEN
+            UPDATE USERS SET STATUS = 'LOCKED' WHERE USERNAME = :NEW.USERNAME;
+        END IF;
+    END IF;
+END;
+/
+
+--------------------------------------------------------------------------------
+-- J. Fine Grained Auditing (FGA) - audit column PASSWORD_HASH
+--------------------------------------------------------------------------------
+BEGIN
+  DBMS_FGA.ADD_POLICY(
+    object_schema   => USER,
+    object_name     => 'USERS',
+    policy_name     => 'fga_users_password',
+    audit_column    => 'PASSWORD_HASH',
+    statement_types => 'SELECT'
+  );
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+--------------------------------------------------------------------------------
+-- K. VPD: chỉ NGCHOAN mới thấy USER_KEYS (private keys); USERS row-level policy:
+--    - USERS: ADMIN (NGCHOAN) thấy tất cả; others see only their own row
+--------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION VPD_USERS_POLICY(schema_name IN VARCHAR2, table_name IN VARCHAR2) RETURN VARCHAR2 AS
+BEGIN
+    IF SYS_CONTEXT('USERENV','SESSION_USER') = 'NGCHOAN' THEN
+        RETURN '1=1';
+    ELSE
+        RETURN 'USERNAME = SYS_CONTEXT(''USERENV'',''SESSION_USER'')';
+    END IF;
+END;
+/
+
+BEGIN
+  DBMS_RLS.ADD_POLICY(
+    object_schema   => USER,
+    object_name     => 'USERS',
+    policy_name     => 'vpd_users',
+    function_schema => USER,
+    policy_function => 'VPD_USERS_POLICY'
+  );
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+-- Policy to restrict access to USER_KEYS: only NGCHOAN can select
+CREATE OR REPLACE FUNCTION VPD_USER_KEYS_POLICY(schema_name IN VARCHAR2, table_name IN VARCHAR2) RETURN VARCHAR2 AS
+BEGIN
+    IF SYS_CONTEXT('USERENV','SESSION_USER') = 'NGCHOAN' THEN
+        RETURN '1=1';
+    ELSE
+        -- force predicate false for non-NGCHOAN
+        RETURN '1=0';
+    END IF;
+END;
+/
+
+BEGIN
+  DBMS_RLS.ADD_POLICY(
+    object_schema   => USER,
+    object_name     => 'USER_KEYS',
+    policy_name     => 'vpd_privkeys',
+    function_schema => USER,
+    policy_function => 'VPD_USER_KEYS_POLICY'
+  );
+EXCEPTION WHEN OTHERS THEN NULL;
+END;
+/
+
+EXEC REGISTER_USER('hoan','P@ssw0rd','alice@example.com','0123456789');
+EXEC REGISTER_USER('hoan1','123@Abcd','hoan@example.com','0123432732');
+EXEC REGISTER_USER('hoan1','123@Abcd','ngocchoanne@gmail.com','0123432732');
+EXEC REGISTER_USER('hoan2','123@Abcd','ngocchoanne@gmail.com','0123432732');
+EXEC REGISTER_USER('ngochoan','ngochoan123@','maingochoan0801@gmail.com','0124332732');
+SELECT PUBLIC_KEY FROM USERS WHERE USERNAME='hoan';
+SELECT PUBLIC_KEY FROM USERS WHERE USERNAME='hoan1';
+
+show user;
+
+SELECT USER_ID FROM USERS WHERE USERNAME='hoan';
+SELECT GET_PRIVATE_KEY(1) FROM DUAL;
+
+SELECT * FROM users;
+
+SET SERVEROUTPUT ON;
+DECLARE
+  v_result VARCHAR2(50);
+BEGIN
+  v_result := LOGIN('hoan1', '123@Abcd');
+  DBMS_OUTPUT.PUT_LINE('Login result: ' || v_result);
+END;
+/
+
+
+
+
+
+
+
+-----
+
+CREATE OR REPLACE FUNCTION GENERATE_OTP RETURN VARCHAR2 IS
+    v_otp VARCHAR2(6);
+BEGIN
+    v_otp := TO_CHAR(TRUNC(DBMS_RANDOM.VALUE(100000, 999999)));
+    RETURN v_otp;
+END;
+/
+
+CREATE OR REPLACE PROCEDURE SEND_OTP_EMAIL (
+    p_recipient IN VARCHAR2,
+    p_otp       IN VARCHAR2
+) AS
+BEGIN
+    UTL_MAIL.send(
+        sender     => 'hoanmangoc135@gmail.com',
+        recipients => p_recipient,
+        subject    => 'Mã OTP xác thực',
+        message    => 'Xin chào,' || UTL_TCP.crlf ||
+                      'Mã OTP của bạn là: ' || p_otp || UTL_TCP.crlf ||
+                      'OTP hết hạn sau 5 phút.'
+    );
+END;
+/
+
+CREATE OR REPLACE PROCEDURE FORGOT_PASSWORD (
+    p_username IN VARCHAR2
+) AS
+    v_userid   USERS.USER_ID%TYPE;
+    v_email    USERS.EMAIL%TYPE;
+    v_otp      VARCHAR2(6);
+BEGIN
+    -- Lấy thông tin user
+    SELECT USER_ID, EMAIL
+      INTO v_userid, v_email
+      FROM USERS
+     WHERE USERNAME = p_username;
+
+    -- Sinh OTP
+    v_otp := GENERATE_OTP();
+
+    -- Lưu OTP mới
+    INSERT INTO USER_OTP_LOG (USER_ID, USERNAME, OTP, EXPIRED_AT)
+    VALUES (v_userid, p_username, v_otp, SYSTIMESTAMP + INTERVAL '5' MINUTE);
+
+    -- Gửi mail
+    SEND_OTP_EMAIL(v_email, v_otp);
+
+    COMMIT;
+
+    DBMS_OUTPUT.PUT_LINE('OTP đã gửi tới ' || v_email);
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('User không tồn tại: ' || p_username);
+END;
+/
+
+CREATE OR REPLACE FUNCTION VERIFY_OTP (
+    p_username IN VARCHAR2,
+    p_otp      IN VARCHAR2
+) RETURN VARCHAR2 AS
+    v_code    VARCHAR2(10);
+    v_expire  TIMESTAMP;
+    v_used    CHAR(1);
+BEGIN
+    SELECT OTP, EXPIRED_AT, USED
+      INTO v_code, v_expire, v_used
+      FROM (
+          SELECT OTP, EXPIRED_AT, USED
+          FROM USER_OTP_LOG
+          WHERE USERNAME = p_username
+          ORDER BY CREATED_AT DESC
+      )
+     WHERE ROWNUM = 1;
+
+    IF v_used = 'Y' THEN
+        RETURN 'USED';
+    ELSIF SYSTIMESTAMP > v_expire THEN
+        RETURN 'EXPIRED';
+    ELSIF v_code = p_otp THEN
+        RETURN 'VALID';
+    ELSE
+        RETURN 'INVALID';
+    END IF;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN 'NO OTP';
+END;
+/
+
+-- test
+BEGIN
+   FORGOT_PASSWORD('ngochoan');
+END;
+/
+
+
+SELECT * FROM USERS;

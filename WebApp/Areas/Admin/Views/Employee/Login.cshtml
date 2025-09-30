@@ -1,0 +1,28 @@
+﻿@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Admin Login";
+}
+
+<h2>Admin Login</h2>
+
+<form asp-area="Admin" asp-controller="Employee" asp-action="Login" method="post">
+    <div class="mb-3">
+        <label>Username</label>
+        <input class="form-control" name="username" required />
+    </div>
+    <div class="mb-3">
+        <label>Password</label>
+        <input class="form-control" type="password" name="password" required />
+    </div>
+    <button class="btn btn-primary" type="submit">Login</button>
+</form>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger mt-2">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <p>@error.ErrorMessage</p>
+        }
+    </div>
+}

@@ -1,4 +1,7 @@
 
+using Microsoft.EntityFrameworkCore;
+using WebAPI.Models;
+
 namespace WebAPI
 {
     public class Program
@@ -13,6 +16,7 @@ namespace WebAPI
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            builder.Services.AddDbContext<MobileDbContext>(options => options.UseOracle(builder.Configuration.GetConnectionString("OracleDb")));
 
             var app = builder.Build();
 
