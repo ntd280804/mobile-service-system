@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -9,24 +10,22 @@ namespace WebApp.Areas.Admin.Controllers
     [Area("Admin")]
     public class EmployeeController : Controller
     {
-        private readonly HttpClient _httpClient;
-
-        public EmployeeController(IHttpClientFactory httpClientFactory)
+        private static readonly CookieContainer _cookieContainer = new CookieContainer();
+        private static readonly HttpClientHandler _handler = new HttpClientHandler { CookieContainer = _cookieContainer, UseCookies = true };
+        private static readonly HttpClient _httpClient = new HttpClient(_handler)
         {
-            _httpClient = httpClientFactory.CreateClient();
-        }
+            BaseAddress = new Uri("https://localhost:7179/")
+        };
 
         [HttpGet]
         public async Task<IActionResult> Index()
         {
             if (string.IsNullOrEmpty(HttpContext.Session.GetString("Username")))
-            {
                 return RedirectToAction("Login", "Employee", new { area = "Admin" });
-            }
+
             try
             {
-                var response = await _httpClient.GetAsync("https://localhost:7179/api/Employee");
-
+                var response = await _httpClient.GetAsync("api/Admin/Employee");
                 if (response.IsSuccessStatusCode)
                 {
                     var employees = await response.Content.ReadFromJsonAsync<List<EmployeeDto>>();
@@ -44,21 +43,9 @@ namespace WebApp.Areas.Admin.Controllers
                 return View(new List<EmployeeDto>());
             }
         }
-        public class EmployeeDto
-        {
-            public decimal EmpId { get; set; }
-            public string FullName { get; set; }
-            public string Status { get; set; }
-            public string Username { get; set; }
-            public string Email { get; set; }
-            public string Phone { get; set; }
-            public string Role { get; set; }
-        }
+
         [HttpGet]
-        public IActionResult Login()
-        {
-            return View();
-        }
+        public IActionResult Login() => View();
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -73,28 +60,27 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 var loginData = new { Username = username, Password = password };
-                var response = await _httpClient.PostAsJsonAsync("https://localhost:7179/api/Employee/login", loginData);
+                var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/login", loginData);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-
                     if (result == null)
                     {
                         ModelState.AddModelError("", "API trả về dữ liệu null.");
                         return View();
                     }
 
-
-
-                    // Kiểm tra kết quả login
                     if (result.Result == "SUCCESS")
                     {
                         TempData["Message"] = $"Login thành công! ({result.Role})";
-                        // Lưu tất cả vào session
+
+                        // --- Lưu vào session WebApp ---
                         HttpContext.Session.SetString("Username", result.Username ?? "");
                         HttpContext.Session.SetString("Role", result.Role ?? "");
                         HttpContext.Session.SetString("LoginResult", result.Result ?? "");
+
+                        // --- Cookie WebAPI đã được _cookieContainer giữ tự động ---
                         return RedirectToAction("Index", "Home", new { area = "Admin" });
                     }
                     else
@@ -115,35 +101,43 @@ namespace WebApp.Areas.Admin.Controllers
                 return View();
             }
         }
-        public class LoginResponse
-        {
-            [JsonPropertyName("username")]
-            public string Username { get; set; }
-
-            [JsonPropertyName("role")]
-            public string Role { get; set; } // ADMIN / USER / null nếu login thất bại
-
-            [JsonPropertyName("result")]
-            public string Result { get; set; } // SUCCESS / FAILED / ACCOUNT LOCKED / NO EMPLOYEE
-        }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            // Xóa tất cả session
-            HttpContext.Session.Clear();
+            try
+            {
+                // 1. Gọi API logout để xóa session WebAPI
+                var response = await _httpClient.PostAsync("api/Admin/Employee/logout", null);
+                if (!response.IsSuccessStatusCode)
+                {
+                    TempData["Error"] = "Logout API thất bại: " + response.ReasonPhrase;
+                }
 
-            // Redirect về trang Login
+                // 2. Xóa session WebApp
+                HttpContext.Session.Clear();
+
+                // 3. Xóa cookie WebAPI trong CookieContainer
+                var cookies = _cookieContainer.GetCookies(_httpClient.BaseAddress);
+                foreach (Cookie cookie in cookies)
+                {
+                    cookie.Expired = true;
+                }
+
+                TempData["Message"] = "Logout thành công!";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi khi logout: " + ex.Message;
+            }
+
             return RedirectToAction("Login", "Employee", new { area = "Admin" });
         }
 
         [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
+        public IActionResult Register() => View();
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(EmployeeRegisterDto dto)
@@ -152,12 +146,11 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("https://localhost:7179/api/Employee/register", dto);
-
+                var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/register", dto);
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["Message"] = "Đăng ký nhân viên thành công!";
-                    return RedirectToAction("Login", "Employee", new { area = "Admin" });
+                    return RedirectToAction("Index");
                 }
                 else
                 {
@@ -173,16 +166,6 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
 
-
-        public class EmployeeRegisterDto
-        {
-            public string FullName { get; set; }
-            public string Username { get; set; }
-            public string Password { get; set; }
-            public string Email { get; set; }
-            public string Phone { get; set; }
-            public string Role { get; set; }
-        }
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Unlock(string username)
@@ -195,11 +178,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(
-                    "https://localhost:7179/api/Employee/unlock",
-                    new { Username = username }
-                );
-
+                var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/unlock", new { Username = username });
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadFromJsonAsync<UnlockResponse>();
@@ -231,11 +210,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(
-                    "https://localhost:7179/api/Employee/lock",
-                    new { Username = username }
-                );
-
+                var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/lock", new { Username = username });
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["Message"] = $"Lock tài khoản '{username}' thành công.";
@@ -254,11 +229,42 @@ namespace WebApp.Areas.Admin.Controllers
             return RedirectToAction("Index");
         }
 
+        // --- DTOs ---
+        public class EmployeeDto
+        {
+            public decimal EmpId { get; set; }
+            public string FullName { get; set; }
+            public string Status { get; set; }
+            public string Username { get; set; }
+            public string Email { get; set; }
+            public string Phone { get; set; }
+            public string Role { get; set; }
+        }
+
+        public class EmployeeRegisterDto
+        {
+            public string FullName { get; set; }
+            public string Username { get; set; }
+            public string Password { get; set; }
+            public string Email { get; set; }
+            public string Phone { get; set; }
+            public string Role { get; set; }
+        }
+
+        public class LoginResponse
+        {
+            [JsonPropertyName("username")]
+            public string Username { get; set; }
+            [JsonPropertyName("role")]
+            public string Role { get; set; }
+            [JsonPropertyName("result")]
+            public string Result { get; set; }
+        }
+
         public class UnlockResponse
         {
             public string Username { get; set; }
-            public string Result { get; set; } // UNLOCKED / FAILED / NO EMPLOYEE
+            public string Result { get; set; }
         }
     }
 }
-

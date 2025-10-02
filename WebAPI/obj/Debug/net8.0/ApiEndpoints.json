@@ -1,8 +1,8 @@
 [
   {
-    "ContainingType": "WebAPI.Controllers.EmployeeController",
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
     "Method": "GetAll",
-    "RelativePath": "api/Employee",
+    "RelativePath": "api/Admin/Employee",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -10,9 +10,9 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "WebAPI.Controllers.EmployeeController",
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
     "Method": "Get",
-    "RelativePath": "api/Employee/{id}",
+    "RelativePath": "api/Admin/Employee/{id}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -26,48 +26,100 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "WebAPI.Controllers.EmployeeController",
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
     "Method": "Login",
-    "RelativePath": "api/Employee/login",
+    "RelativePath": "api/Admin/Employee/login",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Controllers.EmployeeController\u002BEmployeeLoginDto",
+        "Type": "WebAPI.Areas.Admin.Controllers.EmployeeController\u002BEmployeeLoginDto",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "WebAPI.Controllers.EmployeeController",
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
+    "Method": "Logout",
+    "RelativePath": "api/Admin/Employee/logout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
     "Method": "Register",
-    "RelativePath": "api/Employee/register",
+    "RelativePath": "api/Admin/Employee/register",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Controllers.EmployeeController\u002BEmployeeRegisterDto",
+        "Type": "WebAPI.Areas.Admin.Controllers.EmployeeController\u002BEmployeeRegisterDto",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "WebAPI.Controllers.EmployeeController",
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
     "Method": "Unlock",
-    "RelativePath": "api/Employee/unlock",
+    "RelativePath": "api/Admin/Employee/unlock",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Controllers.EmployeeController\u002BUnlockEmployeeDto",
+        "Type": "WebAPI.Areas.Admin.Controllers.EmployeeController\u002BUnlockEmployeeDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
+    "Method": "Login",
+    "RelativePath": "api/Public/Customer/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Public.Controllers.CustomerController\u002BCustomerLoginDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
+    "Method": "Logout",
+    "RelativePath": "api/Public/Customer/logout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
+    "Method": "Register",
+    "RelativePath": "api/Public/Customer/register",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Public.Controllers.CustomerController\u002BCustomerRegisterDto",
         "IsRequired": true
       }
     ],

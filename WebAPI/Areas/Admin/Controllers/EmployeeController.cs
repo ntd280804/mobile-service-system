@@ -1,0 +1,257 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Oracle.ManagedDataAccess.Client;
+using System.Data;
+using WebAPI.Data;
+using WebAPI.Models;
+using WebAPI;
+namespace WebAPI.Areas.Admin.Controllers
+{
+    [Area("Admin")]
+    [Route("api/[area]/[controller]")]
+    [ApiController]
+    public class EmployeeController : ControllerBase
+    {
+        private readonly Helper _helper;
+        private readonly AppDbContext _context;
+
+        public EmployeeController(AppDbContext context, Helper helper)
+        {
+            _context = context;
+            _helper = helper;
+        }
+
+        // GET: api/employee
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            try
+            {
+                using var conn = _helper.GetTempOracleConnection();
+                using var cmd = new OracleCommand("APP.GET_ALL_EMPLOYEES", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                var cursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(cursor);
+
+                using var reader = cmd.ExecuteReader();
+
+                var list = new List<object>();
+                while (reader.Read())
+                {
+                    list.Add(new
+                    {
+                        EmpId = reader.GetDecimal(0),
+                        FullName = reader.GetString(1),
+                        Username = reader.GetString(2),
+                        Email = reader.GetString(3),
+                        Phone = reader.GetString(4),
+                        Role = reader.GetString(5),
+                        Status = reader.GetString(6)
+                    });
+                }
+
+                return Ok(list);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to get employees", detail = ex.Message });
+            }
+        }
+
+        // GET: api/employee/1
+        [HttpGet("{id}")]
+        public IActionResult Get(decimal id)
+        {
+            try
+            {
+                using var conn = _helper.GetTempOracleConnection();
+                using var cmd = new OracleCommand("APP.GET_EMPLOYEE_BY_ID", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_empid", OracleDbType.Decimal).Value = id;
+                var cursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(cursor);
+
+                using var reader = cmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    return Ok(new
+                    {
+                        EmpId = reader.GetDecimal(0),
+                        FullName = reader.GetString(1),
+                        Username = reader.GetString(2),
+                        Email = reader.GetString(3),
+                        Phone = reader.GetString(4),
+                        Role = reader.GetString(5),
+                        Status = reader.GetString(6)
+                    });
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to get employee", detail = ex.Message });
+            }
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] EmployeeLoginDto dto)
+        {
+            if (dto == null) return BadRequest("Invalid data");
+
+            try
+            {
+                var usernameParam = new OracleParameter("p_username", dto.Username);
+                var passwordParam = new OracleParameter("p_password", dto.Password);
+
+                var outUsernameParam = new OracleParameter("p_out_username", OracleDbType.Varchar2, 100)
+                { Direction = System.Data.ParameterDirection.Output };
+                var outRoleParam = new OracleParameter("p_out_role", OracleDbType.Varchar2, 50)
+                { Direction = System.Data.ParameterDirection.Output };
+                var outResultParam = new OracleParameter("p_out_result", OracleDbType.Varchar2, 50)
+                { Direction = System.Data.ParameterDirection.Output };
+
+                await _context.Database.ExecuteSqlRawAsync(
+                    "BEGIN LOGIN_EMPLOYEE(:p_username, :p_password, :p_out_username, :p_out_role, :p_out_result); END;",
+                    usernameParam, passwordParam, outUsernameParam, outRoleParam, outResultParam
+                );
+
+                var result = outResultParam.Value?.ToString();
+
+                if (result == "SUCCESS")
+                {
+                    // Lưu Oracle username/password tạm trong session
+                    HttpContext.Session.SetString("TempOracleUsername", dto.Username);
+                    HttpContext.Session.SetString("TempOraclePassword", dto.Password);
+                }
+
+                return Ok(new
+                {
+                    username = outUsernameParam.Value?.ToString(),
+                    role = outRoleParam.Value?.ToString(),
+                    result = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Login failed", detail = ex.Message });
+            }
+        }
+
+
+
+
+        [HttpPost("register")]
+        public IActionResult Register([FromBody] EmployeeRegisterDto dto)
+        {
+            if (dto == null) return BadRequest("Invalid data");
+
+            try
+            {
+                using var conn = _helper.GetTempOracleConnection(); // dùng session temp Oracle user/password
+                var cmd = new OracleCommand("APP.REGISTER_EMPLOYEE", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_empid", OracleDbType.Decimal).Value = DBNull.Value; // để Oracle tự sinh
+                cmd.Parameters.Add("p_full_name", OracleDbType.Varchar2).Value = dto.FullName;
+                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
+                cmd.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
+                cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
+                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
+                cmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = dto.Role;
+
+                cmd.ExecuteNonQuery();
+
+                return Ok(new { message = "Employee registered" });
+            }
+            catch (Exception ex)
+            {
+                return Conflict(new { message = "Register failed", detail = ex.Message });
+            }
+        }
+
+        [HttpPost("unlock")]
+        public async Task<IActionResult> Unlock([FromBody] UnlockEmployeeDto dto)
+        {
+            if (dto == null || string.IsNullOrEmpty(dto.Username))
+                return BadRequest(new { message = "Invalid data" });
+
+            try
+            {
+                var usernameParam = new OracleParameter("p_username", dto.Username);
+
+                var outResultParam = new OracleParameter("p_out_result", OracleDbType.Varchar2, 50)
+                {
+                    Direction = System.Data.ParameterDirection.Output
+                };
+
+                await _context.Database.ExecuteSqlRawAsync(
+                    "BEGIN UNLOCK_EMPLOYEE(:p_username, :p_out_result); END;",
+                    usernameParam,
+                    outResultParam
+                );
+
+                return Ok(new
+                {
+                    username = dto.Username,
+                    result = outResultParam.Value?.ToString()
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Unlock failed", detail = ex.Message });
+            }
+        }// POST: api/Admin/Employee/logout
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            try
+            {
+                // Xóa session tạm Oracle username/password
+                HttpContext.Session.Remove("TempOracleUsername");
+                HttpContext.Session.Remove("TempOraclePassword");
+
+                // Nếu muốn, xóa tất cả session
+                // HttpContext.Session.Clear();
+
+                return Ok(new
+                {
+                    message = "Logout thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Logout thất bại",
+                    detail = ex.Message
+                });
+            }
+        }
+
+        // DTO
+        public class UnlockEmployeeDto
+        {
+            public string Username { get; set; }
+        }
+        public class EmployeeLoginDto
+        {
+            public string Username { get; set; }
+            public string Password { get; set; }
+        }
+        public class EmployeeRegisterDto
+        {
+            public string FullName { get; set; }
+            public string Username { get; set; }
+            public string Password { get; set; }
+            public string Email { get; set; }
+            public string Phone { get; set; }
+            public string Role { get; set; }
+        }
+    }
+}

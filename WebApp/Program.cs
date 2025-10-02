@@ -2,7 +2,13 @@
 
 // Add services
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient();
+
+// --- Thêm HttpClientFactory để gọi WebAPI ---
+builder.Services.AddHttpClient("WebApiClient", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7179/"); // URL của WebAPI
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 // --- Thêm session ---
 builder.Services.AddDistributedMemoryCache(); // Lưu session trên RAM
@@ -11,7 +17,11 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+    options.Cookie.Name = ".MyApp.Session"; // tùy chọn tên cookie
 });
+
+// --- Nếu muốn HttpContext trong Helper/Service ---
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -44,4 +54,3 @@ app.MapControllerRoute(
     defaults: new { area = "Public", controller = "Home", action = "Index" });
 
 app.Run();
-    

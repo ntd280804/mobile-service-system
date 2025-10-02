@@ -7,10 +7,18 @@
 
 <h2>@ViewData["Title"]</h2>
 
-@if (TempData["Message"] != null)
+@if (TempData["Error"] != null)
 {
-    <div class="alert alert-success">@TempData["Message"]</div>
+    <div class="alert alert-danger">@TempData["Error"]</div>
 }
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @Html.ValidationSummary(true)
+    </div>
+}
+
 
 <form asp-action="Register" method="post">
     <div class="mb-3">
@@ -47,7 +55,9 @@
         <label asp-for="Role" class="form-label"></label>
         <select asp-for="Role" class="form-select">
             <option value="">-- Chọn vai trò --</option>
-            <option value="USER">USER</option>
+            <option value="TTV">Tiếp tân</option>
+            <option value="TK">Thủ kho</option>
+            <option value="KTV">Kĩ thuật viên</option>
             <option value="ADMIN">ADMIN</option>
         </select>
         <span asp-validation-for="Role" class="text-danger"></span>

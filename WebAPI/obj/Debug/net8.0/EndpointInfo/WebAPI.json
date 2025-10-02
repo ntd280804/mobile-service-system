@@ -5,7 +5,81 @@
     "version": "1.0"
   },
   "paths": {
-    "/api/Employee": {
+    "/api/Public/Customer/login": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerLoginDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerLoginDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Public/Customer/register": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRegisterDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRegisterDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Public/Customer/logout": {
+      "post": {
+        "tags": [
+          "Customer"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Admin/Employee": {
       "get": {
         "tags": [
           "Employee"
@@ -17,7 +91,7 @@
         }
       }
     },
-    "/api/Employee/{id}": {
+    "/api/Admin/Employee/{id}": {
       "get": {
         "tags": [
           "Employee"
@@ -40,7 +114,7 @@
         }
       }
     },
-    "/api/Employee/login": {
+    "/api/Admin/Employee/login": {
       "post": {
         "tags": [
           "Employee"
@@ -71,7 +145,7 @@
         }
       }
     },
-    "/api/Employee/register": {
+    "/api/Admin/Employee/register": {
       "post": {
         "tags": [
           "Employee"
@@ -102,7 +176,7 @@
         }
       }
     },
-    "/api/Employee/unlock": {
+    "/api/Admin/Employee/unlock": {
       "post": {
         "tags": [
           "Employee"
@@ -126,6 +200,18 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Admin/Employee/logout": {
+      "post": {
+        "tags": [
+          "Employee"
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -136,6 +222,46 @@
   },
   "components": {
     "schemas": {
+      "CustomerLoginDto": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CustomerRegisterDto": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          },
+          "address": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "EmployeeLoginDto": {
         "type": "object",
         "properties": {

@@ -1,24 +1,3 @@
---------------------------------------------------------------------------------
--- A. Hash password function (DBMS_CRYPTO)
---    Trả về HEX string (64 ký tự)
---------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION HASH_PASSWORD(p_password VARCHAR2) RETURN VARCHAR2 IS
-    v_raw RAW(32);
-BEGIN
-    v_raw := DBMS_CRYPTO.HASH(
-        UTL_I18N.STRING_TO_RAW(p_password, 'AL32UTF8'),
-        DBMS_CRYPTO.HASH_SH256
-    );
-    RETURN RAWTOHEX(v_raw);
-END;
-/
-
--- Nếu DBMS_CRYPTO không có quyền cho schema, grant bằng SYS:
--- GRANT EXECUTE ON DBMS_CRYPTO TO <schema>;
-
---------------------------------------------------------------------------------
--- B. Employee Registration Procedure (tạo RSA keypair, lưu public/private)
---------------------------------------------------------------------------------
 create or replace PROCEDURE REGISTER_EMPLOYEE(
     p_empid     IN NUMBER DEFAULT NULL,   -- Nếu NULL, để Oracle tự sinh
     p_full_name IN VARCHAR2,
@@ -29,14 +8,15 @@ create or replace PROCEDURE REGISTER_EMPLOYEE(
     p_role      IN VARCHAR2
 )
 AS
-    v_hash   VARCHAR2(256);
-    v_pub    CLOB;
-    v_priv   CLOB;
-    v_empid_used NUMBER;
+    v_hash        VARCHAR2(256);
+    v_pub         CLOB;
+    v_priv        CLOB;
+    v_empid_used  NUMBER;
 BEGIN
     -- Hash mật khẩu
     v_hash := HASH_PASSWORD(p_password);
-        -- Sinh cặp RSA (Java)
+
+    -- Sinh cặp RSA (Java)
     RSA_GENERATE_KEYPAIR(2048);
 
     -- Lấy public/private key
@@ -45,17 +25,30 @@ BEGIN
 
     -- Insert employee
     IF p_empid IS NULL THEN
-    -- EMP_ID tự sinh bằng IDENTITY / sequence
-    INSERT INTO EMPLOYEE(FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE, ROLE)
-    VALUES (p_full_name, p_username, v_hash, v_pub, p_email, p_phone, p_role)
-    RETURNING EMP_ID INTO v_empid_used;
-ELSE
-    -- EMP_ID truyền vào, không cần RETURNING
-    INSERT INTO EMPLOYEE(EMP_ID, FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE, ROLE)
-    VALUES (p_empid, p_full_name, p_username, v_hash, v_pub, p_email, p_phone, p_role);
-    v_empid_used := p_empid;
-END IF;
+        INSERT INTO EMPLOYEE(FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE, ROLE)
+        VALUES (p_full_name, p_username, v_hash, v_pub, p_email, p_phone, p_role)
+        RETURNING EMP_ID INTO v_empid_used;
+    ELSE
+        INSERT INTO EMPLOYEE(EMP_ID, FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE, ROLE)
+        VALUES (p_empid, p_full_name, p_username, v_hash, v_pub, p_email, p_phone, p_role);
+        v_empid_used := p_empid;
+    END IF;
 
+    -- Tạo Oracle DB user (chỉ tạo nếu insert thành công)
+    BEGIN
+        EXECUTE IMMEDIATE 'CREATE USER ' || p_username || 
+                  ' IDENTIFIED BY "' || p_password || '" DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS';
+        EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO ' || p_username;
+        EXECUTE IMMEDIATE 'GRANT SELECT, UPDATE ON EMPLOYEE TO ' || p_username;
+        EXECUTE IMMEDIATE 'GRANT EXECUTE ON REGISTER_EMPLOYEE TO ' || p_username;
+        EXECUTE IMMEDIATE 'GRANT EXECUTE ON GET_ALL_EMPLOYEES TO ' || p_username;
+        EXECUTE IMMEDIATE 'GRANT EXECUTE ON GET_EMPLOYEE_BY_ID TO ' || p_username;
+        
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Nếu user đã tồn tại hoặc lỗi privilege, bỏ qua
+            NULL;
+    END;
 
     -- Lưu private key
     INSERT INTO EMPLOYEE_KEYS(EMP_ID, PRIVATE_KEY) VALUES (v_empid_used, v_priv);
@@ -74,24 +67,6 @@ EXCEPTION
 END;
 /
 
---------------------------------------------------------------------------------
--- C. Function GET_PRIVATE_KEY (chỉ NGCHOAN mới xem được)
---------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION GET_PRIVATE_KEY(p_employeeid IN NUMBER) RETURN CLOB AS
-    v_priv CLOB;
-BEGIN
-    IF SYS_CONTEXT('USERENV','SESSION_USER') <> 'NGCHOAN' THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Access denied: only NGCHOAN can view private keys');
-    END IF;
-
-    SELECT PRIVATE_KEY INTO v_priv FROM EMPLOYEE_KEYS WHERE EMP_ID = p_employeeid;
-    RETURN v_priv;
-END;
-/
-
---------------------------------------------------------------------------------
--- D. LOGIN function + ghi audit
---------------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE LOGIN_EMPLOYEE(
     p_username     IN  VARCHAR2,
     p_password     IN  VARCHAR2,
@@ -194,7 +169,9 @@ BEGIN
     UPDATE EMPLOYEE
     SET STATUS = 'ACTIVE'
     WHERE USERNAME = p_username;
-
+	
+	INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS)
+    VALUES (p_username, 'UNLOCK');
     COMMIT;
 
     p_out_result := 'UNLOCKED';
@@ -204,35 +181,87 @@ EXCEPTION
         p_out_result := 'FAILED: ' || SQLERRM;
 END UNLOCK_EMPLOYEE;
 /
-
-
-SET SERVEROUTPUT ON;
-
-DECLARE
-    v_hash VARCHAR2(256);
+CREATE OR REPLACE PROCEDURE LOCK_EMPLOYEE(
+    p_username   IN  VARCHAR2,
+    p_out_result OUT VARCHAR2
+) AS
+    v_count NUMBER;
 BEGIN
-    v_hash := HASH_PASSWORD('Pass1234!');
-    DBMS_OUTPUT.PUT_LINE('Hashed password: ' || v_hash);
+    -- Kiểm tra tồn tại
+    SELECT COUNT(*) INTO v_count
+    FROM EMPLOYEE
+    WHERE USERNAME = p_username;
+
+    IF v_count = 0 THEN
+        p_out_result := 'NO EMPLOYEE';
+        RETURN;
+    END IF;
+
+    -- Cập nhật trạng thái LOCKED
+    UPDATE EMPLOYEE
+    SET STATUS = 'LOCKED'
+    WHERE USERNAME = p_username;
+
+    INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS)
+    VALUES (p_username, 'LOCK');
+    COMMIT;
+
+    p_out_result := 'LOCKED';
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        p_out_result := 'FAILED: ' || SQLERRM;
+END LOCK_EMPLOYEE;
+/
+
+CREATE OR REPLACE PROCEDURE GET_ALL_EMPLOYEES(
+    p_cursor OUT SYS_REFCURSOR
+)
+AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT EMP_ID,
+               FULL_NAME,
+               USERNAME,
+               EMAIL,
+               PHONE,
+               ROLE,
+               STATUS
+        FROM APP.EMPLOYEE;
 END;
 /
-DECLARE
-    v_role VARCHAR2(50);
+CREATE OR REPLACE PROCEDURE GET_EMPLOYEE_BY_ID(
+    p_empid  IN  NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+)
+AS
 BEGIN
-    v_role := LOGIN_EMPLOYEE('nguyenvanf2', 'Pass1234!');
-    DBMS_OUTPUT.PUT_LINE('Login role: ' || v_role);
+    OPEN p_cursor FOR
+        SELECT EMP_ID,
+               FULL_NAME,
+               USERNAME,
+               EMAIL,
+               PHONE,
+               ROLE,
+               STATUS
+        FROM APP.EMPLOYEE
+        WHERE EMP_ID = p_empid;
 END;
 /
 
-
 BEGIN
-    -- Test 1: EMP_ID tự sinh
     REGISTER_EMPLOYEE(
-    p_empid     => 3,
-        p_full_name => 'Nguyen Van A',
-        p_username  => 'nguyenvanc',
-        p_password  => 'Pass1234!',
-        p_email     => 'nguyenvanc@example.com',
-        p_phone     => '0909123451',
+        p_full_name => 'Admin1',
+        p_username  => 'Admin1',
+        p_password  => 'Admin1',
+        p_email     => 'Admin1@example.com',
+        p_phone     => '0909123456',
         p_role      => 'ADMIN'
     );
 END;
+/
+CREATE USER AdminTest IDENTIFIED BY AdminTest
+DEFAULT TABLESPACE USERS
+TEMPORARY TABLESPACE TEMP
+ACCOUNT UNLOCK;
+GRANT CREATE SESSION TO AdminTest;

@@ -9,8 +9,6 @@ public partial class Customer
 
     public string FullName { get; set; } = null!;
 
-    public string? Username { get; set; }
-
     public string? PasswordHash { get; set; }
 
     public string? PublicKey { get; set; }

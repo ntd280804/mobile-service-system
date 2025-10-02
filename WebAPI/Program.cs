@@ -1,6 +1,5 @@
-
-using Microsoft.EntityFrameworkCore;
-using WebAPI.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using WebAPI.Data;
 
 namespace WebAPI
 {
@@ -10,17 +9,35 @@ namespace WebAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
+            // Add services to the container
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddDbContext<MobileDbContext>(options => options.UseOracle(builder.Configuration.GetConnectionString("OracleDb")));
+
+            // DbContext Oracle
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseOracle(builder.Configuration.GetConnectionString("OracleDb"))
+            );
+
+            // --- Session ---
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30); // session tồn tại 30 phút
+                options.Cookie.HttpOnly = true;                  // JS không truy cập được
+                options.Cookie.IsEssential = true;              // luôn gửi cookie
+                options.Cookie.Name = ".MyApp.Session";         // đặt tên cookie riêng
+            });
+
+            // HttpContextAccessor để Helper truy cập session
+            builder.Services.AddHttpContextAccessor();
+
+            // Helper service
+            builder.Services.AddScoped<Helper>();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // Configure pipeline
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -29,8 +46,10 @@ namespace WebAPI
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+            // --- Session trước Authorization ---
+            app.UseSession();
 
+            app.UseAuthorization();
 
             app.MapControllers();
 
