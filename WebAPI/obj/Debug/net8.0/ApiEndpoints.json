@@ -84,6 +84,58 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
+    "Method": "createrole",
+    "RelativePath": "api/Admin/Role/createrole/{roleName}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "roleName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
+    "Method": "GetAllRole",
+    "RelativePath": "api/Admin/Role/roles",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
+    "Method": "GetRoleOfUser",
+    "RelativePath": "api/Admin/Role/roles-of-user/{username}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "username",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
+    "Method": "GetAllDBUser",
+    "RelativePath": "api/Admin/Role/users",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "Login",
     "RelativePath": "api/Public/Customer/login",

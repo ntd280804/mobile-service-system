@@ -16,7 +16,17 @@
     </div>
     <button class="btn btn-primary" type="submit">Login</button>
 </form>
-
+<script>
+    // sử dụng lại channel đã được định nghĩa trong _Layout.cshtml
+    const loginForm = document.querySelector('form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', () => {
+            // Gửi tín hiệu login cho các tab khác
+            channel.postMessage('login');
+            console.log('📡 Gửi sự kiện login sang các tab khác');
+        });
+    }
+</script>
 @if (!ViewData.ModelState.IsValid)
 {
     <div class="alert alert-danger mt-2">

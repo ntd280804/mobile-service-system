@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebAPI.Data;
+using WebAPI;
 
 namespace WebAPI
 {
@@ -9,35 +10,49 @@ namespace WebAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container
+            // --- Add services ---
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // DbContext Oracle
+            // --- DbContext Oracle ---
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseOracle(builder.Configuration.GetConnectionString("OracleDb"))
             );
+
+            // --- SignalR ---
+            builder.Services.AddSignalR();
 
             // --- Session ---
             builder.Services.AddDistributedMemoryCache();
             builder.Services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(30); // session tồn tại 30 phút
-                options.Cookie.HttpOnly = true;                  // JS không truy cập được
-                options.Cookie.IsEssential = true;              // luôn gửi cookie
-                options.Cookie.Name = ".MyApp.Session";         // đặt tên cookie riêng
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+                options.Cookie.Name = ".MyApp.Session";
             });
 
-            // HttpContextAccessor để Helper truy cập session
-            builder.Services.AddHttpContextAccessor();
+            // --- CORS ---
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", policy =>
+                {
+                    policy
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials()
+                        .SetIsOriginAllowed(_ => true); // cho phép tất cả origin (có thể giới hạn sau)
+                });
+            });
 
-            // Helper service
+            // --- HttpContextAccessor & Helper ---
+            builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<Helper>();
 
             var app = builder.Build();
 
-            // Configure pipeline
+            // --- Middleware pipeline ---
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -46,12 +61,18 @@ namespace WebAPI
 
             app.UseHttpsRedirection();
 
-            // --- Session trước Authorization ---
+            // Thêm CORS
+            app.UseCors("CorsPolicy");
+
+            // Session trước Authorization
             app.UseSession();
 
             app.UseAuthorization();
 
+            // --- Map routes ---
             app.MapControllers();
+
+            // Map SignalR Hub
 
             app.Run();
         }

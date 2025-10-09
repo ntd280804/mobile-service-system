@@ -16,19 +16,33 @@ namespace WebAPI
         {
             var session = _httpContextAccessor.HttpContext?.Session;
 
+            string tempUser;
+            string tempPass;
+
             if (session == null)
-                throw new Exception("No HttpContext session available");
+            {
+                // 🔥 Fallback về tài khoản mặc định
+                tempUser = "App";
+                tempPass = "App";
+            }
+            else
+            {
+                tempUser = session.GetString("TempOracleUsername");
+                tempPass = session.GetString("TempOraclePassword");
 
-            var tempUser = session.GetString("TempOracleUsername");
-            var tempPass = session.GetString("TempOraclePassword");
-
-            if (string.IsNullOrEmpty(tempUser) || string.IsNullOrEmpty(tempPass))
-                throw new Exception("No temporary Oracle user in session");
+                if (string.IsNullOrEmpty(tempUser) || string.IsNullOrEmpty(tempPass))
+                {
+                    // 🔥 Cũng fallback về tài khoản mặc định
+                    tempUser = "App";
+                    tempPass = "App";
+                }
+            }
 
             string connStr = $"User Id={tempUser};Password={tempPass};Data Source=192.168.26.138:1521/ORCLPDB1;Pooling=true";
             var conn = new OracleConnection(connStr);
             conn.Open();
             return conn;
         }
+
     }
 }

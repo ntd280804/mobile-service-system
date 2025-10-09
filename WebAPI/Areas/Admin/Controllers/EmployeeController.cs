@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Humanizer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
+using WebAPI;
 using WebAPI.Data;
 using WebAPI.Models;
-using WebAPI;
 namespace WebAPI.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -117,7 +119,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 { Direction = System.Data.ParameterDirection.Output };
 
                 await _context.Database.ExecuteSqlRawAsync(
-                    "BEGIN LOGIN_EMPLOYEE(:p_username, :p_password, :p_out_username, :p_out_role, :p_out_result); END;",
+                    "BEGIN APP.LOGIN_EMPLOYEE(:p_username, :p_password, :p_out_username, :p_out_role, :p_out_result); END;",
                     usernameParam, passwordParam, outUsernameParam, outRoleParam, outResultParam
                 );
 
@@ -191,7 +193,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 };
 
                 await _context.Database.ExecuteSqlRawAsync(
-                    "BEGIN UNLOCK_EMPLOYEE(:p_username, :p_out_result); END;",
+                    "BEGIN APP.UNLOCK_EMPLOYEE(:p_username, :p_out_result); END;",
                     usernameParam,
                     outResultParam
                 );
@@ -208,17 +210,22 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }// POST: api/Admin/Employee/logout
         [HttpPost("logout")]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout([FromServices] IHubContext<AuthHub> hub)
         {
             try
             {
+                var username = HttpContext.Session.GetString("TempOracleUsername");
                 // Xóa session tạm Oracle username/password
                 HttpContext.Session.Remove("TempOracleUsername");
                 HttpContext.Session.Remove("TempOraclePassword");
 
                 // Nếu muốn, xóa tất cả session
                 // HttpContext.Session.Clear();
-
+                if (!string.IsNullOrEmpty(username))
+                {
+                    await hub.Clients.Group(username).SendAsync("ForceLogout");
+                    Console.WriteLine($"📡 Gửi ForceLogout tới group: {username}");
+                }
                 return Ok(new
                 {
                     message = "Logout thành công"

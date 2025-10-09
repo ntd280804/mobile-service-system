@@ -259,3 +259,7 @@ D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\tr\Microsoft.CodeAnaly
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\zh-Hans\Microsoft.CodeAnalysis.Scripting.resources.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\zh-Hant\Microsoft.CodeAnalysis.Scripting.resources.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Diagnostics.Abstractions.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Hosting.Abstractions.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.ObjectPool.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\System.Net.WebSockets.WebSocketProtocol.dll
