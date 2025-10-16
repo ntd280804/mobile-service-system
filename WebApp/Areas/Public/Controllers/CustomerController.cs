@@ -49,9 +49,10 @@ namespace WebApp.Areas.Public.Controllers
                     {
                         TempData["Message"] = $"Login thành công! ({result.Username})";
 
-                        // --- Lưu vào session WebApp ---
-                        HttpContext.Session.SetString("customerUsername", result.Username ?? "");
-                        HttpContext.Session.SetString("customerLoginResult", result.Result ?? "");
+                            // Lưu session cho WebApp
+                            HttpContext.Session.SetString("Username", result.Username ?? "");
+                            HttpContext.Session.SetString("customerUsername", result.Username ?? ""); // dùng cho đặt lịch
+                            HttpContext.Session.SetString("LoginResult", result.Result ?? "");
 
                         // --- Cookie WebAPI đã được _cookieContainer giữ tự động ---
                         return RedirectToAction("Index", "Home", new { area = "Public" });

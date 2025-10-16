@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "Đặt lịch";
+}
+
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header"><h3>🗓️ Đặt lịch</h3></div>
+        <div class="card-body">
+          <form id="f">
+            <div class="mb-3">
+              <label class="form-label">Số điện thoại *</label>
+              <input class="form-control" name="customerPhone" id="customerPhone" required />
+              <div class="form-text">Bạn cần đăng nhập để đặt lịch. SĐT lấy từ tài khoản đã đăng nhập.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Ngày hẹn *</label>
+              <input type="date" class="form-control" name="appointmentDate" required />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Mô tả</label>
+              <textarea class="form-control" rows="3" name="description" placeholder="Mô tả vấn đề..."></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">Đặt lịch</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const apiBase = 'https://localhost:7179/api/Public/Appointment';
+  const form = document.getElementById('f');
+  const dateInput = form.querySelector('input[name="appointmentDate"]');
+  dateInput.min = new Date().toISOString().split('T')[0];
+  // Prefill phone from session (rendered by server into a data attribute)
+  const phoneFromSession = '@(Context.Session.GetString("customerUsername") ?? "")';
+  const phoneInput = document.getElementById('customerPhone');
+  if (phoneFromSession) {
+    phoneInput.value = phoneFromSession;
+    phoneInput.readOnly = true;
+  } else {
+    // Not logged in: prevent submit
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('Bạn cần đăng nhập trước khi đặt lịch.');
+    }, { once: true });
+    return;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+  const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+    // ensure ISO date
+    payload.appointmentDate = new Date(payload.appointmentDate).toISOString();
+    try {
+      const res = await fetch(`${apiBase}/book`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(res.ok){
+        alert('✅ ' + (data.message||'Đặt lịch thành công') + ` (ID: ${data.appointmentId})`);
+        form.reset();
+      } else {
+        alert('❌ ' + (data.message||'Đặt lịch thất bại'));
+      }
+    } catch(err){
+      alert('❌ Lỗi: ' + err.message);
+    }
+  });
+})();
+</script>

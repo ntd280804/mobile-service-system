@@ -1,0 +1,58 @@
+@{
+    ViewData["Title"] = "Quản lý lịch hẹn";
+}
+<div class="container mt-4">
+  <h3>📋 Quản lý lịch hẹn</h3>
+  <div class="table-responsive">
+    <table class="table table-striped" id="t">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>SĐT</th>
+          <th>Ngày</th>
+          <th>Trạng thái</th>
+          <th>Mô tả</th>
+          <th>Hành động</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<form id="u" method="post" asp-action="UpdateStatus" class="d-none">
+  <input name="id" />
+  <input name="status" />
+  @Html.AntiForgeryToken()
+</form>
+
+<script>
+(async function(){
+  const api = 'https://localhost:7179/api/Admin/Appointment/list';
+  const tbody = document.querySelector('#t tbody');
+  const res = await fetch(api);
+  const items = await res.json();
+  tbody.innerHTML = items.map(x => `
+    <tr>
+      <td>${x.appointmentId}</td>
+      <td>${x.customerPhone}</td>
+      <td>${new Date(x.appointmentDate).toLocaleDateString('vi-VN')}</td>
+      <td>${x.status||''}</td>
+      <td>${x.description||''}</td>
+      <td>
+        <button class="btn btn-sm btn-success" data-id="${x.appointmentId}" data-status="COMPLETED">Hoàn thành</button>
+        <button class="btn btn-sm btn-warning" data-id="${x.appointmentId}" data-status="NO_SHOW">Không đến</button>
+      </td>
+    </tr>
+  `).join('');
+
+  tbody.addEventListener('click', (e) => {
+    if(e.target.matches('button[data-id]')){
+      const id = e.target.getAttribute('data-id');
+      const status = e.target.getAttribute('data-status');
+      const f = document.getElementById('u');
+      f.id.value = id; f.status.value = status; f.submit();
+    }
+  });
+})();
+</script>
