@@ -20,52 +20,74 @@ namespace WebAPI.Areas.Public.Controllers
             _helper = helper;
         }
 
-        
+
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] CustomerLoginDto dto)
         {
-            if (dto == null) return BadRequest("Invalid data");
+            if (dto == null)
+                return BadRequest(new { message = "Invalid data" });
+
+            // 🔐 Chuẩn bị connection string
+            string connStr = $"User Id={dto.Username};Password={dto.Password};Data Source=192.168.26.138:1521/ORCLPDB1;Pooling=true";
 
             try
             {
-                var phoneParam = new OracleParameter("p_phone", dto.Username); // sửa lại đúng
+                // 🪪 Bước 1: kiểm tra kết nối Oracle bằng tài khoản thực
+                using (var conn = new OracleConnection(connStr))
+                {
+                    await conn.OpenAsync();
+                }
+
+                // 🧾 Bước 2: Gọi procedure LOGIN_CUSTOMER
+                var phoneParam = new OracleParameter("p_phone", dto.Username);
                 var passwordParam = new OracleParameter("p_password", dto.Password);
 
                 var outPhoneParam = new OracleParameter("p_out_phone", OracleDbType.Varchar2, 100)
                 { Direction = ParameterDirection.Output };
-                var outRoleParam = new OracleParameter("p_out_role", OracleDbType.Varchar2, 50)
-                { Direction = ParameterDirection.Output };
+
                 var outResultParam = new OracleParameter("p_out_result", OracleDbType.Varchar2, 50)
                 { Direction = ParameterDirection.Output };
 
                 await _context.Database.ExecuteSqlRawAsync(
-                    "BEGIN LOGIN_CUSTOMER(:p_phone, :p_password, :p_out_phone, :p_out_role, :p_out_result); END;",
-                    phoneParam, passwordParam, outPhoneParam, outRoleParam, outResultParam
+                    "BEGIN LOGIN_CUSTOMER(:p_phone, :p_password, :p_out_phone, :p_out_result); END;",
+                    phoneParam, passwordParam, outPhoneParam, outResultParam
                 );
 
-
                 var result = outResultParam.Value?.ToString();
+                var username = outPhoneParam.Value?.ToString();
 
                 if (result == "SUCCESS")
                 {
-                    // Lưu Oracle username/password tạm trong session
+                    // ✅ Lưu session Oracle để dùng sau này
                     HttpContext.Session.SetString("TempOracleUsername", dto.Username);
                     HttpContext.Session.SetString("TempOraclePassword", dto.Password);
                 }
 
                 return Ok(new
                 {
-                    username = outPhoneParam.Value?.ToString(),
-                    role = outRoleParam.Value?.ToString(),
+                    username = username,
+                    roles = "CUSTOMER",
                     result = result
                 });
             }
+            catch (OracleException ex)
+            {
+                // 🧭 Bắt lỗi Oracle (profile)
+                return ex.Number switch
+                {
+                    1017 => Unauthorized(new { result = "FAILED", message = "Sai số điện thoại hoặc mật khẩu." }),
+                    28000 => Unauthorized(new { result = "LOCKED", message = "Tài khoản đã bị khóa (profile)." }),
+                    28001 => Unauthorized(new { result = "EXPIRED", message = "Mật khẩu đã hết hạn (profile)." }),
+                    _ => StatusCode(500, new { result = "FAILED", message = $"Oracle error {ex.Number}: {ex.Message}" })
+                };
+            }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Login failed", detail = ex.Message });
+                return StatusCode(500, new { result = "FAILED", message = ex.Message });
             }
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] CustomerRegisterDto dto)
         {

@@ -1,174 +1,114 @@
-CREATE OR REPLACE PROCEDURE REGISTER_CUSTOMER(
-    p_phone     IN VARCHAR2,   -- dùng làm PK
+create or replace PROCEDURE REGISTER_EMPLOYEE(
+    p_empid     IN NUMBER DEFAULT NULL,   -- Nếu NULL, để Oracle tự sinh
     p_full_name IN VARCHAR2,
+    p_username  IN VARCHAR2,
     p_password  IN VARCHAR2,
     p_email     IN VARCHAR2,
-    p_address   IN VARCHAR2
+    p_phone     IN VARCHAR2
 )
 AS
-    v_hash VARCHAR2(256);
-    v_pub  CLOB;
-    v_priv CLOB;
+    v_hash        VARCHAR2(256);
+    v_pub         CLOB;
+    v_priv        CLOB;
+    v_empid_used  NUMBER;
 BEGIN
     -- Hash mật khẩu
     v_hash := HASH_PASSWORD(p_password);
 
     -- Sinh cặp RSA
     RSA_GENERATE_KEYPAIR(2048);
-
-    -- Lấy public/private key
     v_pub  := RSA_GET_PUBLIC_KEY();
     v_priv := RSA_GET_PRIVATE_KEY();
 
-    -- Insert customer
-    INSERT INTO CUSTOMER(PHONE, FULL_NAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, ADDRESS, STATUS)
-    VALUES (p_phone, p_full_name, v_hash, v_pub, p_email, p_address, 'ACTIVE');
-	
-	BEGIN
-        EXECUTE IMMEDIATE 'CREATE USER ' || p_phone || 
+    -- 1. Tạo Oracle DB user trước
+    BEGIN
+        EXECUTE IMMEDIATE 'CREATE USER ' || p_username ||
                   ' IDENTIFIED BY "' || p_password || '" DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS';
-        EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO ' || p_phone;
-        
+        EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO ' || p_username;
+
+        -- Gán quyền cần thiết
+        EXECUTE IMMEDIATE 'GRANT SELECT, UPDATE ON EMPLOYEE TO ' || p_username;
+        EXECUTE IMMEDIATE 'GRANT EXECUTE ON REGISTER_EMPLOYEE TO ' || p_username;
+        EXECUTE IMMEDIATE 'GRANT EXECUTE ON GET_ALL_EMPLOYEES TO ' || p_username;
+        EXECUTE IMMEDIATE 'GRANT EXECUTE ON GET_EMPLOYEE_BY_ID TO ' || p_username;
+
     EXCEPTION
         WHEN OTHERS THEN
-            -- Nếu user đã tồn tại hoặc lỗi privilege, bỏ qua
-            NULL;
+            -- Nếu tạo user DB bị lỗi → dừng toàn bộ
+            RAISE_APPLICATION_ERROR(-20001, 'Không thể tạo DB User cho nhân viên: ' || SQLERRM);
     END;
-    -- Lưu private key vào CUSTOMER_KEYS
-    INSERT INTO CUSTOMER_KEYS(CUSTOMER_ID, PRIVATE_KEY)
-    VALUES (p_phone, v_priv);
 
-    -- Audit (cột USERNAME trong audit table thực ra sẽ lưu số điện thoại)
-    INSERT INTO CUSTOMER_LOGIN_AUDIT(USERNAME, STATUS)
-    VALUES (p_phone, 'REGISTERED');
+    -- 2. Nếu DB user tạo thành công → insert vào EMPLOYEE
+    IF p_empid IS NULL THEN
+        INSERT INTO EMPLOYEE(FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE)
+        VALUES (p_full_name, p_username, v_hash, v_pub, p_email, p_phone)
+        RETURNING EMP_ID INTO v_empid_used;
+    ELSE
+        INSERT INTO EMPLOYEE(EMP_ID, FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE)
+        VALUES (p_empid, p_full_name, p_username, v_hash, v_pub, p_email, p_phone);
+        v_empid_used := p_empid;
+    END IF;
 
+    -- 3. Lưu private key
+    INSERT INTO EMPLOYEE_KEYS(EMP_ID, PRIVATE_KEY)
+    VALUES (v_empid_used, v_priv);
+    
     COMMIT;
 
 EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        INSERT INTO CUSTOMER_LOGIN_AUDIT(USERNAME, STATUS)
-        VALUES (p_phone, 'DUPLICATE');
-        COMMIT;
     WHEN OTHERS THEN
-        INSERT INTO CUSTOMER_LOGIN_AUDIT(USERNAME, STATUS)
-        VALUES (p_phone, 'FAILED_REGISTER');
-        COMMIT;
-END REGISTER_CUSTOMER;
+        -- Nếu lỗi sau khi tạo user DB, xóa user để rollback sạch
+        BEGIN
+            EXECUTE IMMEDIATE 'DROP USER ' || p_username || ' CASCADE';
+        EXCEPTION
+            WHEN OTHERS THEN NULL;
+        END;
+        RAISE;
+END;
 /
 
 
 
--- Login customer
-CREATE OR REPLACE PROCEDURE LOGIN_CUSTOMER(
+create or replace PROCEDURE LOGIN_CUSTOMER(
     p_phone        IN  VARCHAR2,
     p_password     IN  VARCHAR2,
     p_out_phone    OUT VARCHAR2,
-    p_out_role     OUT VARCHAR2,
     p_out_result   OUT VARCHAR2
 ) AS
     PRAGMA AUTONOMOUS_TRANSACTION;
 
     v_hash       VARCHAR2(256);
     v_db_hash    VARCHAR2(256);
-    v_role       VARCHAR2(20);
     v_status     VARCHAR2(10);
     v_fail_count NUMBER;
 BEGIN
     v_hash := HASH_PASSWORD(p_password);
 
     BEGIN
-        SELECT PASSWORD_HASH, 'CUSTOMER', STATUS
-        INTO v_db_hash, v_role, v_status
+        SELECT PASSWORD_HASH, STATUS
+        INTO v_db_hash, v_status
         FROM CUSTOMER
         WHERE PHONE = p_phone;
-
         p_out_phone := p_phone;
-        p_out_role := v_role;
 
         IF v_status = 'LOCKED' THEN
-            INSERT INTO CUSTOMER_LOGIN_AUDIT(USERNAME, STATUS)
-            VALUES (p_phone, 'LOCKED');
-            COMMIT;
             p_out_result := 'ACCOUNT LOCKED';
             RETURN;
         END IF;
 
         IF v_db_hash = v_hash THEN
-            INSERT INTO CUSTOMER_LOGIN_AUDIT(USERNAME, STATUS)
-            VALUES (p_phone, 'SUCCESS');
-            COMMIT;
             p_out_result := 'SUCCESS';
         ELSE
-            INSERT INTO CUSTOMER_LOGIN_AUDIT(USERNAME, STATUS)
-            VALUES (p_phone, 'FAIL');
-            COMMIT;
-
-            SELECT COUNT(*) INTO v_fail_count
-            FROM (
-                SELECT STATUS
-                FROM CUSTOMER_LOGIN_AUDIT
-                WHERE USERNAME = p_phone
-                ORDER BY LOGIN_TIME DESC
-            )
-            WHERE ROWNUM <= 3 AND STATUS = 'FAIL';
-
-            IF v_fail_count >= 3 THEN
-                UPDATE CUSTOMER
-                SET STATUS = 'LOCKED'
-                WHERE PHONE = p_phone;
-                COMMIT;
-                p_out_result := 'ACCOUNT LOCKED';
-            ELSE
-                p_out_result := 'FAILED';
-            END IF;
+            p_out_result := 'FAILED';
         END IF;
 
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
-            INSERT INTO CUSTOMER_LOGIN_AUDIT(USERNAME, STATUS)
-            VALUES (p_phone, 'NO CUSTOMER');
-            COMMIT;
+
             p_out_phone := NULL;
-            p_out_role := NULL;
+            
             p_out_result := 'FAILED';
     END;
 END LOGIN_CUSTOMER;
 /
 
-
--- Unlock customer
-CREATE OR REPLACE PROCEDURE UNLOCK_CUSTOMER(
-    p_phone      IN  VARCHAR2,
-    p_out_result OUT VARCHAR2
-)
-AS
-BEGIN
-    -- Kiểm tra customer tồn tại
-    DECLARE
-        v_count NUMBER;
-    BEGIN
-        SELECT COUNT(*) INTO v_count
-        FROM CUSTOMER
-        WHERE PHONE = p_phone;
-
-        IF v_count = 0 THEN
-            p_out_result := 'NO CUSTOMER';
-            RETURN;
-        END IF;
-    END;
-
-    -- Cập nhật trạng thái ACTIVE
-    UPDATE CUSTOMER
-    SET STATUS = 'ACTIVE'
-    WHERE PHONE = p_phone;
-	INSERT INTO CUSTOMER_LOGIN_AUDIT(USERNAME, STATUS)
-    VALUES (p_phone, 'UNLOCK');
-    COMMIT;
-
-    p_out_result := 'UNLOCKED';
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        p_out_result := 'FAILED: ' || SQLERRM;
-END UNLOCK_CUSTOMER;
-/

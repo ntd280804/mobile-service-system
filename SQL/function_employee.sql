@@ -1,251 +1,166 @@
-create or replace PROCEDURE REGISTER_EMPLOYEE(
-    p_empid     IN NUMBER DEFAULT NULL,   -- Nếu NULL, để Oracle tự sinh
+create or replace PROCEDURE REGISTER_CUSTOMER(
+    p_phone     IN VARCHAR2,   -- dùng làm PK
     p_full_name IN VARCHAR2,
-    p_username  IN VARCHAR2,
     p_password  IN VARCHAR2,
     p_email     IN VARCHAR2,
-    p_phone     IN VARCHAR2,
-    p_role      IN VARCHAR2
+    p_address   IN VARCHAR2
 )
 AS
-    v_hash        VARCHAR2(256);
-    v_pub         CLOB;
-    v_priv        CLOB;
-    v_empid_used  NUMBER;
+    v_hash VARCHAR2(256);
+    v_pub  CLOB;
+    v_priv CLOB;
 BEGIN
     -- Hash mật khẩu
     v_hash := HASH_PASSWORD(p_password);
 
-    -- Sinh cặp RSA (Java)
+    -- Sinh cặp RSA
     RSA_GENERATE_KEYPAIR(2048);
-
-    -- Lấy public/private key
     v_pub  := RSA_GET_PUBLIC_KEY();
     v_priv := RSA_GET_PRIVATE_KEY();
 
-    -- Insert employee
-    IF p_empid IS NULL THEN
-        INSERT INTO EMPLOYEE(FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE, ROLE)
-        VALUES (p_full_name, p_username, v_hash, v_pub, p_email, p_phone, p_role)
-        RETURNING EMP_ID INTO v_empid_used;
-    ELSE
-        INSERT INTO EMPLOYEE(EMP_ID, FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE, ROLE)
-        VALUES (p_empid, p_full_name, p_username, v_hash, v_pub, p_email, p_phone, p_role);
-        v_empid_used := p_empid;
-    END IF;
-
-    -- Tạo Oracle DB user (chỉ tạo nếu insert thành công)
+    -- 1. Tạo Oracle DB user trước
     BEGIN
-        EXECUTE IMMEDIATE 'CREATE USER ' || p_username || 
-                  ' IDENTIFIED BY "' || p_password || '" DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS';
-        EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO ' || p_username;
-        EXECUTE IMMEDIATE 'GRANT SELECT, UPDATE ON EMPLOYEE TO ' || p_username;
-        EXECUTE IMMEDIATE 'GRANT EXECUTE ON REGISTER_EMPLOYEE TO ' || p_username;
-        EXECUTE IMMEDIATE 'GRANT EXECUTE ON GET_ALL_EMPLOYEES TO ' || p_username;
-        EXECUTE IMMEDIATE 'GRANT EXECUTE ON GET_EMPLOYEE_BY_ID TO ' || p_username;
-        
+        EXECUTE IMMEDIATE 'CREATE USER "' || p_phone || '"' ||
+                          ' IDENTIFIED BY "' || p_password || '"' ||
+                          ' DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS';
+
+        EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO "' || p_phone || '"';
+        -- Nếu cần có thể gán thêm quyền select/execute tùy mục đích sử dụng
     EXCEPTION
         WHEN OTHERS THEN
-            -- Nếu user đã tồn tại hoặc lỗi privilege, bỏ qua
-            NULL;
+            RAISE_APPLICATION_ERROR(-20002, 'Không thể tạo DB User cho Customer ' || p_phone || ': ' || SQLERRM);
     END;
 
-    -- Lưu private key
-    INSERT INTO EMPLOYEE_KEYS(EMP_ID, PRIVATE_KEY) VALUES (v_empid_used, v_priv);
+    -- 2. Insert vào bảng CUSTOMER (chỉ khi tạo DB user thành công)
+    BEGIN
+        INSERT INTO CUSTOMER(PHONE, FULL_NAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, ADDRESS, STATUS)
+        VALUES (p_phone, p_full_name, v_hash, v_pub, p_email, p_address, 'ACTIVE');
 
-    -- Audit đăng ký
-    INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'REGISTERED');
-    COMMIT;
+        -- 3. Lưu private key
+        INSERT INTO CUSTOMER_KEYS(CUSTOMER_ID, PRIVATE_KEY)
+        VALUES (p_phone, v_priv);
 
-EXCEPTION
-    WHEN DUP_VAL_ON_INDEX THEN
-        INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'DUPLICATE');
         COMMIT;
-    WHEN OTHERS THEN
-        INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS) VALUES (p_username, 'FAILED_REGISTER');
-        COMMIT;
-END;
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Nếu lỗi ở bước insert thì rollback + xóa DB user vừa tạo
+            ROLLBACK;
+            BEGIN
+                EXECUTE IMMEDIATE 'DROP USER "' || p_phone || '" CASCADE';
+            EXCEPTION
+                WHEN OTHERS THEN NULL;
+            END;
+            RAISE;
+    END;
+
+END REGISTER_CUSTOMER;
 /
 
-CREATE OR REPLACE PROCEDURE LOGIN_EMPLOYEE(
+create or replace PROCEDURE LOGIN_EMPLOYEE(
     p_username     IN  VARCHAR2,
     p_password     IN  VARCHAR2,
     p_out_username OUT VARCHAR2,
-    p_out_role     OUT VARCHAR2,
-    p_out_result   OUT VARCHAR2
+    p_out_result   OUT VARCHAR2,
+    p_out_role     OUT VARCHAR2
 ) AS
     PRAGMA AUTONOMOUS_TRANSACTION;
 
     v_hash       VARCHAR2(256);
     v_db_hash    VARCHAR2(256);
-    v_role       EMPLOYEE.ROLE%TYPE;
-    v_status     EMPLOYEE.STATUS%TYPE;
-    v_fail_count NUMBER;
+    v_status     VARCHAR2(30);
 BEGIN
     v_hash := HASH_PASSWORD(p_password);
 
     BEGIN
-        SELECT PASSWORD_HASH, ROLE, STATUS
-        INTO v_db_hash, v_role, v_status
+        -- Lấy mật khẩu từ bảng EMPLOYEE
+        SELECT PASSWORD_HASH
+        INTO v_db_hash
         FROM EMPLOYEE
         WHERE USERNAME = p_username;
 
         p_out_username := p_username;
-        p_out_role := v_role;
 
-        IF v_status = 'LOCKED' THEN
-            INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS)
-            VALUES (p_username, 'LOCKED');
-            COMMIT;
+        -- Lấy trạng thái từ DBA_USERS
+        BEGIN
+            SELECT ACCOUNT_STATUS
+            INTO v_status
+            FROM DBA_USERS
+            WHERE USERNAME = UPPER(p_username);
+        EXCEPTION
+            WHEN NO_DATA_FOUND THEN
+                v_status := 'UNKNOWN';
+        END;
+
+        IF v_status LIKE 'LOCKED%' THEN
             p_out_result := 'ACCOUNT LOCKED';
+            p_out_role := NULL;
             RETURN;
         END IF;
 
         IF v_db_hash = v_hash THEN
-            -- Login thành công: reset fail count logic không cần, chỉ insert SUCCESS
-            INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS)
-            VALUES (p_username, 'SUCCESS');
-            COMMIT;
             p_out_result := 'SUCCESS';
+
+            -- Lấy role của user
+            BEGIN
+                SELECT LISTAGG(GRANTED_ROLE, ', ') WITHIN GROUP (ORDER BY GRANTED_ROLE)
+                INTO p_out_role
+                FROM DBA_ROLE_PRIVS
+                WHERE GRANTEE = UPPER(p_username);
+            EXCEPTION
+                WHEN NO_DATA_FOUND THEN
+                    p_out_role := NULL;
+            END;
+
         ELSE
-            -- Login fail: insert FAIL
-            INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS)
-            VALUES (p_username, 'FAIL');
-            COMMIT;
-
-            -- Đếm 3 lần FAIL liên tiếp gần nhất
-            SELECT COUNT(*) INTO v_fail_count
-            FROM (
-                SELECT STATUS
-                FROM EMPLOYEE_LOGIN_AUDIT
-                WHERE USERNAME = p_username
-                ORDER BY LOGIN_TIME DESC
-            )
-            WHERE ROWNUM <= 3 AND STATUS = 'FAIL';
-
-            -- Nếu >=3 lần fail liên tiếp, lock account
-            IF v_fail_count >= 3 THEN
-                UPDATE EMPLOYEE
-                SET STATUS = 'LOCKED'
-                WHERE USERNAME = p_username;
-                COMMIT;
-                p_out_result := 'ACCOUNT LOCKED';
-            ELSE
-                p_out_result := 'FAILED';
-            END IF;
+            p_out_result := 'FAILED';
+            p_out_role := NULL;
         END IF;
 
     EXCEPTION
         WHEN NO_DATA_FOUND THEN
-            INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS)
-            VALUES (p_username, 'NO EMPLOYEE');
-            COMMIT;
             p_out_username := NULL;
-            p_out_role := NULL;
             p_out_result := 'FAILED';
+            p_out_role := NULL;
     END;
 END LOGIN_EMPLOYEE;
 /
-CREATE OR REPLACE PROCEDURE UNLOCK_EMPLOYEE(
-    p_username   IN  VARCHAR2,
-    p_out_result OUT VARCHAR2
-) AS
-BEGIN
-    -- Kiểm tra user tồn tại
-    DECLARE
-        v_count NUMBER;
-    BEGIN
-        SELECT COUNT(*) INTO v_count
-        FROM EMPLOYEE
-        WHERE USERNAME = p_username;
 
-        IF v_count = 0 THEN
-            p_out_result := 'NO EMPLOYEE';
-            RETURN;
-        END IF;
-    END;
-
-    -- Cập nhật trạng thái ACTIVE
-    UPDATE EMPLOYEE
-    SET STATUS = 'ACTIVE'
-    WHERE USERNAME = p_username;
-	
-	INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS)
-    VALUES (p_username, 'UNLOCK');
-    COMMIT;
-
-    p_out_result := 'UNLOCKED';
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        p_out_result := 'FAILED: ' || SQLERRM;
-END UNLOCK_EMPLOYEE;
-/
-CREATE OR REPLACE PROCEDURE LOCK_EMPLOYEE(
-    p_username   IN  VARCHAR2,
-    p_out_result OUT VARCHAR2
-) AS
-    v_count NUMBER;
-BEGIN
-    -- Kiểm tra tồn tại
-    SELECT COUNT(*) INTO v_count
-    FROM EMPLOYEE
-    WHERE USERNAME = p_username;
-
-    IF v_count = 0 THEN
-        p_out_result := 'NO EMPLOYEE';
-        RETURN;
-    END IF;
-
-    -- Cập nhật trạng thái LOCKED
-    UPDATE EMPLOYEE
-    SET STATUS = 'LOCKED'
-    WHERE USERNAME = p_username;
-
-    INSERT INTO EMPLOYEE_LOGIN_AUDIT(USERNAME, STATUS)
-    VALUES (p_username, 'LOCK');
-    COMMIT;
-
-    p_out_result := 'LOCKED';
-EXCEPTION
-    WHEN OTHERS THEN
-        ROLLBACK;
-        p_out_result := 'FAILED: ' || SQLERRM;
-END LOCK_EMPLOYEE;
-/
-
-CREATE OR REPLACE PROCEDURE GET_ALL_EMPLOYEES(
+create or replace PROCEDURE GET_ALL_EMPLOYEES(
     p_cursor OUT SYS_REFCURSOR
 )
 AS
 BEGIN
     OPEN p_cursor FOR
-        SELECT EMP_ID,
-               FULL_NAME,
-               USERNAME,
-               EMAIL,
-               PHONE,
-               ROLE,
-               STATUS
-        FROM APP.EMPLOYEE;
+        SELECT e.EMP_ID,
+               e.FULL_NAME,
+               e.USERNAME,
+               e.EMAIL,
+               e.PHONE,
+               -- Lấy trạng thái từ DBA_USERS
+               (SELECT ACCOUNT_STATUS 
+                FROM DBA_USERS d 
+                WHERE d.USERNAME = UPPER(e.USERNAME)) AS STATUS
+        FROM APP.EMPLOYEE e;
 END;
 /
-CREATE OR REPLACE PROCEDURE GET_EMPLOYEE_BY_ID(
+create or replace PROCEDURE GET_EMPLOYEE_BY_ID(
     p_empid  IN  NUMBER,
     p_cursor OUT SYS_REFCURSOR
 )
 AS
 BEGIN
     OPEN p_cursor FOR
-        SELECT EMP_ID,
-               FULL_NAME,
-               USERNAME,
-               EMAIL,
-               PHONE,
-               ROLE,
-               STATUS
-        FROM APP.EMPLOYEE
-        WHERE EMP_ID = p_empid;
+        SELECT e.EMP_ID,
+               e.FULL_NAME,
+               e.USERNAME,
+               e.EMAIL,
+               e.PHONE,
+               -- Lấy trạng thái từ DBA_USERS
+               (SELECT d.ACCOUNT_STATUS
+                FROM DBA_USERS d
+                WHERE d.USERNAME = UPPER(e.USERNAME)) AS STATUS
+        FROM APP.EMPLOYEE e
+        WHERE e.EMP_ID = p_empid;
 END;
 /
 
@@ -260,8 +175,3 @@ BEGIN
     );
 END;
 /
-CREATE USER AdminTest IDENTIFIED BY AdminTest
-DEFAULT TABLESPACE USERS
-TEMPORARY TABLESPACE TEMP
-ACCOUNT UNLOCK;
-GRANT CREATE SESSION TO AdminTest;

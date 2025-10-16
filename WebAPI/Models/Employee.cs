@@ -23,8 +23,6 @@ public partial class Employee
 
     public string Phone { get; set; } = null!;
 
-    public string Role { get; set; } = null!;
-
     public virtual ICollection<Assignment> Assignments { get; set; } = new List<Assignment>();
 
     public virtual EmployeeKey? EmployeeKey { get; set; }

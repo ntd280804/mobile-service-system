@@ -12,55 +12,57 @@
     </div>
 }
 
+
 <div class="row g-3">
     <!-- Danh sách User -->
-    <div class="col-md-6">
-        <h6 class="mb-2">Danh sách User</h6>
-        <ul id="user-list" class="list-group list-group-sm scroll-list">
-            @if (Model.Users != null && Model.Users.Any())
+    <div class="col-md-4">
+        <h6>Danh sách User</h6>
+        <ul id="user-list" class="scroll-list entity-list">
+            @if (Model.Users?.Any() == true)
             {
                 foreach (var u in Model.Users)
                 {
-                    <li class="list-group-item user-item py-1 px-2" data-username="@u.Username">
+                    <li class="list-group-item item" data-type="user" data-value="@u.Username">
                         <i class="bi bi-person"></i> @u.Username
                     </li>
                 }
             }
             else
             {
-                <li class="list-group-item text-muted py-1 px-2">Không có user</li>
+                <li class="list-group-item text-muted">Không có user</li>
             }
         </ul>
     </div>
 
-    <!-- Danh sách Role hệ thống -->
-    <div class="col-md-6">
-        <h6 class="mb-2">Danh sách Role</h6>
-        <ul id="role-list" class="list-group list-group-sm scroll-list">
-            @if (Model.Roles != null && Model.Roles.Any())
+    <!-- Danh sách Role -->
+    <div class="col-md-4">
+        <h6>Danh sách Role</h6>
+        <ul id="role-list" class="scroll-list entity-list">
+            @if (Model.Roles?.Any() == true)
             {
                 foreach (var r in Model.Roles)
                 {
-                    <li class="list-group-item py-1 px-2">
+                    <li class="list-group-item item" data-type="role" data-value="@r.role">
                         <i class="bi bi-shield-lock"></i> @r.role
                     </li>
                 }
             }
             else
             {
-                <li class="list-group-item text-muted py-1 px-2">Không có role</li>
+                <li class="list-group-item text-muted">Không có role</li>
             }
+        </ul>
+    </div>
+
+    <!-- Danh sách Role của User -->
+    <div class="col-md-4">
+        <h6>Role của User</h6>
+        <ul id="user-role-list" class="scroll-list entity-list">
+            <li class="list-group-item text-muted">Chọn user để xem role</li>
         </ul>
     </div>
 </div>
 
-<!-- Danh sách role của user được chọn -->
-<div class="mt-4">
-    <h6 class="mb-2">Role của User</h6>
-    <ul id="role-list-user" class="list-group list-group-sm scroll-list">
-        <li class="list-group-item text-muted py-1 px-2">Chọn user để xem role</li>
-    </ul>
-</div>
 
 <!-- Form tạo Role -->
 <div class="mt-4">
@@ -81,13 +83,37 @@
         <div class="mt-2 small">@TempData["CreateRoleMessage"]</div>
     }
 </div>
+<div class="mt-4">
+    <h6 class="mb-2">Xóa Role</h6>
+    <form asp-area="Admin" asp-controller="Role" asp-action="DeleteRole" method="post" class="row g-2">
+        <div class="col-auto">
+            <select name="roleName" class="form-select form-select-sm" required>
+                <option value="">--Chọn Role--</option>
+                @foreach (var u in Model.Roles)
+                {
+                    <option value="@u.role">@u.role</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-success">
+                <i class="bi bi-plus-circle"></i> Xóa Role
+            </button>
+        </div>
+    </form>
+
+    @if (TempData["DeleteRoleMessage"] != null)
+    {
+        <div class="mt-2 small">@TempData["DeleteRoleMessage"]</div>
+    }
+</div>
 
 <!-- Form gán role -->
 <div class="mt-4">
     <h6 class="mb-2">Gán Role cho User</h6>
-    <form asp-area="Admin" asp-controller="Role" asp-action="AssignRoleToUser" method="post" class="row g-2">
+    <form asp-area="Admin" asp-controller="Role" asp-action="AssignRole" method="post" class="row g-2">
         <div class="col-auto">
-            <select name="username" class="form-select form-select-sm" required>
+            <select name="userName" class="form-select form-select-sm" required>
                 <option value="">--Chọn User--</option>
                 @foreach (var u in Model.Users)
                 {
@@ -106,7 +132,7 @@
         </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-sm btn-primary">
-                <i class="bi bi-person-plus"></i> Gán
+                <i class="bi bi-person-plus"></i> Gán Role
             </button>
         </div>
     </form>
@@ -116,147 +142,136 @@
         <div class="mt-2 small">@TempData["AssignRoleMessage"]</div>
     }
 </div>
-<form asp-area="Admin" asp-controller="Role" asp-action="RevokeRole" method="post" class="row g-2">
-    <div class="col-auto">
-        <select id="assign-username" name="username" class="form-select form-select-sm" required>
-            <option value="">--Chọn User--</option>
-            @foreach (var u in Model.Users)
-            {
-                <option value="@u.Username">@u.Username</option>
-            }
-        </select>
-    </div>
-    <div class="col-auto">
-        <select id="assign-rolename" name="roleName" class="form-select form-select-sm" required>
-            <option value="">--Chọn Role--</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-sm btn-danger">
-            <i class="bi bi-person-dash"></i> Thu hồi
-        </button>
-    </div>
-</form>
+
+<div class="mt-4">
+    <h6 class="mb-2">Thu hồi Role từ User</h6>
+    <form asp-area="Admin" asp-controller="Role" asp-action="RevokeRole" method="post" class="row g-2">
+        <div class="col-auto">
+            <select name="userName" class="form-select form-select-sm" required>
+                <option value="">--Chọn User--</option>
+                @foreach (var u in Model.Users)
+                {
+                    <option value="@u.Username">@u.Username</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="roleName" class="form-select form-select-sm" required>
+                <option value="">--Chọn Role--</option>
+                @foreach (var r in Model.Roles)
+                {
+                    <option value="@r.role">@r.role</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-danger">
+                <i class="bi bi-person-dash"></i> Thu hồi Role
+            </button>
+        </div>
+    </form>
+
+    @if (TempData["RevokeRoleMessage"] != null)
+    {
+        <div class="mt-2 small">@TempData["RevokeRoleMessage"]</div>
+    }
+</div>
+
 
 
 @section Scripts {
     <script>
-                // Khi chọn user trong form Thu hồi → load role tương ứng
-        document.getElementById('assign-username').addEventListener('change', async function () {
-            const username = this.value;
-            const selectRole = document.getElementById('assign-rolename');
-            selectRole.innerHTML = '<option value="">--Chọn Role--</option>';
+        const roleApi = '/Admin/Role/GetRolesOfUser';
+        const userList = document.getElementById('user-list');
+        const userRoleList = document.getElementById('user-role-list');
+        const revokeUsernameSelect = document.getElementById('revoke-username');
+        const revokeRoleSelect = document.getElementById('revoke-role');
 
-            if (!username) return; // nếu chưa chọn user thì không gọi API
-
+        // Hàm lấy role của user
+        async function loadRolesOfUser(username) {
             try {
-                const response = await fetch(`/Admin/Role/GetRolesOfUser?username=${encodeURIComponent(username)}`);
-                if (!response.ok) throw new Error();
-                const roles = await response.json();
+                const res = await fetch(`${roleApi}?username=${encodeURIComponent(username)}`);
+                if (!res.ok) throw new Error('Lỗi tải role');
+                const roles = await res.json();
+                return roles.map(r => r.grantedRole || r.GrantedRole);
+            } catch (err) {
+                console.error(err);
+                return null;
+            }
+        }
 
-                if (roles.length === 0) {
-                    const opt = document.createElement('option');
-                    opt.disabled = true;
-                    opt.textContent = 'User chưa có role';
-                    selectRole.appendChild(opt);
-                } else {
-                    roles.forEach(r => {
-                        const roleName = r.grantedRole || r.GrantedRole;
-                        const opt = document.createElement('option');
-                        opt.value = roleName;
-                        opt.textContent = roleName;
-                        selectRole.appendChild(opt);
-                    });
-                }
-            } catch (error) {
-                console.error(error);
-                const opt = document.createElement('option');
-                opt.disabled = true;
-                opt.textContent = 'Lỗi tải role';
-                selectRole.appendChild(opt);
+        // Khi click user → load role vào danh sách bên cạnh
+        userList.addEventListener('click', async (e) => {
+            const li = e.target.closest('li.item');
+            if (!li) return;
+
+            document.querySelectorAll('#user-list .item').forEach(el => el.classList.remove('active'));
+            li.classList.add('active');
+
+            const username = li.dataset.value;
+            userRoleList.innerHTML = `<li class="list-group-item text-muted">Đang tải role...</li>`;
+
+            const roles = await loadRolesOfUser(username);
+            userRoleList.innerHTML = '';
+            if (!roles) {
+                userRoleList.innerHTML = `<li class="list-group-item text-danger">Không thể tải role</li>`;
+            } else if (roles.length === 0) {
+                userRoleList.innerHTML = `<li class="list-group-item text-muted">Không có role</li>`;
+            } else {
+                roles.forEach(roleName => {
+                    const liRole = document.createElement('li');
+                    liRole.className = 'list-group-item py-1 px-2';
+                    liRole.innerHTML = `<i class="bi bi-shield-lock"></i> ${roleName}`;
+                    userRoleList.appendChild(liRole);
+                });
             }
         });
 
-        // Khi click user, load role của user đó
-        document.querySelectorAll('.user-item').forEach(item => {
-            item.addEventListener('click', async function () {
-                document.querySelectorAll('.user-item').forEach(u => u.classList.remove('active'));
-                this.classList.add('active');
+        // Khi chọn user ở dropdown revoke → load role vào select
+        revokeUsernameSelect.addEventListener('change', async () => {
+            const username = revokeUsernameSelect.value;
+            revokeRoleSelect.innerHTML = '<option value="">--Chọn Role--</option>';
+            if (!username) return;
 
-                const username = this.dataset.username;
-                const list = document.getElementById('role-list-user');
-                list.innerHTML = `<li class="list-group-item text-muted py-1 px-2">Đang tải quyền của ${username}...</li>`;
-
-                try {
-                    const response = await fetch(`/Admin/Role/GetRolesOfUser?username=${encodeURIComponent(username)}`);
-                    if (!response.ok) throw new Error();
-                    const roles = await response.json();
-                    list.innerHTML = '';
-
-
-                    if (roles.length === 0) {
-                        list.innerHTML = `<li class="list-group-item text-muted py-1 px-2">Không có role</li>`;
-                    } else {
-                        roles.forEach(r => {
-                            const roleName = r.grantedRole || r.GrantedRole;
-
-                            // Hiển thị trong danh sách role của user
-                            const li = document.createElement('li');
-                            li.classList.add('list-group-item', 'py-1', 'px-2');
-                            li.innerHTML = `<i class="bi bi-shield-lock"></i> ${roleName}`;
-                            list.appendChild(li);
-
-                            // ✅ Đồng thời đổ role vào select nếu bạn muốn revoke
-                            const opt = document.createElement('option');
-                            opt.value = roleName;
-                            opt.textContent = roleName;
-                        });
-                    }
-                } catch (error) {
-                    console.error(error);
-                    list.innerHTML = `<li class="list-group-item text-danger py-1 px-2">Không thể tải quyền</li>`;
-                }
-            });
+            const roles = await loadRolesOfUser(username);
+            if (!roles) {
+                revokeRoleSelect.innerHTML += '<option value="" disabled>Lỗi tải role</option>';
+            } else if (roles.length === 0) {
+                revokeRoleSelect.innerHTML += '<option value="" disabled>Người dùng không có role</option>';
+            } else {
+                roles.forEach(roleName => {
+                    const option = document.createElement('option');
+                    option.value = roleName;
+                    option.textContent = roleName;
+                    revokeRoleSelect.appendChild(option);
+                });
+            }
         });
-
     </script>
 }
 
+
+
 <style>
     .scroll-list {
-        max-height: 100px;
+        max-height: 150px;
         overflow-y: auto;
-        font-size: 0.65rem;
-        line-height: 1.2;
+        font-size: 0.75rem;
     }
 
-    .user-item {
+    .entity-list .item {
         cursor: pointer;
         transition: background-color 0.2s;
+        padding: 4px 8px;
     }
 
-        .user-item:hover {
+        .entity-list .item:hover {
             background-color: #f0f0f0;
         }
 
-        .user-item.active {
+        .entity-list .item.active {
             background-color: #007bff;
-            color: white;
+            color: #fff;
         }
 
-    #role-list li i,
-    #role-list-user li i,
-    #user-list li i {
-        margin-right: 5px;
-    }
-
-    h6 {
-        font-size: 0.9rem;
-        font-weight: 600;
-    }
-
-    form .form-control-sm,
-    form .form-select-sm {
-        font-size: 0.75rem;
-    }
 </style>

@@ -102,8 +102,6 @@ namespace WebAPI.Areas.Admin.Controllers
         [HttpPost("createrole/{roleName}")]
         public async Task<IActionResult> createrole(string roleName)
         {
-            
-
             try
             {
                 using var conn = _helper.GetTempOracleConnection();
@@ -125,6 +123,109 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "❌ Tạo role thất bại.", detail = ex.Message });
             }
         }
+        [HttpDelete("deleterole/{roleName}")]
+        public async Task<IActionResult> deleterole(string roleName)
+        {
+            try
+            {
+                using var conn = _helper.GetTempOracleConnection();
+
+                // 📌 Tạo câu lệnh SQL xóa role
+                var sql = $"DROP ROLE \"{roleName}\"";
+
+                using var cmd = new OracleCommand(sql, conn);
+                var result = await cmd.ExecuteNonQueryAsync();
+
+                return Ok(new { message = $"✅ Đã xóa role '{roleName}' thành công." });
+            }
+            catch (OracleException ex) when (ex.Number == 1919) // ORA-01919: role does not exist
+            {
+                return NotFound(new { message = $"❌ Role '{roleName}' không tồn tại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "❌ Xóa role thất bại.", detail = ex.Message });
+            }
+        }
+        [HttpPost("assignrole")]
+        public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.RoleName))
+            {
+                return BadRequest(new { message = "❌ User hoặc Role không được để trống." });
+            }
+
+            try
+            {
+                using var conn = _helper.GetTempOracleConnection();
+
+                // 📌 Lệnh SQL: gán role cho user
+                var sql = $"GRANT \"{request.RoleName}\" TO \"{request.UserName}\"";
+
+                using var cmd = new OracleCommand(sql, conn);
+                var result = await cmd.ExecuteNonQueryAsync();
+
+                return Ok(new { message = $"✅ Đã gán role '{request.RoleName}' cho user '{request.UserName}' thành công." });
+            }
+            catch (OracleException ex) when (ex.Number == 1918) // ORA-01918: user does not exist
+            {
+                return NotFound(new { message = $"❌ User '{request.UserName}' không tồn tại." });
+            }
+            catch (OracleException ex) when (ex.Number == 1919) // ORA-01919: role does not exist
+            {
+                return NotFound(new { message = $"❌ Role '{request.RoleName}' không tồn tại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "❌ Gán role thất bại.", detail = ex.Message });
+            }
+        }
+
+        public class AssignRoleRequest
+        {
+            public string UserName { get; set; }
+            public string RoleName { get; set; }
+        }
+        [HttpPost("revokerole")]
+        public async Task<IActionResult> RevokeRole([FromBody] RevokeRoleRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.RoleName))
+            {
+                return BadRequest(new { message = "❌ User hoặc Role không được để trống." });
+            }
+
+            try
+            {
+                using var conn = _helper.GetTempOracleConnection();
+
+                // 📌 Lệnh SQL thu hồi role
+                var sql = $"REVOKE \"{request.RoleName}\" FROM \"{request.UserName}\"";
+
+                using var cmd = new OracleCommand(sql, conn);
+                var result = await cmd.ExecuteNonQueryAsync();
+
+                return Ok(new { message = $"✅ Đã thu hồi role '{request.RoleName}' khỏi user '{request.UserName}' thành công." });
+            }
+            catch (OracleException ex) when (ex.Number == 1918) // ORA-01918: user does not exist
+            {
+                return NotFound(new { message = $"❌ User '{request.UserName}' không tồn tại." });
+            }
+            catch (OracleException ex) when (ex.Number == 1919) // ORA-01919: role does not exist
+            {
+                return NotFound(new { message = $"❌ Role '{request.RoleName}' không tồn tại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "❌ Thu hồi role thất bại.", detail = ex.Message });
+            }
+        }
+
+        public class RevokeRoleRequest
+        {
+            public string UserName { get; set; }
+            public string RoleName { get; set; }
+        }
+
 
     }
 }

@@ -70,6 +70,128 @@ namespace WebApp.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRole(string roleName)
+        {
+            // 1️⃣ Kiểm tra đầu vào
+            if (string.IsNullOrWhiteSpace(roleName))
+            {
+                TempData["DeleteRoleMessage"] = "❌ Tên role không được để trống.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                // 2️⃣ Gọi API DELETE
+                var response = await _httpClient.DeleteAsync($"api/Admin/Role/deleterole/{Uri.EscapeDataString(roleName)}");
+
+                // 3️⃣ Kiểm tra kết quả
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["DeleteRoleMessage"] = $"✅ Đã xóa role '{roleName}' thành công.";
+                    return RedirectToAction(nameof(Index));
+                }
+                else
+                {
+                    TempData["DeleteRoleMessage"] = $"❌ Lỗi xóa role: {response.ReasonPhrase}";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            catch (Exception ex)
+            {
+                // 4️⃣ Xử lý lỗi
+                TempData["DeleteRoleMessage"] = $"🚨 Lỗi kết nối API: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignRole(string userName, string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(roleName))
+            {
+                TempData["AssignRoleMessage"] = "❌ Vui lòng chọn user và role.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                var payload = new
+                {
+                    UserName = userName,
+                    RoleName = roleName
+                };
+
+                var json = new StringContent(
+                    System.Text.Json.JsonSerializer.Serialize(payload),
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _httpClient.PostAsync("api/Admin/Role/assignrole", json);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["AssignRoleMessage"] = $"✅ Đã gán role '{roleName}' cho user '{userName}'.";
+                }
+                else
+                {
+                    var msg = await response.Content.ReadAsStringAsync();
+                    TempData["AssignRoleMessage"] = $"❌ Gán role thất bại: {msg}";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["AssignRoleMessage"] = $"🚨 Lỗi kết nối API: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RevokeRole(string userName, string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(roleName))
+            {
+                TempData["RevokeRoleMessage"] = "❌ Vui lòng chọn user và role.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            try
+            {
+                var payload = new
+                {
+                    UserName = userName,
+                    RoleName = roleName
+                };
+
+                var json = new StringContent(
+                    System.Text.Json.JsonSerializer.Serialize(payload),
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _httpClient.PostAsync("api/Admin/Role/revokerole", json);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["RevokeRoleMessage"] = $"✅ Đã thu hồi role '{roleName}' khỏi user '{userName}'.";
+                }
+                else
+                {
+                    var msg = await response.Content.ReadAsStringAsync();
+                    TempData["RevokeRoleMessage"] = $"❌ Thu hồi thất bại: {msg}";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["RevokeRoleMessage"] = $"🚨 Lỗi kết nối API: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
         [HttpGet]
         public async Task<IActionResult> Index()
         {

@@ -48,8 +48,7 @@ namespace WebAPI.Areas.Admin.Controllers
                         Username = reader.GetString(2),
                         Email = reader.GetString(3),
                         Phone = reader.GetString(4),
-                        Role = reader.GetString(5),
-                        Status = reader.GetString(6)
+                        Status = reader.GetString(5)
                     });
                 }
 
@@ -86,8 +85,7 @@ namespace WebAPI.Areas.Admin.Controllers
                         Username = reader.GetString(2),
                         Email = reader.GetString(3),
                         Phone = reader.GetString(4),
-                        Role = reader.GetString(5),
-                        Status = reader.GetString(6)
+                        Status = reader.GetString(5)
                     });
                 }
                 else
@@ -104,46 +102,70 @@ namespace WebAPI.Areas.Admin.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] EmployeeLoginDto dto)
         {
-            if (dto == null) return BadRequest("Invalid data");
+            if (dto == null)
+                return BadRequest(new { message = "Invalid data" });
+
+            string connStr = $"User Id={dto.Username};Password={dto.Password};Data Source=192.168.26.138:1521/ORCLPDB1;Pooling=true";
 
             try
             {
+                // 🪪 Bước 1: kiểm tra kết nối Oracle bằng tài khoản thực
+                using (var conn = new OracleConnection(connStr))
+                {
+                    await conn.OpenAsync();
+                }
+
+                // 🧾 Bước 2: gọi procedure LOGIN_EMPLOYEE để kiểm tra logic nội bộ
                 var usernameParam = new OracleParameter("p_username", dto.Username);
                 var passwordParam = new OracleParameter("p_password", dto.Password);
 
                 var outUsernameParam = new OracleParameter("p_out_username", OracleDbType.Varchar2, 100)
-                { Direction = System.Data.ParameterDirection.Output };
+                { Direction = ParameterDirection.Output };
                 var outRoleParam = new OracleParameter("p_out_role", OracleDbType.Varchar2, 50)
-                { Direction = System.Data.ParameterDirection.Output };
+                { Direction = ParameterDirection.Output };
                 var outResultParam = new OracleParameter("p_out_result", OracleDbType.Varchar2, 50)
-                { Direction = System.Data.ParameterDirection.Output };
+                { Direction = ParameterDirection.Output };
 
                 await _context.Database.ExecuteSqlRawAsync(
-                    "BEGIN APP.LOGIN_EMPLOYEE(:p_username, :p_password, :p_out_username, :p_out_role, :p_out_result); END;",
-                    usernameParam, passwordParam, outUsernameParam, outRoleParam, outResultParam
+                    "BEGIN APP.LOGIN_EMPLOYEE(:p_username, :p_password, :p_out_username, :p_out_result, :p_out_role); END;",
+                    usernameParam, passwordParam, outUsernameParam, outResultParam, outRoleParam
                 );
 
                 var result = outResultParam.Value?.ToString();
+                var username = outUsernameParam.Value?.ToString();
+                var rolesString = outRoleParam.Value?.ToString();
 
                 if (result == "SUCCESS")
                 {
-                    // Lưu Oracle username/password tạm trong session
+                    // ✅ Lưu session Oracle để dùng sau này
                     HttpContext.Session.SetString("TempOracleUsername", dto.Username);
                     HttpContext.Session.SetString("TempOraclePassword", dto.Password);
                 }
 
                 return Ok(new
                 {
-                    username = outUsernameParam.Value?.ToString(),
-                    role = outRoleParam.Value?.ToString(),
+                    username = username,
+                    roles = rolesString,
                     result = result
                 });
             }
+            catch (OracleException ex)
+            {
+                // 🧭 Bắt lỗi profile Oracle
+                return ex.Number switch
+                {
+                    1017 => Unauthorized(new { result = "FAILED", message = "Sai username hoặc mật khẩu." }),
+                    28000 => Unauthorized(new { result = "LOCKED", message = "Tài khoản đã bị khóa (profile)." }),
+                    28001 => Unauthorized(new { result = "EXPIRED", message = "Mật khẩu đã hết hạn (profile)." }),
+                    _ => StatusCode(500, new { result = "FAILED", message = $"Oracle error {ex.Number}: {ex.Message}" })
+                };
+            }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Login failed", detail = ex.Message });
+                return StatusCode(500, new { result = "FAILED", message = ex.Message });
             }
         }
+
 
 
 
@@ -165,7 +187,6 @@ namespace WebAPI.Areas.Admin.Controllers
                 cmd.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
                 cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
                 cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
-                cmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = dto.Role;
 
                 cmd.ExecuteNonQuery();
 
@@ -258,7 +279,6 @@ namespace WebAPI.Areas.Admin.Controllers
             public string Password { get; set; }
             public string Email { get; set; }
             public string Phone { get; set; }
-            public string Role { get; set; }
         }
     }
 }

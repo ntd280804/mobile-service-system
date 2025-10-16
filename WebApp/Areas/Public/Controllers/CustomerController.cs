@@ -50,8 +50,8 @@ namespace WebApp.Areas.Public.Controllers
                         TempData["Message"] = $"Login thành công! ({result.Username})";
 
                         // --- Lưu vào session WebApp ---
-                        HttpContext.Session.SetString("Username", result.Username ?? "");
-                        HttpContext.Session.SetString("LoginResult", result.Result ?? "");
+                        HttpContext.Session.SetString("customerUsername", result.Username ?? "");
+                        HttpContext.Session.SetString("customerLoginResult", result.Result ?? "");
 
                         // --- Cookie WebAPI đã được _cookieContainer giữ tự động ---
                         return RedirectToAction("Index", "Home", new { area = "Public" });
@@ -89,7 +89,8 @@ namespace WebApp.Areas.Public.Controllers
                 }
 
                 // 2. Xóa session WebApp
-                HttpContext.Session.Clear();
+                HttpContext.Session.Remove("customerUsername");
+                HttpContext.Session.Remove("customerLoginResult");
 
                 // 3. Xóa cookie WebAPI trong CookieContainer
                 var cookies = _cookieContainer.GetCookies(_httpClient.BaseAddress);

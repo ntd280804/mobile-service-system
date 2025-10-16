@@ -26,13 +26,11 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<CustomerKey> CustomerKeys { get; set; }
 
-    public virtual DbSet<CustomerLoginAudit> CustomerLoginAudits { get; set; }
 
     public virtual DbSet<Employee> Employees { get; set; }
 
     public virtual DbSet<EmployeeKey> EmployeeKeys { get; set; }
 
-    public virtual DbSet<EmployeeLoginAudit> EmployeeLoginAudits { get; set; }
 
     public virtual DbSet<EmployeeShift> EmployeeShifts { get; set; }
 
@@ -213,29 +211,7 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_CUSTOMER_KEYS");
         });
 
-        modelBuilder.Entity<CustomerLoginAudit>(entity =>
-        {
-            entity.HasKey(e => e.AuditId).HasName("SYS_C008333");
-
-            entity.ToTable("CUSTOMER_LOGIN_AUDIT");
-
-            entity.Property(e => e.AuditId)
-                .ValueGeneratedOnAdd()
-                .HasColumnType("NUMBER")
-                .HasColumnName("AUDIT_ID");
-            entity.Property(e => e.LoginTime)
-                .HasPrecision(6)
-                .HasDefaultValueSql("SYSTIMESTAMP")
-                .HasColumnName("LOGIN_TIME");
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("STATUS");
-            entity.Property(e => e.Username)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("USERNAME");
-        });
+        
 
         modelBuilder.Entity<Employee>(entity =>
         {
@@ -276,10 +252,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.PublicKey)
                 .HasColumnType("CLOB")
                 .HasColumnName("PUBLIC_KEY");
-            entity.Property(e => e.Role)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("ROLE");
+            
             entity.Property(e => e.Status)
                 .HasMaxLength(10)
                 .IsUnicode(false)
@@ -310,29 +283,7 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_EMPLOYEE_KEYS");
         });
 
-        modelBuilder.Entity<EmployeeLoginAudit>(entity =>
-        {
-            entity.HasKey(e => e.AuditId).HasName("SYS_C008331");
-
-            entity.ToTable("EMPLOYEE_LOGIN_AUDIT");
-
-            entity.Property(e => e.AuditId)
-                .ValueGeneratedOnAdd()
-                .HasColumnType("NUMBER")
-                .HasColumnName("AUDIT_ID");
-            entity.Property(e => e.LoginTime)
-                .HasPrecision(6)
-                .HasDefaultValueSql("SYSTIMESTAMP")
-                .HasColumnName("LOGIN_TIME");
-            entity.Property(e => e.Status)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("STATUS");
-            entity.Property(e => e.Username)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("USERNAME");
-        });
+        
 
         modelBuilder.Entity<EmployeeShift>(entity =>
         {

@@ -71,27 +71,45 @@ namespace WebApp.Areas.Admin.Controllers
                         return View();
                     }
 
-                    if (result.Result == "SUCCESS")
+                    if (result.result == "SUCCESS")
                     {
-                        TempData["Message"] = $"Login thành công! ({result.Role})";
+                        // ✅ Login thành công
+                        TempData["Message"] = $"Login thành công! ({result.roles})";
 
-                        // --- Lưu vào session WebApp ---
                         HttpContext.Session.SetString("Username", result.Username ?? "");
-                        HttpContext.Session.SetString("Role", result.Role ?? "");
-                        HttpContext.Session.SetString("LoginResult", result.Result ?? "");
+                        HttpContext.Session.SetString("Role", result.roles);
+                        HttpContext.Session.SetString("LoginResult", result.result ?? "");
 
-                        // --- Cookie WebAPI đã được _cookieContainer giữ tự động ---
                         return RedirectToAction("Index", "Home", new { area = "Admin" });
                     }
                     else
                     {
-                        ModelState.AddModelError("", $"Login thất bại: {result.Result}");
+                        ModelState.AddModelError("", $"Login thất bại: {result.result}");
                         return View();
                     }
                 }
                 else
                 {
-                    ModelState.AddModelError("", "Lỗi kết nối API: " + response.ReasonPhrase);
+                    // ❌ Trường hợp API trả về 401, 500... → đọc nội dung lỗi
+                    var errorContent = await response.Content.ReadAsStringAsync();
+
+                    try
+                    {
+                        var errorResult = System.Text.Json.JsonSerializer.Deserialize<LoginResponse>(errorContent);
+                        if (errorResult != null && !string.IsNullOrEmpty(errorResult.message))
+                        {
+                            ModelState.AddModelError("", errorResult.message);
+                        }
+                        else
+                        {
+                            ModelState.AddModelError("", $"Lỗi đăng nhập: {response.ReasonPhrase}");
+                        }
+                    }
+                    catch
+                    {
+                        ModelState.AddModelError("", $"Lỗi đăng nhập: {response.ReasonPhrase}");
+                    }
+
                     return View();
                 }
             }
@@ -101,6 +119,7 @@ namespace WebApp.Areas.Admin.Controllers
                 return View();
             }
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -116,7 +135,9 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 // 2. Xóa session WebApp
-                HttpContext.Session.Clear();
+                HttpContext.Session.Remove("Username");
+                HttpContext.Session.Remove("LoginResult");
+                HttpContext.Session.Remove("Role");
 
                 // 3. Xóa cookie WebAPI trong CookieContainer
                 var cookies = _cookieContainer.GetCookies(_httpClient.BaseAddress);
@@ -238,7 +259,6 @@ namespace WebApp.Areas.Admin.Controllers
             public string Username { get; set; }
             public string Email { get; set; }
             public string Phone { get; set; }
-            public string Role { get; set; }
         }
 
         public class EmployeeRegisterDto
@@ -248,17 +268,17 @@ namespace WebApp.Areas.Admin.Controllers
             public string Password { get; set; }
             public string Email { get; set; }
             public string Phone { get; set; }
-            public string Role { get; set; }
         }
 
         public class LoginResponse
         {
             [JsonPropertyName("username")]
             public string Username { get; set; }
-            [JsonPropertyName("role")]
-            public string Role { get; set; }
+            [JsonPropertyName("roles")]
+            public string roles { get; set; }
             [JsonPropertyName("result")]
-            public string Result { get; set; }
+            public string result { get; set; }
+            public string? message { get; set; }
         }
 
         public class UnlockResponse
