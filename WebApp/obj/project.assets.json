@@ -5566,23 +5566,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ntdmi\\.nuget\\packages\\": {},
+    "C:\\Users\\ASUS\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\WebApp.csproj",
+      "projectUniqueName": "d:\\KLTN-2025\\mobile-service-system\\WebApp\\WebApp.csproj",
       "projectName": "WebApp",
-      "projectPath": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\WebApp.csproj",
-      "packagesPath": "C:\\Users\\ntdmi\\.nuget\\packages\\",
-      "outputPath": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\obj\\",
+      "projectPath": "d:\\KLTN-2025\\mobile-service-system\\WebApp\\WebApp.csproj",
+      "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
+      "outputPath": "d:\\KLTN-2025\\mobile-service-system\\WebApp\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\ntdmi\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -5640,7 +5640,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.300/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
