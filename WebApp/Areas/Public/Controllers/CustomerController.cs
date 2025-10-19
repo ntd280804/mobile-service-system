@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -10,11 +11,9 @@ namespace WebApp.Areas.Public.Controllers
     [Area("Public")]
     public class CustomerController : Controller
     {
-        private static readonly CookieContainer _cookieContainer = new CookieContainer();
-        private static readonly HttpClientHandler _handler = new HttpClientHandler { CookieContainer = _cookieContainer, UseCookies = true };
-        private static readonly HttpClient _httpClient = new HttpClient(_handler)
+        private static readonly HttpClient _httpClient = new HttpClient
         {
-            BaseAddress = new Uri("https://localhost:7179/")
+            BaseAddress = new Uri("http://10.147.20.199:5131/")
         };
 
 
@@ -33,7 +32,15 @@ namespace WebApp.Areas.Public.Controllers
 
             try
             {
-                var loginData = new { Username = username, Password = password };
+                // Hardcode platform
+                string platform = "WEB"; // hoặc "MOBILE" nếu mobile app
+
+                var loginData = new
+                {
+                    Username = username,
+                    Password = password,
+                    Platform = platform
+                };
                 var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/login", loginData);
 
                 if (response.IsSuccessStatusCode)
@@ -49,22 +56,24 @@ namespace WebApp.Areas.Public.Controllers
                     {
                         TempData["Message"] = $"Login thành công! ({result.Username})";
 
-                        // --- Lưu vào session WebApp ---
-                        HttpContext.Session.SetString("customerUsername", result.Username ?? "");
-                        HttpContext.Session.SetString("customerLoginResult", result.Result ?? "");
+                        HttpContext.Session.SetString("CJwtToken", result.token ?? "");
+                        HttpContext.Session.SetString("CUsername", result.Username ?? "");
+                        HttpContext.Session.SetString("CRole", result.roles ?? "");
+                        HttpContext.Session.SetString("CPlatform", platform); // lưu platform
+                        HttpContext.Session.SetString("CSessionId", result.sessionId ?? ""); // nếu API trả về sessionId
 
-                        // --- Cookie WebAPI đã được _cookieContainer giữ tự động ---
                         return RedirectToAction("Index", "Home", new { area = "Public" });
                     }
                     else
                     {
-                        ModelState.AddModelError("", $"Login thất bại: {result.Result}");
+                        ModelState.AddModelError("", $"Login thất bại: {result.Result} - {result.message}");
                         return View();
                     }
                 }
                 else
                 {
-                    ModelState.AddModelError("", "Lỗi kết nối API: " + response.ReasonPhrase);
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    ModelState.AddModelError("", $"Lỗi kết nối API: {response.ReasonPhrase} - {errorContent}");
                     return View();
                 }
             }
@@ -81,23 +90,25 @@ namespace WebApp.Areas.Public.Controllers
         {
             try
             {
-                // 1. Gọi API logout để xóa session WebAPI
-                var response = await _httpClient.PostAsync("api/Public/Customer/logout", null);
-                if (!response.IsSuccessStatusCode)
+                var token = HttpContext.Session.GetString("CJwtToken");
+                var username = HttpContext.Session.GetString("CUsername");
+                var platform = HttpContext.Session.GetString("CPlatform");
+                var sessionId = HttpContext.Session.GetString("CSessionId");
+                if (!string.IsNullOrEmpty(token))
                 {
-                    TempData["Error"] = "Logout API thất bại: " + response.ReasonPhrase;
-                }
+                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    // ✅ Thêm 3 header Oracle
+                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
+                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
+                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
 
-                // 2. Xóa session WebApp
-                HttpContext.Session.Remove("customerUsername");
-                HttpContext.Session.Remove("customerLoginResult");
-
-                // 3. Xóa cookie WebAPI trong CookieContainer
-                var cookies = _cookieContainer.GetCookies(_httpClient.BaseAddress);
-                foreach (Cookie cookie in cookies)
-                {
-                    cookie.Expired = true;
+                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
+                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
+                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
+                    var response = await _httpClient.PostAsync("api/Public/Customer/logout", null);
                 }
+                HttpContext.Session.Clear();
+                TempData["Message"] = "Logout thành công!";
 
                 TempData["Message"] = "Logout thành công!";
             }
@@ -159,7 +170,13 @@ namespace WebApp.Areas.Public.Controllers
             public string Username { get; set; }
             public string Password { get; set; }
             public string Result { get; set; }
+            [JsonPropertyName("roles")]
+            public string roles { get; set; }
+            public string token { get; set; }
+            public string? message { get; set; }
+            public string? sessionId { get; set; }
         }
+        
 
     }
 }

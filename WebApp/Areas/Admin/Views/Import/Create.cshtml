@@ -1,0 +1,44 @@
+﻿@model WebApp.Areas.Admin.Controllers.ImportController.ImportStockDto
+
+@{
+    ViewData["Title"] = "Import Stock";
+}
+
+<h2>Danh sách Stock In</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<a class="btn btn-primary mb-3" href="@Url.Action("Create", "Import", new { area = "Admin" })">Thêm Stock In</a>
+
+<form asp-action="Create" method="post">
+    <div>
+        <label asp-for="EmpId"></label>
+        <input asp-for="EmpId" />
+    </div>
+    <div>
+        <label asp-for="Note"></label>
+        <input asp-for="Note" />
+    </div>
+    <div>
+        <label>Items</label>
+        @for (int i = 0; i < Model.Items.Count; i++)
+        {
+            <div>
+                <label>Part Name</label>
+                <input asp-for="Items[@i].PartName" />
+                <label>Manufacturer</label>
+                <input asp-for="Items[@i].Manufacturer" />
+                <label>Serial</label>
+                <input asp-for="Items[@i].Serial" />
+            </div>
+        }
+    </div>
+    <button type="submit">Create</button>
+</form>

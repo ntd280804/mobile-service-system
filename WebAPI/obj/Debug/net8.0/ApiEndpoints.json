@@ -68,16 +68,42 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
-    "Method": "Unlock",
-    "RelativePath": "api/Admin/Employee/unlock",
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
+    "Method": "GetAllImports",
+    "RelativePath": "api/admin/Import/getallimport",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
+    "Method": "GetImportById",
+    "RelativePath": "api/admin/Import/getimportid/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
+    "Method": "ImportStockStepByStepWithTransaction",
+    "RelativePath": "api/admin/Import/post",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Admin.Controllers.EmployeeController\u002BUnlockEmployeeDto",
+        "Type": "WebAPI.Areas.Admin.Controllers.ImportStockDto",
         "IsRequired": true
       }
     ],
@@ -168,6 +194,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.QRController",
+    "Method": "GetQRCode",
+    "RelativePath": "api/Admin/QR/{serial}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "serial",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
     "Method": "AssignRole",
     "RelativePath": "api/Admin/Role/assignrole",
@@ -185,7 +227,7 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
-    "Method": "createrole",
+    "Method": "CreateRole",
     "RelativePath": "api/Admin/Role/createrole/{roleName}",
     "HttpMethod": "POST",
     "IsController": true,
@@ -201,7 +243,7 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
-    "Method": "deleterole",
+    "Method": "DeleteRole",
     "RelativePath": "api/Admin/Role/deleterole/{roleName}",
     "HttpMethod": "DELETE",
     "IsController": true,
@@ -233,7 +275,7 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
-    "Method": "GetAllRole",
+    "Method": "GetAllRoles",
     "RelativePath": "api/Admin/Role/roles",
     "HttpMethod": "GET",
     "IsController": true,
@@ -250,7 +292,7 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "username",
+        "Name": "Username",
         "Type": "System.String",
         "IsRequired": true
       }

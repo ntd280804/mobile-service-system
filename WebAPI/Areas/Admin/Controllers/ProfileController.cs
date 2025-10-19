@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
-using System.Data;
-using WebAPI.Data;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using WebAPI.Data;
+using WebAPI.Helpers;
+using WebAPI.Services;
 
 namespace WebAPI.Areas.Admin.Controllers
 {
@@ -12,11 +14,13 @@ namespace WebAPI.Areas.Admin.Controllers
     [ApiController]
     public class ProfileController : ControllerBase
     {
-        private readonly Helper _helper;
+        private readonly OracleConnectionManager _connManager;
+        private readonly JwtHelper _jwtHelper;
 
-        public ProfileController(Helper helper)
+        public ProfileController(OracleConnectionManager connManager, JwtHelper jwtHelper)
         {
-            _helper = helper;
+            _connManager = connManager;
+            _jwtHelper = jwtHelper;
         }
 
         private static readonly string[] TargetResources = new[]
@@ -29,9 +33,17 @@ namespace WebAPI.Areas.Admin.Controllers
         [HttpGet("users")]
         public IActionResult GetAllUsersWithProfile()
         {
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
+
+            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
+            if (conn == null)
+                return Unauthorized(new { message = "Oracle session expired. Please login again." });
+
             try
             {
-                using var conn = _helper.GetTempOracleConnection();
+                
                 using var cmd = new OracleCommand(
                     "SELECT USERNAME, PROFILE FROM DBA_USERS ORDER BY PROFILE, USERNAME",
                     conn
@@ -73,9 +85,17 @@ namespace WebAPI.Areas.Admin.Controllers
         [HttpGet]
         public IActionResult GetAllProfiles()
         {
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
+
+            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
+            if (conn == null)
+                return Unauthorized(new { message = "Oracle session expired. Please login again." });
+
             try
             {
-                using var conn = _helper.GetTempOracleConnection();
+                
                 using var cmd = new OracleCommand(@"
                     SELECT PROFILE, RESOURCE_NAME, LIMIT 
                     FROM DBA_PROFILES 
@@ -119,9 +139,17 @@ namespace WebAPI.Areas.Admin.Controllers
         [HttpGet("{profileName}")]
         public IActionResult GetProfileByName(string profileName)
         {
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
+
+            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
+            if (conn == null)
+                return Unauthorized(new { message = "Oracle session expired. Please login again." });
+
             try
             {
-                using var conn = _helper.GetTempOracleConnection();
+                
                 using var cmd = new OracleCommand(@"
                     SELECT PROFILE, RESOURCE_NAME, LIMIT 
                     FROM DBA_PROFILES 
@@ -177,10 +205,17 @@ namespace WebAPI.Areas.Admin.Controllers
             {
                 return BadRequest(new { message = "ProfileName is required" });
             }
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
+
+            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
+            if (conn == null)
+                return Unauthorized(new { message = "Oracle session expired. Please login again." });
 
             try
             {
-                using var conn = _helper.GetTempOracleConnection();
+                
                 using var cmd = new OracleCommand();
                 cmd.Connection = conn;
 
@@ -246,10 +281,17 @@ namespace WebAPI.Areas.Admin.Controllers
         {
             if (string.IsNullOrWhiteSpace(profileName))
                 return BadRequest(new { message = "Profile name is required" });
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
+
+            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
+            if (conn == null)
+                return Unauthorized(new { message = "Oracle session expired. Please login again." });
 
             try
             {
-                using var conn = _helper.GetTempOracleConnection();
+                
                 using var cmd = new OracleCommand();
                 cmd.Connection = conn;
 
@@ -302,10 +344,17 @@ namespace WebAPI.Areas.Admin.Controllers
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.ProfileName))
                 return BadRequest(new { message = "Username and ProfileName are required" });
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
+
+            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
+            if (conn == null)
+                return Unauthorized(new { message = "Oracle session expired. Please login again." });
 
             try
             {
-                using var conn = _helper.GetTempOracleConnection();
+                
                 using var cmd = new OracleCommand();
                 cmd.Connection = conn;
                 cmd.CommandText = $"ALTER USER \"{request.Username}\" PROFILE \"{request.ProfileName.ToUpper()}\"";

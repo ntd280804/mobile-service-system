@@ -1,0 +1,67 @@
+﻿@model List<WebApp.Areas.Admin.Controllers.ImportController.ImportViewModel>
+
+@{
+    ViewData["Title"] = "Danh sách Import";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<p>
+    <a class="btn btn-primary" asp-area="Admin" asp-controller="Import" asp-action="Create">Thêm Import</a>
+</p>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>StockIn ID</th>
+            <th>Employee ID</th>
+            <th>In Date</th>
+            <th>Note</th>
+            <th>Part Name</th>
+            <th>Manufacturer</th>
+            <th>Serial</th>
+            <th>QR</th> <!-- ✅ thêm cột QR -->
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.StockInId</td>
+                <td>@item.EmpId</td>
+                <td>@item.InDate.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@item.Note</td>
+                <td>@item.StockInItem?.PartName</td>
+                <td>@item.StockInItem?.Manufacturer</td>
+                <td>@item.StockInItem?.Serial</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(item.StockInItem?.Serial))
+                    {
+                        <!-- ✅ hiển thị QR trực tiếp từ API -->
+                        <img src="@Url.Action("GetQRCode", "QR", new { area = "Admin", serial = item.StockInItem.Serial })"
+                             alt="QR"
+                             width="80" height="80"
+                             style="border:1px solid #ccc; padding:2px;" />
+                    }
+                </td>
+                <td>
+                    <a class="btn btn-sm btn-info"
+                       asp-area="Admin"
+                       asp-controller="Import"
+                       asp-action="Details"
+                       asp-route-id="@item.StockInId">Xem chi tiết</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

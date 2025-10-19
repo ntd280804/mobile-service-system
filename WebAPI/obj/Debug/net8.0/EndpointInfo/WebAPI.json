@@ -145,6 +145,18 @@
         }
       }
     },
+    "/api/Admin/Employee/logout": {
+      "post": {
+        "tags": [
+          "Employee"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Admin/Employee/register": {
       "post": {
         "tags": [
@@ -176,30 +188,11 @@
         }
       }
     },
-    "/api/Admin/Employee/unlock": {
-      "post": {
+    "/api/admin/Import/getallimport": {
+      "get": {
         "tags": [
-          "Employee"
+          "Import"
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UnlockEmployeeDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UnlockEmployeeDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UnlockEmployeeDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "OK"
@@ -207,11 +200,53 @@
         }
       }
     },
-    "/api/Admin/Employee/logout": {
+    "/api/admin/Import/getimportid/{id}": {
+      "get": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/Import/post": {
       "post": {
         "tags": [
-          "Employee"
+          "Import"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportStockDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportStockDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportStockDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -345,6 +380,28 @@
         }
       }
     },
+    "/api/Admin/QR/{serial}": {
+      "get": {
+        "tags": [
+          "QR"
+        ],
+        "parameters": [
+          {
+            "name": "serial",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Admin/Role/users": {
       "get": {
         "tags": [
@@ -376,7 +433,7 @@
         ],
         "parameters": [
           {
-            "name": "username",
+            "name": "Username",
             "in": "path",
             "required": true,
             "schema": {
@@ -564,6 +621,10 @@
           "password": {
             "type": "string",
             "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -604,6 +665,10 @@
           "password": {
             "type": "string",
             "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -634,6 +699,45 @@
         },
         "additionalProperties": false
       },
+      "ImportItemDto": {
+        "type": "object",
+        "properties": {
+          "partName": {
+            "type": "string",
+            "nullable": true
+          },
+          "manufacturer": {
+            "type": "string",
+            "nullable": true
+          },
+          "serial": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImportStockDto": {
+        "type": "object",
+        "properties": {
+          "empId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportItemDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "RevokeRoleRequest": {
         "type": "object",
         "properties": {
@@ -647,17 +751,20 @@
           }
         },
         "additionalProperties": false
-      },
-      "UnlockEmployeeDto": {
-        "type": "object",
-        "properties": {
-          "username": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Enter 'Bearer' [space] and then your token.\nExample: 'Bearer abc123xyz'",
+        "scheme": "Bearer",
+        "bearerFormat": "JWT"
       }
     }
-  }
+  },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ]
 }

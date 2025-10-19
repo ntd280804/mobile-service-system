@@ -42,8 +42,8 @@
             {
                 foreach (var r in Model.Roles)
                 {
-                    <li class="list-group-item item" data-type="role" data-value="@r.role">
-                        <i class="bi bi-shield-lock"></i> @r.role
+                    <li class="list-group-item item" data-type="role" data-value="@r.Role">
+                        <i class="bi bi-shield-lock"></i> @r.Role
                     </li>
                 }
             }
@@ -91,7 +91,7 @@
                 <option value="">--Chọn Role--</option>
                 @foreach (var u in Model.Roles)
                 {
-                    <option value="@u.role">@u.role</option>
+                    <option value="@u.Role">@u.Role</option>
                 }
             </select>
         </div>
@@ -126,7 +126,7 @@
                 <option value="">--Chọn Role--</option>
                 @foreach (var r in Model.Roles)
                 {
-                    <option value="@r.role">@r.role</option>
+                    <option value="@r.Role">@r.Role</option>
                 }
             </select>
         </div>
@@ -147,7 +147,8 @@
     <h6 class="mb-2">Thu hồi Role từ User</h6>
     <form asp-area="Admin" asp-controller="Role" asp-action="RevokeRole" method="post" class="row g-2">
         <div class="col-auto">
-            <select name="userName" class="form-select form-select-sm" required>
+            <select id="revoke-username" name="userName" class="form-select form-select-sm" required>
+
                 <option value="">--Chọn User--</option>
                 @foreach (var u in Model.Users)
                 {
@@ -156,11 +157,12 @@
             </select>
         </div>
         <div class="col-auto">
-            <select name="roleName" class="form-select form-select-sm" required>
+            <select id="revoke-role" name="roleName" class="form-select form-select-sm" required>
+
                 <option value="">--Chọn Role--</option>
                 @foreach (var r in Model.Roles)
                 {
-                    <option value="@r.role">@r.role</option>
+                    <option value="@r.Role">@r.Role</option>
                 }
             </select>
         </div>

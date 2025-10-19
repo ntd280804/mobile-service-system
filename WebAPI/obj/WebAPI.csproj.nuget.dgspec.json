@@ -51,9 +51,17 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.*, )"
+            },
             "Microsoft.AspNetCore.SignalR": {
               "target": "Package",
               "version": "[1.2.0, )"
+            },
+            "Microsoft.AspNetCore.SignalR.Client": {
+              "target": "Package",
+              "version": "[9.0.10, )"
             },
             "Microsoft.AspNetCore.SignalR.Core": {
               "target": "Package",
@@ -72,6 +80,14 @@
             "Oracle.EntityFrameworkCore": {
               "target": "Package",
               "version": "[9.23.90, )"
+            },
+            "Oracle.ManagedDataAccess.Core": {
+              "target": "Package",
+              "version": "[23.26.0, )"
+            },
+            "QRCoder": {
+              "target": "Package",
+              "version": "[1.7.0, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",

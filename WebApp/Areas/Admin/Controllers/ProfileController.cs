@@ -1,22 +1,38 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using System.Net.Http.Headers;
 
 namespace WebApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class ProfileController : Controller
     {
-        private static readonly CookieContainer _cookieContainer = new CookieContainer();
-        private static readonly HttpClientHandler _handler = new HttpClientHandler
-        {
-            CookieContainer = _cookieContainer,
-            UseCookies = true
-        };
-        private static readonly HttpClient _httpClient = new HttpClient(_handler)
-        {
-            BaseAddress = new Uri("https://localhost:7179/") // địa chỉ API backend của bạn
-        };
 
+        private static readonly HttpClient _httpClient = new HttpClient
+        {
+            BaseAddress = new Uri("http://10.147.20.199:5131/")
+        };
+        private void SetOracleHeaders(string token, string username, string platform, string sessionId)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
+            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
+            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
+
+            _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
+            _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
+            _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
+        }
+
+        private void SetOracleHeadersFromSession()
+        {
+            var token = HttpContext.Session.GetString("JwtToken");
+            var username = HttpContext.Session.GetString("Username");
+            var platform = HttpContext.Session.GetString("Platform");
+            var sessionId = HttpContext.Session.GetString("SessionId");
+            SetOracleHeaders(token, username, platform, sessionId);
+        }
         public class UserDto
         {
             public string Username { get; set; }
@@ -67,6 +83,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
+                SetOracleHeadersFromSession();
                 var json = new StringContent(
                     System.Text.Json.JsonSerializer.Serialize(request),
                     System.Text.Encoding.UTF8,
@@ -109,6 +126,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
+                SetOracleHeadersFromSession();
                 var response = await _httpClient.DeleteAsync($"api/Admin/Profile/{Uri.EscapeDataString(profileName)}");
 
                 if (response.IsSuccessStatusCode)
@@ -143,6 +161,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
+                SetOracleHeadersFromSession();
                 var payload = new AssignProfileRequest
                 {
                     Username = username,
@@ -188,6 +207,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
+                SetOracleHeadersFromSession();
                 // Lấy danh sách user
                 var responseUser = await _httpClient.GetAsync("api/Admin/Profile/users");
                 if (responseUser.IsSuccessStatusCode)

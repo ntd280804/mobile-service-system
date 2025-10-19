@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using WebAPI.Data;
+using WebAPI.Helpers;
 using WebAPI.Models;
+using WebAPI.Services;
 namespace WebAPI.Areas.Public.Controllers
 {
     [Area("Public")]
@@ -11,16 +13,18 @@ namespace WebAPI.Areas.Public.Controllers
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private readonly Helper _helper;
         private readonly AppDbContext _context;
+        private readonly OracleConnectionManager _connManager;
+        private readonly JwtHelper _jwtHelper;
 
-        public CustomerController(AppDbContext context, Helper helper)
+        public CustomerController(AppDbContext context,
+                                  OracleConnectionManager connManager,
+                                  JwtHelper jwtHelper)
         {
             _context = context;
-            _helper = helper;
+            _connManager = connManager;
+            _jwtHelper = jwtHelper;
         }
-
-
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] CustomerLoginDto dto)
@@ -29,16 +33,13 @@ namespace WebAPI.Areas.Public.Controllers
                 return BadRequest(new { message = "Invalid data" });
 
             // 🔐 Chuẩn bị connection string
-            string connStr = $"User Id={dto.Username};Password={dto.Password};Data Source=192.168.26.138:1521/ORCLPDB1;Pooling=true";
+            string datasource = "10.147.20.157:1521/ORCLPDB1";
 
             try
             {
-                // 🪪 Bước 1: kiểm tra kết nối Oracle bằng tài khoản thực
-                using (var conn = new OracleConnection(connStr))
-                {
-                    await conn.OpenAsync();
-                }
-
+                string platform = dto.Platform;
+                string sessionId = Guid.NewGuid().ToString();
+                var conn = _connManager.CreateConnection(dto.Username, dto.Password, datasource, platform, sessionId);
                 // 🧾 Bước 2: Gọi procedure LOGIN_CUSTOMER
                 var phoneParam = new OracleParameter("p_phone", dto.Username);
                 var passwordParam = new OracleParameter("p_password", dto.Password);
@@ -56,20 +57,15 @@ namespace WebAPI.Areas.Public.Controllers
 
                 var result = outResultParam.Value?.ToString();
                 var username = outPhoneParam.Value?.ToString();
-
-                if (result == "SUCCESS")
+                var roles = "CUSTOMER";
+                if (result != "SUCCESS")
                 {
-                    // ✅ Lưu session Oracle để dùng sau này
-                    HttpContext.Session.SetString("TempOracleUsername", dto.Username);
-                    HttpContext.Session.SetString("TempOraclePassword", dto.Password);
+                    Console.WriteLine($"[Login] Failed login attempt for phone: {dto.Username}, result: {result}");
+                    return Unauthorized(new { result, message = "Sai số điện thoại hoặc mật khẩu." });
                 }
 
-                return Ok(new
-                {
-                    username = username,
-                    roles = "CUSTOMER",
-                    result = result
-                });
+                var token = _jwtHelper.GenerateToken(username, roles, sessionId);
+                return Ok(new { username, roles, result, sessionId, token });
             }
             catch (OracleException ex)
             {
@@ -114,43 +110,32 @@ namespace WebAPI.Areas.Public.Controllers
             }
         }
 
-
-
-
         // POST: api/Admin/Customer/logout
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            try
-            {
-                // Xóa session tạm Oracle username/password
-                HttpContext.Session.Remove("TempOracleUsername");
-                HttpContext.Session.Remove("TempOraclePassword");
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
 
-                // Nếu muốn, xóa tất cả session
-                // HttpContext.Session.Clear();
+            HttpContext.Session.Clear();
 
-                return Ok(new
-                {
-                    message = "Logout thành công"
-                });
-            }
-            catch (Exception ex)
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(sessionId))
             {
-                return StatusCode(500, new
-                {
-                    message = "Logout thất bại",
-                    detail = ex.Message
-                });
+                _connManager.RemoveConnection(username, platform, sessionId);
+                Console.WriteLine($"[Logout] Removed Oracle connection ({username}, {platform}, {sessionId})");
             }
+
+            return Ok(new { message = "Đăng xuất thành công." });
         }
 
         // DTO
-        
+
         public class CustomerLoginDto
         {
             public string Username { get; set; }
             public string Password { get; set; }
+            public string Platform { get; set; }
         }
         public class CustomerRegisterDto
         {
