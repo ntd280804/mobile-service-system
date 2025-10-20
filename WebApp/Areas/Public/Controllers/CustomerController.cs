@@ -11,10 +11,12 @@ namespace WebApp.Areas.Public.Controllers
     [Area("Public")]
     public class CustomerController : Controller
     {
-        private static readonly HttpClient _httpClient = new HttpClient
+        private readonly HttpClient _httpClient;
+
+        public CustomerController(IHttpClientFactory httpClientFactory)
         {
-            BaseAddress = new Uri("http://10.147.20.199:5131/")
-        };
+            _httpClient = httpClientFactory.CreateClient("WebApiClient");
+        }
 
 
         [HttpGet]

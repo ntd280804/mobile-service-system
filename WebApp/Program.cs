@@ -2,30 +2,33 @@
 
 // Add services
 builder.Services.AddControllersWithViews();
-
-// --- Thêm HttpClientFactory để gọi WebAPI ---
 builder.Services.AddHttpClient("WebApiClient", client =>
 {
-    client.BaseAddress = new Uri("http://10.147.20.199:5131/");
+    client.BaseAddress = new Uri(builder.Configuration["WebApi:BaseUrl"]);
     client.Timeout = TimeSpan.FromSeconds(30);
-});
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+    new HttpClientHandler
+    {
+        // Bỏ qua validation certificate (chỉ dev, LAN)
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    });
+
 
 // --- Thêm session ---
 builder.Services.AddDistributedMemoryCache(); // Lưu session trên RAM
-// Admin
 builder.Services.AddSession(options =>
 {
-    options.Cookie.Name = ".WebApp.Admin.Session";
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
+    options.Cookie.Name = ".WebAPI.Session"; // single cookie
 });
-
-// Public
-builder.Services.AddSession(options =>
+builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Cookie.Name = ".WebApp.Public.Session";
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
+    options.ListenAnyIP(7158, listenOptions =>
+    {
+        listenOptions.UseHttps(); // Dùng dev certificate
+    });
 });
 
 

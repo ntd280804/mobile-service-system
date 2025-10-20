@@ -78,10 +78,11 @@
             const sessionId = '@(HttpContextAccessor.HttpContext.Session.GetString("CSessionId") ?? "")';
             console.log('👤 sessionId:', sessionId);
             // Tạo SignalR connection
+            @inject IConfiguration Configuration
             const connection = new signalR.HubConnectionBuilder()
-                .withUrl('http://10.147.20.199:5131/Hubs/notification?sessionId=' + encodeURIComponent(sessionId))
-                .withAutomaticReconnect()
-                .build();
+        .withUrl('@Configuration["SignalR:NotificationHubUrl"]?sessionId=' + encodeURIComponent(sessionId))
+        .withAutomaticReconnect()
+        .build();
 
             // Lắng nghe ForceLogout từ server
             connection.on('ForceLogout', async function(message) {

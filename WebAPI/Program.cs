@@ -109,7 +109,14 @@ builder.Services.AddSingleton<OracleConnectionManager>();
 builder.Services.AddSingleton<QrGeneratorSingleton>();
 // Add SignalR
 builder.Services.AddSignalR();
-builder.WebHost.UseUrls("http://0.0.0.0:5131");
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5131, listenOptions =>
+    {
+        listenOptions.UseHttps(); // Dùng dev certificate tự sinh
+    });
+});
+
 
 var app = builder.Build();
 
@@ -120,7 +127,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection(); 
 
 // --- CORS ---
 app.UseCors("CorsPolicy");

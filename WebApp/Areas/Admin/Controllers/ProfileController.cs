@@ -8,10 +8,12 @@ namespace WebApp.Areas.Admin.Controllers
     public class ProfileController : Controller
     {
 
-        private static readonly HttpClient _httpClient = new HttpClient
+        private readonly HttpClient _httpClient;
+
+        public ProfileController(IHttpClientFactory httpClientFactory)
         {
-            BaseAddress = new Uri("http://10.147.20.199:5131/")
-        };
+            _httpClient = httpClientFactory.CreateClient("WebApiClient");
+        }
         private void SetOracleHeaders(string token, string username, string platform, string sessionId)
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);

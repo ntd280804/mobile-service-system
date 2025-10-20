@@ -12,11 +12,12 @@
     "https": {
       "commandName": "Project",
       "launchBrowser": true,
+      "launchUrl": "https://10.147.20.199:7158",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://10.147.20.199:5176"
+      "applicationUrl": "https://10.147.20.199:7158"
     },
     "IIS Express": {
       "commandName": "IISExpress",

@@ -8,10 +8,12 @@ namespace WebApp.Areas.Admin.Controllers
     [Area("Admin")]
     public class QRController : Controller
     {
-        private static readonly HttpClient _httpClient = new HttpClient
+        private readonly HttpClient _httpClient;
+
+        public QRController(IHttpClientFactory httpClientFactory)
         {
-            BaseAddress = new Uri("http://10.147.20.199:5131/")
-        };
+            _httpClient = httpClientFactory.CreateClient("WebApiClient");
+        }
 
         public class QRViewModel
         {

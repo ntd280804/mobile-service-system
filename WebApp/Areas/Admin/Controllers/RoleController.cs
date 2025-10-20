@@ -9,10 +9,12 @@ namespace WebApp.Areas.Admin.Controllers
     [Area("Admin")]
     public class RoleController : Controller
     {
-        private static readonly HttpClient _httpClient = new HttpClient
+        private readonly HttpClient _httpClient;
+
+        public RoleController(IHttpClientFactory httpClientFactory)
         {
-            BaseAddress = new Uri("http://10.147.20.199:5131/")
-        };
+            _httpClient = httpClientFactory.CreateClient("WebApiClient");
+        }
 
         // DTOs
         public class UserDto
