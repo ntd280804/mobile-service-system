@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using WebAPI.Data;
 using WebAPI.Helpers;
 using WebAPI.Services;
 
@@ -23,35 +21,45 @@ namespace WebAPI.Areas.Admin.Controllers
             _jwtHelper = jwtHelper;
         }
 
-        private static readonly string[] TargetResources = new[]
+        private OracleConnection GetConnectionOrUnauthorized(out IActionResult unauthorizedResult)
         {
-            "FAILED_LOGIN_ATTEMPTS",
-            "PASSWORD_LIFE_TIME",
-            "PASSWORD_GRACE_TIME",
-            "PASSWORD_LOCK_TIME"
-        };
-        [HttpGet("users")]
-        public IActionResult GetAllUsersWithProfile()
-        {
+            unauthorizedResult = null;
             var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
             var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
             var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
 
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(platform) || string.IsNullOrEmpty(sessionId))
+            {
+                unauthorizedResult = Unauthorized(new { message = "Missing Oracle session headers" });
+                return null;
+            }
+
             var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
             if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
+            {
+                unauthorizedResult = Unauthorized(new { message = "Oracle session expired. Please login again." });
+                return null;
+            }
+
+            return conn;
+        }
+
+        [HttpGet("users")]
+        public IActionResult GetAllUsersWithProfile()
+        {
+            if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
 
             try
             {
-                
-                using var cmd = new OracleCommand(
-                    "SELECT USERNAME, PROFILE FROM DBA_USERS ORDER BY PROFILE, USERNAME",
-                    conn
-                );
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.GET_ALL_USERS_WITH_PROFILE";
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-                using var reader = cmd.ExecuteReader();
+                var curParam = new OracleParameter("cur_out", OracleDbType.RefCursor, System.Data.ParameterDirection.Output);
+                cmd.Parameters.Add(curParam);
+
                 var list = new List<object>();
-
+                using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
                     list.Add(new
@@ -65,47 +73,26 @@ namespace WebAPI.Areas.Admin.Controllers
             }
             catch (OracleException ex)
             {
-                return StatusCode(500, new
-                {
-                    message = "Failed to get users with profiles",
-                    oracleError = ex.Number,
-                    detail = ex.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    message = "Unexpected error",
-                    detail = ex.Message
-                });
+                return StatusCode(500, new { message = "Failed to get users", oracleError = ex.Number, detail = ex.Message });
             }
         }
 
         [HttpGet]
         public IActionResult GetAllProfiles()
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
+            if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
 
             try
             {
-                
-                using var cmd = new OracleCommand(@"
-                    SELECT PROFILE, RESOURCE_NAME, LIMIT 
-                    FROM DBA_PROFILES 
-                    WHERE RESOURCE_NAME IN ('FAILED_LOGIN_ATTEMPTS','PASSWORD_LIFE_TIME','PASSWORD_GRACE_TIME','PASSWORD_LOCK_TIME')
-                    ORDER BY PROFILE, RESOURCE_NAME
-                ", conn);
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.GET_ALL_PROFILES_WITH_LIMITS";
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-                using var reader = cmd.ExecuteReader();
+                var curParam = new OracleParameter("cur_out", OracleDbType.RefCursor, System.Data.ParameterDirection.Output);
+                cmd.Parameters.Add(curParam);
+
                 var tempList = new List<dynamic>();
-
+                using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
                     tempList.Add(new
@@ -116,7 +103,6 @@ namespace WebAPI.Areas.Admin.Controllers
                     });
                 }
 
-                // Nhóm theo profile
                 var grouped = tempList
                     .GroupBy(x => x.Profile)
                     .Select(g => new
@@ -130,49 +116,35 @@ namespace WebAPI.Areas.Admin.Controllers
 
                 return Ok(grouped);
             }
-            catch (Exception ex)
+            catch (OracleException ex)
             {
-                return StatusCode(500, new { message = "Failed to get profiles", detail = ex.Message });
+                return StatusCode(500, new { message = "Failed to get profiles", oracleError = ex.Number, detail = ex.Message });
             }
         }
 
         [HttpGet("{profileName}")]
         public IActionResult GetProfileByName(string profileName)
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
+            if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
 
             try
             {
-                
-                using var cmd = new OracleCommand(@"
-                    SELECT PROFILE, RESOURCE_NAME, LIMIT 
-                    FROM DBA_PROFILES 
-                    WHERE PROFILE = :profileName 
-                    AND RESOURCE_NAME IN ('FAILED_LOGIN_ATTEMPTS','PASSWORD_LIFE_TIME','PASSWORD_GRACE_TIME','PASSWORD_LOCK_TIME')
-                ", conn);
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.GET_PROFILE_BY_NAME";
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-                cmd.Parameters.Add(new OracleParameter("profileName", profileName.ToUpper()));
+                cmd.Parameters.Add("p_profile_name", OracleDbType.Varchar2, profileName.ToUpper(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("cur_out", OracleDbType.RefCursor, System.Data.ParameterDirection.Output);
 
-                using var reader = cmd.ExecuteReader();
                 var dict = new Dictionary<string, string>();
-
+                using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
-                    var resource = reader["RESOURCE_NAME"].ToString();
-                    var limit = reader["LIMIT"].ToString();
-                    dict[resource] = limit;
+                    dict[reader["RESOURCE_NAME"].ToString()] = reader["LIMIT"].ToString();
                 }
 
                 if (dict.Count == 0)
-                {
                     return NotFound(new { message = $"Profile '{profileName}' not found" });
-                }
 
                 var result = new
                 {
@@ -185,11 +157,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (OracleException ex)
             {
-                return StatusCode(500, new { message = "Failed to get profile details", detail = ex.Message });
+                return StatusCode(500, new { message = "Failed to get profile details", oracleError = ex.Number, detail = ex.Message });
             }
         }
+
         public class CreateProfileRequest
         {
             public string ProfileName { get; set; } = string.Empty;
@@ -198,141 +171,65 @@ namespace WebAPI.Areas.Admin.Controllers
             public string GraceTime { get; set; } = "UNLIMITED";
             public string LockTime { get; set; } = "UNLIMITED";
         }
+
         [HttpPost]
         public IActionResult CreateProfile([FromBody] CreateProfileRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.ProfileName))
-            {
-                return BadRequest(new { message = "ProfileName is required" });
-            }
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
+            if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
+            if (string.IsNullOrWhiteSpace(request.ProfileName)) return BadRequest(new { message = "ProfileName is required" });
 
             try
             {
-                
-                using var cmd = new OracleCommand();
-                cmd.Connection = conn;
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.CREATE_PROFILE";
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-                // Làm sạch input (chuyển sang upper, trim)
-                var profile = request.ProfileName.Trim().ToUpper();
-                var failedLogin = request.FailedLogin.Trim().ToUpper();
-                var lifeTime = request.LifeTime.Trim().ToUpper();
-                var graceTime = request.GraceTime.Trim().ToUpper();
-                var lockTime = request.LockTime.Trim().ToUpper();
-
-                cmd.CommandText = $@"
-                    CREATE PROFILE {profile} LIMIT
-                    FAILED_LOGIN_ATTEMPTS {failedLogin}
-                    PASSWORD_LIFE_TIME {lifeTime}
-                    PASSWORD_GRACE_TIME {graceTime}
-                    PASSWORD_LOCK_TIME {lockTime}
-                ";
+                cmd.Parameters.Add("p_profile_name", OracleDbType.Varchar2, request.ProfileName.Trim().ToUpper(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("p_failed_login", OracleDbType.Varchar2, request.FailedLogin.Trim().ToUpper(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("p_life_time", OracleDbType.Varchar2, request.LifeTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("p_grace_time", OracleDbType.Varchar2, request.GraceTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("p_lock_time", OracleDbType.Varchar2, request.LockTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
 
                 cmd.ExecuteNonQuery();
 
-                return Ok(new
-                {
-                    message = $"Profile '{profile}' created successfully",
-                    profile = new
-                    {
-                        profileName = profile,
-                        failedLogin,
-                        lifeTime,
-                        graceTime,
-                        lockTime
-                    }
-                });
+                return Ok(new { message = $"Profile '{request.ProfileName}' created successfully" });
             }
             catch (OracleException ex)
             {
-                if (ex.Number == 2379) // ORA-02379: profile already exists
-                {
-                    return Conflict(new
-                    {
-                        message = $"Profile '{request.ProfileName}' already exists",
-                        detail = ex.Message
-                    });
-                }
+                if (ex.Number == 2379)
+                    return Conflict(new { message = $"Profile '{request.ProfileName}' already exists", detail = ex.Message });
 
-                return StatusCode(500, new
-                {
-                    message = "Failed to create profile",
-                    oracleError = ex.Number,
-                    detail = ex.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    message = "Unexpected error",
-                    detail = ex.Message
-                });
+                return StatusCode(500, new { message = "Failed to create profile", oracleError = ex.Number, detail = ex.Message });
             }
         }
+
         [HttpDelete("{profileName}")]
         public IActionResult DeleteProfile(string profileName)
         {
-            if (string.IsNullOrWhiteSpace(profileName))
-                return BadRequest(new { message = "Profile name is required" });
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
+            if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
+            if (string.IsNullOrWhiteSpace(profileName)) return BadRequest(new { message = "Profile name is required" });
 
             try
             {
-                
-                using var cmd = new OracleCommand();
-                cmd.Connection = conn;
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.DELETE_PROFILE";
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
-                var profile = profileName.Trim().ToUpper();
-                cmd.CommandText = $"DROP PROFILE {profile} CASCADE";
+                cmd.Parameters.Add("p_profile_name", OracleDbType.Varchar2, profileName.Trim().ToUpper(), System.Data.ParameterDirection.Input);
 
                 cmd.ExecuteNonQuery();
 
-                return Ok(new
-                {
-                    message = $"Profile '{profile}' deleted successfully"
-                });
+                return Ok(new { message = $"Profile '{profileName}' deleted successfully" });
             }
             catch (OracleException ex)
             {
-                // ORA-02380: profile does not exist
                 if (ex.Number == 2380)
-                {
-                    return NotFound(new
-                    {
-                        message = $"Profile '{profileName}' does not exist",
-                        detail = ex.Message
-                    });
-                }
+                    return NotFound(new { message = $"Profile '{profileName}' does not exist", detail = ex.Message });
 
-                return StatusCode(500, new
-                {
-                    message = "Failed to delete profile",
-                    oracleError = ex.Number,
-                    detail = ex.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    message = "Unexpected error",
-                    detail = ex.Message
-                });
+                return StatusCode(500, new { message = "Failed to delete profile", oracleError = ex.Number, detail = ex.Message });
             }
         }
+
         public class AssignProfileRequest
         {
             public string Username { get; set; } = string.Empty;
@@ -342,66 +239,31 @@ namespace WebAPI.Areas.Admin.Controllers
         [HttpPost("assign")]
         public IActionResult AssignProfileToUser([FromBody] AssignProfileRequest request)
         {
+            if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.ProfileName))
                 return BadRequest(new { message = "Username and ProfileName are required" });
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
 
             try
             {
-                
-                using var cmd = new OracleCommand();
-                cmd.Connection = conn;
-                cmd.CommandText = $"ALTER USER \"{request.Username}\" PROFILE \"{request.ProfileName.ToUpper()}\"";
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.ASSIGN_PROFILE_TO_USER";
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_username", OracleDbType.Varchar2, request.Username.Trim(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("p_profile_name", OracleDbType.Varchar2, request.ProfileName.Trim().ToUpper(), System.Data.ParameterDirection.Input);
 
                 cmd.ExecuteNonQuery();
 
-                return Ok(new
-                {
-                    message = $"Profile '{request.ProfileName}' has been assigned to user '{request.Username}'"
-                });
+                return Ok(new { message = $"Profile '{request.ProfileName}' has been assigned to user '{request.Username}'" });
             }
             catch (OracleException ex)
             {
-                if (ex.Number == 2379) // ORA-02379: profile does not exist
-                {
-                    return NotFound(new
-                    {
-                        message = $"Profile '{request.ProfileName}' does not exist",
-                        oracleError = ex.Number,
-                        detail = ex.Message
-                    });
-                }
+                if (ex.Number == 2379)
+                    return NotFound(new { message = $"Profile '{request.ProfileName}' does not exist", oracleError = ex.Number, detail = ex.Message });
+                if (ex.Number == 1918)
+                    return NotFound(new { message = $"User '{request.Username}' does not exist", oracleError = ex.Number, detail = ex.Message });
 
-                if (ex.Number == 1918) // ORA-01918: user does not exist
-                {
-                    return NotFound(new
-                    {
-                        message = $"User '{request.Username}' does not exist",
-                        oracleError = ex.Number,
-                        detail = ex.Message
-                    });
-                }
-
-                return StatusCode(500, new
-                {
-                    message = "Failed to assign profile",
-                    oracleError = ex.Number,
-                    detail = ex.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    message = "Unexpected error",
-                    detail = ex.Message
-                });
+                return StatusCode(500, new { message = "Failed to assign profile", oracleError = ex.Number, detail = ex.Message });
             }
         }
     }

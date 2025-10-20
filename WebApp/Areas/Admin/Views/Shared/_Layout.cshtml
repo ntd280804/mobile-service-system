@@ -22,96 +22,202 @@
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+   <style>
+    /* Layout chính */
+    body, html {
+        height: 100%;
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-        .sidebar {
-            min-width: 220px;
-            max-width: 220px;
-            background-color: #343a40;
-            color: white;
-            min-height: 100vh;
-        }
+    .d-flex-full {
+        display: flex;
+        min-height: 100vh;
+        flex-direction: row;
+    }
 
-            .sidebar a {
-                color: white;
-                text-decoration: none;
-            }
+    /* Sidebar */
+    .sidebar {
+        width: 220px;
+        background-color: #343a40;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        padding-top: 1rem;
+    }
 
-                .sidebar a:hover {
-                    background-color: #495057;
-                    color: white;
-                }
+    .sidebar a {
+        color: #fff;
+        text-decoration: none;
+        padding: 0.6rem 1rem;
+        display: flex;
+        align-items: center;
+        transition: background 0.2s;
+    }
 
-        .content {
-            flex: 1;
-            padding: 20px;
-        }
+    .sidebar a:hover {
+        background-color: #495057;
+    }
 
-        .nav-link.active {
-            background-color: #0d6efd !important;
-            color: white !important;
-        }
-    </style>
+    .sidebar .nav-link.active {
+        background-color: #0d6efd;
+    }
+
+    .sidebar .collapse .nav-link {
+        font-size: 0.95rem;
+        padding-left: 1.5rem;
+    }
+
+    .sidebar .nav-link span {
+        margin-left: auto;
+        transition: transform 0.2s;
+    }
+
+    .sidebar .nav-link[aria-expanded="true"] span {
+        transform: rotate(180deg);
+    }
+
+    /* Nội dung chính */
+    .content {
+        flex: 1;
+        padding: 20px;
+        background-color: #f8f9fa;
+    }
+
+    /* Navbar */
+    .navbar-text {
+        font-weight: 500;
+    }
+
+    /* Footer */
+    footer {
+        border-top: 1px solid #dee2e6;
+        text-align: center;
+        padding: 0.5rem 0;
+        background-color: #fff;
+        flex-shrink: 0;
+    }
+
+    /* Button logout */
+    #logout-btn {
+        text-align: left;
+        width: 100%;
+        padding-left: 1rem;
+    }
+</style>
+
 </head>
 <body>
     <div class="d-flex">
         <!-- Sidebar -->
-        <nav class="sidebar d-flex flex-column p-3">
-            <ul class="nav nav-pills flex-column mb-auto">
-                @if (string.IsNullOrEmpty(username))
-                {
-                    <li class="nav-item">
-                        <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="Login">Login</a>
-                    </li>
-                }
-                else
-                {
-                    <li>
-                        <a class="nav-link" asp-area="Admin" asp-controller="Home" asp-action="Index">Dashboard</a>
-                    </li>
-                    
-                    @if (roles.Contains("ADMIN"))
-                    {
-                        <li>
-                            <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="Index">Employee List</a>
-                        </li>
-                    }
-                    @if (roles.Contains("ADMIN"))
-                    {
-                        <li>
-                            <a class="nav-link" asp-area="Admin" asp-controller="Role" asp-action="Index">Role User</a>
-                        </li>
-                    }
-                    @if (roles.Contains("ADMIN"))
-                    {
-                        <li>
-                            <a class="nav-link" asp-area="Admin" asp-controller="Profile" asp-action="Index">Profile</a>
-                        </li>
-                    }
-                    @if (roles.Contains("THUKO") || roles.Contains("ADMIN"))
-                    {
-                        <li>
-                            <a class="nav-link" asp-area="Admin" asp-controller="Import" asp-action="Index">Nhập kho</a>
-                        </li>
-                    }
+        <ul class="nav nav-pills flex-column mb-auto">
 
+    @if (string.IsNullOrEmpty(username))
+    {
+        <li class="nav-item">
+            <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="Login">Login</a>
+        </li>
+    }
+    else
+    {
+        <!-- DASHBOARD -->
+        <li>
+            <a class="nav-link" asp-area="Admin" asp-controller="Home" asp-action="Index">Dashboard</a>
+        </li>
 
-                    <!-- Đăng xuất -->
-                    <li class="nav-item mt-3">
-                        <form method="post" asp-area="Admin" asp-controller="Employee" asp-action="Logout">
-                            <button type="submit" class="nav-link btn btn-link text-start text-white" id="logout-btn">
-                                Logout (@username)
-                            </button>
-                        </form>
-                    </li>
-                }
+        <!-- QUẢN LÝ NHÂN VIÊN -->
+        @if (roles.Contains("ADMIN"))
+        {
+            <li>
+                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseEmployee" role="button" aria-expanded="false" aria-controls="collapseEmployee">
+                    Quản lý nhân viên <span class="ms-auto">▾</span>
+                </a>
+                <ul class="collapse nav flex-column ms-3" id="collapseEmployee">
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="Index">Danh sách nhân viên</a></li>
+                </ul>
+            </li>
+        }
+        @if (roles.Contains("ADMIN"))
+        {
+            <li>
+                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseRoleProfile" role="button" aria-expanded="false" aria-controls="collapseEmployee">
+                    Quản lý phân quyền và profile <span class="ms-auto">▾</span>
+                </a>
+                <ul class="collapse nav flex-column ms-3" id="collapseRoleProfile">
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Role" asp-action="Index">Phân quyền</a></li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Profile" asp-action="Index">Hồ sơ cá nhân</a></li>
+                </ul>
+            </li>
+        }
+        <!-- QUẢN LÝ KHÁCH HÀNG -->
+        <li>
+            <a class="nav-link" asp-area="Admin" asp-controller="Customer" asp-action="Index">Quản lý khách hàng</a>
+        </li>
+
+        <!-- QUẢN LÝ NHẬP XUẤT KHO -->
+        @if (roles.Contains("THUKO") || roles.Contains("ADMIN"))
+        {
+            <li>
+                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseStock" role="button" aria-expanded="false" aria-controls="collapseStock">
+                    Quản lý nhập xuất kho <span class="ms-auto">▾</span>
+                </a>
+                <ul class="collapse nav flex-column ms-3" id="collapseStock">
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Import" asp-action="Index">Nhập kho</a></li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Export" asp-action="Index">Xuất kho</a></li>
+                </ul>
+            </li>
+        }
+
+        <!-- QUẢN LÝ HÓA ĐƠN -->
+        <li>
+            <a class="nav-link" asp-area="Admin" asp-controller="Invoice" asp-action="Index">Quản lý hóa đơn</a>
+        </li>
+
+        <!-- QUẢN LÝ LINH KIỆN -->
+        <li>
+            <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseParts" role="button" aria-expanded="false" aria-controls="collapseParts">
+                Quản lý linh kiện <span class="ms-auto">▾</span>
+            </a>
+            <ul class="collapse nav flex-column ms-3" id="collapseParts">
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Part" asp-action="Index">Danh sách linh kiện</a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="PartRequest" asp-action="Create">Tạo yêu cầu linh kiện</a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="PartRequest" asp-action="Index">Danh sách yêu cầu</a></li>
             </ul>
-        </nav>
+        </li>
+
+        <!-- QUẢN LÝ ORDER -->
+        <li>
+            <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseOrder" role="button" aria-expanded="false" aria-controls="collapseOrder">
+                Quản lý Order <span class="ms-auto">▾</span>
+            </a>
+            <ul class="collapse nav flex-column ms-3" id="collapseOrder">
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Warranty" asp-action="Index">Bảo hành</a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Repair" asp-action="Index">Sửa chữa</a></li>
+            </ul>
+        </li>
+
+        <!-- QUẢN LÝ ĐẶT LỊCH -->
+        <li>
+            <a class="nav-link" asp-area="Admin" asp-controller="Booking" asp-action="Index">Quản lý đặt lịch</a>
+        </li>
+
+        <!-- QUẢN LÝ LỊCH LÀM VIỆC -->
+        <li>
+            <a class="nav-link" asp-area="Admin" asp-controller="Schedule" asp-action="Index">Quản lý lịch làm việc</a>
+        </li>
+
+        <!-- ĐĂNG XUẤT -->
+        <li class="nav-item mt-3">
+            <form method="post" asp-area="Admin" asp-controller="Employee" asp-action="Logout">
+                <button type="submit" class="nav-link btn w-100 text-start text-white bg-dark" id="logout-btn">
+                    Logout (Admin2)
+                </button>
+
+            </form>
+        </li>
+    }
+</ul>
+
 
         <!-- Main content -->
         <div class="content w-100">

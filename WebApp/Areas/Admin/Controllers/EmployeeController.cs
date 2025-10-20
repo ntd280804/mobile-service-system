@@ -198,6 +198,7 @@ namespace WebApp.Areas.Admin.Controllers
                     return RedirectToAction("Login");
 
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
                 // ✅ Thêm 3 header Oracle
                 _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
                 _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
@@ -206,11 +207,19 @@ namespace WebApp.Areas.Admin.Controllers
                 _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
                 _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
                 _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
+
+                // Gửi POST request
                 var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/register", dto);
+
                 if (response.IsSuccessStatusCode)
                 {
-                    TempData["Message"] = "Đăng ký nhân viên thành công!";
-                    return RedirectToAction("Index");
+                    // ✅ Đọc file stream từ API
+                    var fileStream = await response.Content.ReadAsStreamAsync();
+                    var contentDisposition = response.Content.Headers.ContentDisposition;
+                    var fileName = contentDisposition?.FileName?.Trim('"') ?? $"{dto.Username}_private_key.txt";
+
+                    // Trả file cho user tải về
+                    return File(fileStream, "text/plain", fileName);
                 }
                 else
                 {
@@ -225,6 +234,7 @@ namespace WebApp.Areas.Admin.Controllers
                 return View(dto);
             }
         }
+
 
         // --- Unlock/Lock ---
         [HttpPost]
@@ -311,6 +321,7 @@ namespace WebApp.Areas.Admin.Controllers
             public string Username { get; set; }
             public string Email { get; set; }
             public string Phone { get; set; }
+            public string Roles { get; set; }
         }
 
         public class EmployeeRegisterDto

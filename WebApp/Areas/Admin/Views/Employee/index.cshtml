@@ -38,11 +38,11 @@
                     <td>@emp.Status</td>
                     <td>@emp.Email</td>
                     <td>@emp.Phone</td>
-                    <td>Test</td>
+                    <td>@emp.Roles</td>
                     <td>
                         <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", "Employee", new { id = emp.EmpId })">Edit</a>
 
-                        @if (emp.Status == "ACTIVE")
+                        @if (emp.Status == "OPEN")
                         {
                             <form method="post" asp-action="Lock" asp-controller="Employee" class="d-inline">
                                 <input type="hidden" name="username" value="@emp.Username" />
@@ -56,8 +56,6 @@
                                 <button type="submit" class="btn btn-sm btn-success">Unlock</button>
                             </form>
                         }
-
-                        <a class="btn btn-sm btn-danger" href="@Url.Action("Delete", "Employee", new { id = emp.EmpId })" onclick="return confirm('Bạn có chắc muốn xóa nhân viên này?');">Delete</a>
                     </td>
 
                 </tr>

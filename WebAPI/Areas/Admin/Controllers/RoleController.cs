@@ -21,6 +21,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         // GET: api/Admin/Role/users
+        // GET: api/Admin/Role/users
         [HttpGet("users")]
         [Authorize]
         public IActionResult GetAllDBUser()
@@ -35,9 +36,13 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                using var cmd = new OracleCommand("SELECT USERNAME FROM DBA_USERS", conn);
-                using var reader = cmd.ExecuteReader();
+                using var cmd = new OracleCommand("APP.GET_ALL_USERS", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.Add("p_cursor", OracleDbType.RefCursor).Direction = ParameterDirection.Output;
 
+                using var reader = cmd.ExecuteReader();
                 var list = new List<object>();
                 while (reader.Read())
                 {
@@ -72,41 +77,30 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                using var cmd = new OracleCommand(
-                    "SELECT ROLE FROM DBA_ROLES",
-                    conn
-                );
-                cmd.CommandType = CommandType.Text;
-
-                cmd.Parameters.Add("username", OracleDbType.Varchar2).Value = username.ToUpper();
+                using var cmd = new OracleCommand("APP.GET_ALL_ROLES", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.Add("p_cursor", OracleDbType.RefCursor).Direction = ParameterDirection.Output;
 
                 using var reader = cmd.ExecuteReader();
                 var list = new List<object>();
-
                 while (reader.Read())
                 {
-                    list.Add(new
-                    {
-                        Role = reader.GetString(0)
-                    });
+                    list.Add(new { Role = reader.GetString(0) });
                 }
 
                 return Ok(list);
             }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _connManager.RemoveConnection(username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
             catch (Exception ex)
             {
-                // Log the error for debugging
                 Console.WriteLine($"[GetAllRoles] Error: {ex.Message}");
                 return StatusCode(500, new { message = "Lỗi khi lấy danh sách role", detail = ex.Message });
             }
         }
 
-        [HttpGet("roles-of-user/{username}")]
+        [HttpGet("roles-of-user/{Username}")]
+        [Authorize]
         public IActionResult GetRoleOfUser(string Username)
         {
             var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
@@ -124,19 +118,18 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                
-                string sql = "SELECT GRANTED_ROLE FROM DBA_ROLE_PRIVS WHERE GRANTEE = :username";
-                using var cmd = new OracleCommand(sql, conn);
-                cmd.Parameters.Add(new OracleParameter("username", Username.ToUpper()));
-                using var reader = cmd.ExecuteReader();
+                using var cmd = new OracleCommand("APP.GET_ROLES_OF_USER", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = Username.ToUpper();
+                cmd.Parameters.Add("p_cursor", OracleDbType.RefCursor).Direction = ParameterDirection.Output;
 
+                using var reader = cmd.ExecuteReader();
                 var list = new List<object>();
                 while (reader.Read())
                 {
-                    list.Add(new
-                    {
-                        GrantedRole = reader.GetString(0)
-                    });
+                    list.Add(new { GrantedRole = reader.GetString(0) });
                 }
 
                 return Ok(list);
@@ -161,10 +154,13 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                var sql = $"CREATE ROLE \"{roleName}\"";
-                using var cmd = new OracleCommand(sql, conn);
-                await cmd.ExecuteNonQueryAsync();
+                using var cmd = new OracleCommand("APP.CREATE_ROLE_PROC", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.Add("p_role_name", OracleDbType.Varchar2).Value = roleName;
 
+                await cmd.ExecuteNonQueryAsync();
                 return Ok(new { message = $"Role '{roleName}' created successfully." });
             }
             catch (OracleException ex) when (ex.Number == 1920)
@@ -192,10 +188,13 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                var sql = $"DROP ROLE \"{roleName}\"";
-                using var cmd = new OracleCommand(sql, conn);
-                await cmd.ExecuteNonQueryAsync();
+                using var cmd = new OracleCommand("APP.DELETE_ROLE_PROC", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.Add("p_role_name", OracleDbType.Varchar2).Value = roleName;
 
+                await cmd.ExecuteNonQueryAsync();
                 return Ok(new { message = $"Role '{roleName}' deleted successfully." });
             }
             catch (OracleException ex) when (ex.Number == 1919)
@@ -226,10 +225,14 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                var sql = $"GRANT \"{request.RoleName}\" TO \"{request.UserName}\"";
-                using var cmd = new OracleCommand(sql, conn);
-                await cmd.ExecuteNonQueryAsync();
+                using var cmd = new OracleCommand("APP.ASSIGN_ROLE_PROC", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = request.UserName;
+                cmd.Parameters.Add("p_role_name", OracleDbType.Varchar2).Value = request.RoleName;
 
+                await cmd.ExecuteNonQueryAsync();
                 return Ok(new { message = $"Role '{request.RoleName}' assigned to user '{request.UserName}' successfully." });
             }
             catch (OracleException ex) when (ex.Number == 1918)
@@ -270,10 +273,14 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                var sql = $"REVOKE \"{request.RoleName}\" FROM \"{request.UserName}\"";
-                using var cmd = new OracleCommand(sql, conn);
-                await cmd.ExecuteNonQueryAsync();
+                using var cmd = new OracleCommand("APP.REVOKE_ROLE_PROC", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = request.UserName;
+                cmd.Parameters.Add("p_role_name", OracleDbType.Varchar2).Value = request.RoleName;
 
+                await cmd.ExecuteNonQueryAsync();
                 return Ok(new { message = $"Role '{request.RoleName}' revoked from user '{request.UserName}' successfully." });
             }
             catch (OracleException ex) when (ex.Number == 1918)
@@ -289,6 +296,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Failed to revoke role.", detail = ex.Message });
             }
         }
+
 
         public class RevokeRoleRequest
         {

@@ -188,6 +188,68 @@
         }
       }
     },
+    "/api/Admin/Employee/unlock": {
+      "post": {
+        "tags": [
+          "Employee"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockEmployeeDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockEmployeeDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockEmployeeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Admin/Employee/lock": {
+      "post": {
+        "tags": [
+          "Employee"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockEmployeeDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockEmployeeDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnlockEmployeeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/admin/Import/getallimport": {
       "get": {
         "tags": [
@@ -200,14 +262,14 @@
         }
       }
     },
-    "/api/admin/Import/getimportid/{id}": {
+    "/api/admin/Import/details/{stockinId}": {
       "get": {
         "tags": [
           "Import"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "stockinId",
             "in": "path",
             "required": true,
             "schema": {
@@ -247,6 +309,29 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/Import/verifysign/{stockinId}": {
+      "get": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "stockinId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -426,7 +511,7 @@
         }
       }
     },
-    "/api/Admin/Role/roles-of-user/{username}": {
+    "/api/Admin/Role/roles-of-user/{Username}": {
       "get": {
         "tags": [
           "Role"
@@ -713,6 +798,10 @@
           "serial": {
             "type": "string",
             "nullable": true
+          },
+          "price": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false
@@ -720,11 +809,23 @@
       "ImportStockDto": {
         "type": "object",
         "properties": {
+          "stockInId": {
+            "type": "integer",
+            "format": "int32"
+          },
           "empId": {
             "type": "integer",
             "format": "int32"
           },
           "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "inDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "privateKeyPem": {
             "type": "string",
             "nullable": true
           },
@@ -746,6 +847,16 @@
             "nullable": true
           },
           "roleName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnlockEmployeeDto": {
+        "type": "object",
+        "properties": {
+          "username": {
             "type": "string",
             "nullable": true
           }

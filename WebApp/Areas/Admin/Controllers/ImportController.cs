@@ -19,12 +19,14 @@ namespace WebApp.Areas.Admin.Controllers
             public string PartName { get; set; }
             public string Manufacturer { get; set; }
             public string Serial { get; set; }
+            public long Price { get; set; }
         }
 
         public class ImportStockDto
         {
             public int EmpId { get; set; }
             public string Note { get; set; }
+            public string PrivateKeyPem { get; set; }
             public List<ImportItemDto> Items { get; set; } = new();
         }
 
@@ -76,17 +78,26 @@ namespace WebApp.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            SetOracleHeadersFromSession();
+            SetOracleHeadersFromSession(); // thêm header Oracle từ session
+
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/import/getimportid/{id}");
+                // Gọi WebAPI để lấy chi tiết import
+                var response = await _httpClient.GetAsync($"api/admin/import/details/{id}");
                 if (!response.IsSuccessStatusCode)
                 {
-                    TempData["Error"] = "Không tìm thấy import";
+                    var errorMsg = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Không tìm thấy import hoặc lỗi API: {response.ReasonPhrase} - {errorMsg}";
                     return RedirectToAction(nameof(Index));
                 }
 
                 var detail = await response.Content.ReadFromJsonAsync<ImportDetailViewModel>();
+                if (detail == null)
+                {
+                    TempData["Error"] = "Không nhận được dữ liệu chi tiết từ API";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 return View(detail);
             }
             catch (Exception ex)
@@ -95,6 +106,7 @@ namespace WebApp.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
+
 
         // GET: /Admin/Import/Create
         [HttpGet]
@@ -136,6 +148,58 @@ namespace WebApp.Areas.Admin.Controllers
                 return View(model);
             }
         }
+        // GET: /Admin/Import/Verifysign/5
+        [HttpGet]
+        public async Task<IActionResult> Verifysign(int id)
+        {
+            SetOracleHeadersFromSession();
+
+            try
+            {
+                // Gọi WebAPI endpoint verify chữ ký
+                var response = await _httpClient.GetAsync($"api/admin/import/verifysign/{id}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMsg = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Xác thực thất bại: {response.ReasonPhrase} - {errorMsg}";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Giả sử API trả về JSON { "StockInId": 14, "IsValid": true }
+                var result = await response.Content.ReadFromJsonAsync<VerifySignResult>();
+
+                if (result == null)
+                {
+                    TempData["Error"] = "Không nhận được kết quả từ API";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Thông báo kết quả
+                if (result.IsValid)
+                {
+                    TempData["Success"] = $"Chữ ký StockIn ID {result.StockInId} là hợp lệ ✅";
+                }
+                else
+                {
+                    TempData["Error"] = $"Chữ ký StockIn ID {result.StockInId} không hợp lệ ❌";
+                }
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // DTO để nhận kết quả verify
+        public class VerifySignResult
+        {
+            public int StockInId { get; set; }
+            public bool IsValid { get; set; }
+        }
+
 
         // Helper: set header Oracle từ session
         private void SetOracleHeadersFromSession()

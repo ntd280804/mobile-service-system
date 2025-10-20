@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
+using System.Text;
 using WebAPI.Data;
 using WebAPI.Helpers;
 using WebAPI.Models;
@@ -69,7 +70,8 @@ namespace WebAPI.Areas.Admin.Controllers
                         Username = reader.GetString(2),
                         Email = reader.GetString(3),
                         Phone = reader.GetString(4),
-                        Status = reader.GetString(5)
+                        Status = reader.GetString(5),
+                        Roles = reader.IsDBNull(6) ? "" : reader.GetString(6) // Cột Roles
                     });
                 }
 
@@ -85,6 +87,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Lỗi khi lấy danh sách nhân viên", detail = ex.Message });
             }
         }
+
 
 
         // =====================
@@ -261,9 +264,29 @@ namespace WebAPI.Areas.Admin.Controllers
                 cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
                 cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
 
+                // OUT param để nhận private key
+                var privateKeyParam = new OracleParameter("p_private_key", OracleDbType.Clob)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(privateKeyParam);
+
                 cmd.ExecuteNonQuery();
 
-                return Ok(new { message = "Thêm nhân viên thành công." });
+                // ✅ Lấy private key từ OracleClob
+                string privateKey = string.Empty;
+                if (privateKeyParam.Value is Oracle.ManagedDataAccess.Types.OracleClob clob && !clob.IsNull)
+                {
+                    using var reader = new StreamReader(clob, Encoding.UTF8);
+                    privateKey = reader.ReadToEnd();
+                }
+
+                // Chuyển private key thành byte array để trả file
+                var fileBytes = Encoding.UTF8.GetBytes(privateKey);
+                var fileName = $"{dto.Username}_private_key.txt";
+
+                // Trả file để web app tải xuống
+                return File(fileBytes, "text/plain", fileName);
             }
             catch (OracleException ex) when (ex.Number == 28)
             {
@@ -276,6 +299,8 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
+
+
         // =====================
         // ⚙️ Tiện ích nội bộ
         // =====================
@@ -284,6 +309,86 @@ namespace WebAPI.Areas.Admin.Controllers
             HttpContext.Session.Clear();
             _connManager.RemoveConnection(username, platform, sessionId);
             Console.WriteLine($"[HandleSessionKilled] Session killed for {username}-{platform}-{sessionId}");
+        }
+        [HttpPost("unlock")]
+        [Authorize]
+        public IActionResult UnlockUser([FromBody] UnlockEmployeeDto dto)
+        {
+            if (dto == null || string.IsNullOrEmpty(dto.Username))
+                return BadRequest(new { message = "Username không hợp lệ." });
+
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(username))
+                return Unauthorized();
+
+            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
+            if (conn == null)
+            {
+                HttpContext.Session.Clear();
+                return Unauthorized(new { message = "Phiên Oracle đã bị terminate." });
+            }
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.UNLOCK_DB_USER", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
+
+                cmd.ExecuteNonQuery();
+
+                return Ok(new { message = $"Tài khoản {dto.Username} đã được unlock." });
+            }
+            catch (OracleException ex)
+            {
+                return Conflict(new { message = $"Lỗi Oracle: {ex.Message}", number = ex.Number });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+        [HttpPost("lock")]
+        [Authorize]
+        public IActionResult LockUser([FromBody] UnlockEmployeeDto dto)
+        {
+            if (dto == null || string.IsNullOrEmpty(dto.Username))
+                return BadRequest(new { message = "Username không hợp lệ." });
+
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
+            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
+            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(username))
+                return Unauthorized();
+
+            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
+            if (conn == null)
+            {
+                HttpContext.Session.Clear();
+                return Unauthorized(new { message = "Phiên Oracle đã bị terminate." });
+            }
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.LOCK_DB_USER", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
+
+                cmd.ExecuteNonQuery();
+
+                return Ok(new { message = $"Tài khoản {dto.Username} đã bị khóa." });
+            }
+            catch (OracleException ex)
+            {
+                return Conflict(new { message = $"Lỗi Oracle: {ex.Message}", number = ex.Number });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
 
         // =====================

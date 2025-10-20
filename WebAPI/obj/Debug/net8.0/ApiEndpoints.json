@@ -27,6 +27,22 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
+    "Method": "LockUser",
+    "RelativePath": "api/Admin/Employee/lock",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Admin.Controllers.EmployeeController\u002BUnlockEmployeeDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
     "Method": "Login",
     "RelativePath": "api/Admin/Employee/login",
     "HttpMethod": "POST",
@@ -68,6 +84,38 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
+    "Method": "UnlockUser",
+    "RelativePath": "api/Admin/Employee/unlock",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Admin.Controllers.EmployeeController\u002BUnlockEmployeeDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
+    "Method": "GetImportDetails",
+    "RelativePath": "api/admin/Import/details/{stockinId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "stockinId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
     "Method": "GetAllImports",
     "RelativePath": "api/admin/Import/getallimport",
@@ -75,22 +123,6 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
-    "Method": "GetImportById",
-    "RelativePath": "api/admin/Import/getimportid/{id}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "id",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
     "ReturnTypes": []
   },
   {
@@ -104,6 +136,22 @@
       {
         "Name": "dto",
         "Type": "WebAPI.Areas.Admin.Controllers.ImportStockDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
+    "Method": "VerifyStockInSignature",
+    "RelativePath": "api/admin/Import/verifysign/{stockinId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "stockinId",
+        "Type": "System.Int32",
         "IsRequired": true
       }
     ],
@@ -286,7 +334,7 @@
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.RoleController",
     "Method": "GetRoleOfUser",
-    "RelativePath": "api/Admin/Role/roles-of-user/{username}",
+    "RelativePath": "api/Admin/Role/roles-of-user/{Username}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
