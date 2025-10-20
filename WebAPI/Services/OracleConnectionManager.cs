@@ -9,10 +9,11 @@ namespace WebAPI.Services
     public class OracleConnectionManager
     {
         private readonly IHubContext<NotificationHub> _hubContext;
-
-        public OracleConnectionManager(IHubContext<NotificationHub> hubContext)
+        private readonly IConfiguration _configuration;
+        public OracleConnectionManager(IHubContext<NotificationHub> hubContext, IConfiguration configuration)
         {
             _hubContext = hubContext;
+            _configuration = configuration;
         }
 
         // Thông tin lưu kèm theo mỗi connection
@@ -51,18 +52,14 @@ namespace WebAPI.Services
         /// <summary>
         /// Tạo connection mới cho 1 user + platform + sessionId.
         /// </summary>
-        public OracleConnection CreateConnection(string username, string password, string datasource, string platform, string sessionId)
+        public OracleConnection CreateConnection(string username, string password, string platform, string sessionId)
         {
             // ❌ Xóa hết connection cũ của username + platform và push logout
             RemoveAllConnections(username, platform).Wait();
-
-            var connString = new OracleConnectionStringBuilder
-            {
-                UserID = username,
-                Password = password,
-                DataSource = datasource,
-                Pooling = false
-            }.ToString();
+            var connectionStringTemplate = _configuration.GetConnectionString("OracleDb");
+            var connString = connectionStringTemplate
+                .Replace("{username}", username)
+                .Replace("{password}", password);
 
             var conn = new OracleConnection(connString);
             OracleConnection.ClearPool(conn);
@@ -126,7 +123,18 @@ namespace WebAPI.Services
                 await _hubContext.Clients.Group(sessionId).SendAsync("ForceLogout", "Your session has been logged out.");
             }
         }
+        public OracleConnection CreateDefaultConnection()
+        {
+            var username = _configuration.GetConnectionString("DefaultUsername");
+            var password = _configuration.GetConnectionString("DefaultPassword");
+            var template = _configuration.GetConnectionString("OracleDb");
+            var connString = template.Replace("{username}", username)
+                                     .Replace("{password}", password);
 
+            var conn = new OracleConnection(connString);
+            conn.Open();
+            return conn;
+        }
         /// <summary>
         /// Xóa tất cả connection của 1 user trên 1 platform.
         /// </summary>

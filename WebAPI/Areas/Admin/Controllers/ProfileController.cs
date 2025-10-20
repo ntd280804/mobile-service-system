@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,11 +15,13 @@ namespace WebAPI.Areas.Admin.Controllers
     {
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
+        private readonly OracleSessionHelper _oracleSessionHelper;
 
-        public ProfileController(OracleConnectionManager connManager, JwtHelper jwtHelper)
+        public ProfileController(OracleConnectionManager connManager, JwtHelper jwtHelper, OracleSessionHelper oracleSessionHelper)
         {
             _connManager = connManager;
             _jwtHelper = jwtHelper;
+            _oracleSessionHelper = oracleSessionHelper;
         }
 
         private OracleConnection GetConnectionOrUnauthorized(out IActionResult unauthorizedResult)
@@ -45,6 +48,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         [HttpGet("users")]
+        [Authorize]
         public IActionResult GetAllUsersWithProfile()
         {
             if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
@@ -78,6 +82,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public IActionResult GetAllProfiles()
         {
             if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
@@ -123,6 +128,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         [HttpGet("{profileName}")]
+        [Authorize]
         public IActionResult GetProfileByName(string profileName)
         {
             if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
@@ -173,6 +179,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         [HttpPost]
+        [Authorize]
         public IActionResult CreateProfile([FromBody] CreateProfileRequest request)
         {
             if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
@@ -204,6 +211,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         [HttpDelete("{profileName}")]
+        [Authorize]
         public IActionResult DeleteProfile(string profileName)
         {
             if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
@@ -237,6 +245,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         [HttpPost("assign")]
+        [Authorize]
         public IActionResult AssignProfileToUser([FromBody] AssignProfileRequest request)
         {
             if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;

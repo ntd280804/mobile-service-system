@@ -86,6 +86,7 @@ namespace WebApp.Areas.Public.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        
         public async Task<IActionResult> Logout()
         {
             try
@@ -107,8 +108,11 @@ namespace WebApp.Areas.Public.Controllers
                     _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
                     var response = await _httpClient.PostAsync("api/Public/Customer/logout", null);
                 }
-                HttpContext.Session.Clear();
-                TempData["Message"] = "Logout thành công!";
+                HttpContext.Session.Remove("CJwtToken");
+                HttpContext.Session.Remove("CUsername");
+                HttpContext.Session.Remove("CRole");
+                HttpContext.Session.Remove("CPlatform");
+                HttpContext.Session.Remove("CSessionId");
 
                 TempData["Message"] = "Logout thành công!";
             }

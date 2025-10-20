@@ -1,13 +1,11 @@
-﻿using Humanizer;
+﻿
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Text;
-using WebAPI.Data;
 using WebAPI.Helpers;
-using WebAPI.Models;
 using WebAPI.Services;
 
 namespace WebAPI.Areas.Admin.Controllers
@@ -17,17 +15,20 @@ namespace WebAPI.Areas.Admin.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
+        private readonly OracleSessionHelper _oracleSessionHelper;
 
-        public EmployeeController(AppDbContext context,
+        public EmployeeController(
                                   OracleConnectionManager connManager,
-                                  JwtHelper jwtHelper)
+                                  JwtHelper jwtHelper,
+                                  OracleSessionHelper oracleSessionHelper)
         {
-            _context = context;
+            
             _connManager = connManager;
             _jwtHelper = jwtHelper;
+            _oracleSessionHelper = oracleSessionHelper;
         }
 
         // =====================
@@ -37,19 +38,8 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult GetAll()
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(platform) ||
-                string.IsNullOrEmpty(sessionId))
-                return Unauthorized(new { message = "Missing Oracle session headers" });
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Phiên Oracle của bạn đã bị terminate, vui lòng đăng nhập lại." });
-
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
             try
             {
                 using var cmd = new OracleCommand("APP.GET_ALL_EMPLOYEES", conn);
@@ -79,7 +69,9 @@ namespace WebAPI.Areas.Admin.Controllers
             }
             catch (OracleException ex) when (ex.Number == 28)
             {
-                _connManager.RemoveConnection(username, platform, sessionId);
+                // Retrieve session info from HttpContext
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
                 return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
             }
             catch (Exception ex)
@@ -88,8 +80,6 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-
-
         // =====================
         // 🟢 GET EMPLOYEE BY ID
         // =====================
@@ -97,20 +87,8 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult Get(decimal id)
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(platform) ||
-                string.IsNullOrEmpty(sessionId))
-                return Unauthorized();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-            {
-                return Unauthorized(new { message = "Phiên Oracle đã bị terminate." });
-            }
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
 
             try
             {
@@ -140,7 +118,8 @@ namespace WebAPI.Areas.Admin.Controllers
             }
             catch (OracleException ex) when (ex.Number == 28)
             {
-                HandleSessionKilled(username, platform, sessionId);
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
                 return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
             }
             catch (Exception ex)
@@ -153,11 +132,9 @@ namespace WebAPI.Areas.Admin.Controllers
         // 🔵 LOGIN
         // =====================
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] EmployeeLoginDto dto)
+        public IActionResult Login([FromBody] EmployeeLoginDto dto)
         {
             if (dto == null) return BadRequest(new { message = "Dữ liệu không hợp lệ." });
-
-            string datasource = "10.147.20.157:1521/ORCLPDB1";
 
             try
             {
@@ -165,19 +142,26 @@ namespace WebAPI.Areas.Admin.Controllers
                 string sessionId = Guid.NewGuid().ToString();
 
                 // Tạo connection Oracle riêng cho session này
-                var conn = _connManager.CreateConnection(dto.Username, dto.Password, datasource, platform, sessionId);
+                var conn = _connManager.CreateConnection(dto.Username, dto.Password, platform, sessionId);
 
-                // Gọi procedure kiểm tra đăng nhập
-                var usernameParam = new OracleParameter("p_username", dto.Username);
-                var passwordParam = new OracleParameter("p_password", dto.Password);
-                var outUsernameParam = new OracleParameter("p_out_username", OracleDbType.Varchar2, 100) { Direction = ParameterDirection.Output };
-                var outRoleParam = new OracleParameter("p_out_role", OracleDbType.Varchar2, 50) { Direction = ParameterDirection.Output };
-                var outResultParam = new OracleParameter("p_out_result", OracleDbType.Varchar2, 50) { Direction = ParameterDirection.Output };
+                using var cmd = new OracleCommand("APP.LOGIN_EMPLOYEE", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
 
-                await _context.Database.ExecuteSqlRawAsync(
-                    "BEGIN APP.LOGIN_EMPLOYEE(:p_username, :p_password, :p_out_username, :p_out_result, :p_out_role); END;",
-                    usernameParam, passwordParam, outUsernameParam, outResultParam, outRoleParam
-                );
+                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
+                cmd.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
+
+                var outUsernameParam = new OracleParameter("p_out_username", OracleDbType.Varchar2, 100)
+                { Direction = ParameterDirection.Output };
+                var outRoleParam = new OracleParameter("p_out_role", OracleDbType.Varchar2, 50)
+                { Direction = ParameterDirection.Output };
+                var outResultParam = new OracleParameter("p_out_result", OracleDbType.Varchar2, 50)
+                { Direction = ParameterDirection.Output };
+
+                cmd.Parameters.Add(outUsernameParam);
+                cmd.Parameters.Add(outResultParam);
+                cmd.Parameters.Add(outRoleParam);
+
+                cmd.ExecuteNonQuery(); // chạy procedure trực tiếp
 
                 var result = outResultParam.Value?.ToString();
                 var username = outUsernameParam.Value?.ToString();
@@ -207,6 +191,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
+
         // =====================
         // 🔴 LOGOUT
         // =====================
@@ -214,17 +199,8 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult Logout()
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            HttpContext.Session.Clear();
-
-            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(platform) && !string.IsNullOrEmpty(sessionId))
-            {
-                _connManager.RemoveConnection(username, platform, sessionId);
-                Console.WriteLine($"[Logout] Removed Oracle connection ({username}, {platform}, {sessionId})");
-            }
+            _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+            _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
 
             return Ok(new { message = "Đăng xuất thành công." });
         }
@@ -238,19 +214,8 @@ namespace WebAPI.Areas.Admin.Controllers
         {
             if (dto == null) return BadRequest("Invalid data");
 
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username))
-                return Unauthorized();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-            {
-                HttpContext.Session.Clear();
-                return Unauthorized(new { message = "Phiên Oracle đã bị terminate, vui lòng đăng nhập lại." });
-            }
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
 
             try
             {
@@ -290,7 +255,8 @@ namespace WebAPI.Areas.Admin.Controllers
             }
             catch (OracleException ex) when (ex.Number == 28)
             {
-                HandleSessionKilled(username, platform, sessionId);
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext,_connManager, username, platform, sessionId);
                 return Unauthorized(new { message = "Phiên Oracle đã bị kill." });
             }
             catch (Exception ex)
@@ -299,17 +265,6 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-
-
-        // =====================
-        // ⚙️ Tiện ích nội bộ
-        // =====================
-        private void HandleSessionKilled(string username, string platform, string sessionId)
-        {
-            HttpContext.Session.Clear();
-            _connManager.RemoveConnection(username, platform, sessionId);
-            Console.WriteLine($"[HandleSessionKilled] Session killed for {username}-{platform}-{sessionId}");
-        }
         [HttpPost("unlock")]
         [Authorize]
         public IActionResult UnlockUser([FromBody] UnlockEmployeeDto dto)
@@ -317,19 +272,8 @@ namespace WebAPI.Areas.Admin.Controllers
             if (dto == null || string.IsNullOrEmpty(dto.Username))
                 return BadRequest(new { message = "Username không hợp lệ." });
 
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username))
-                return Unauthorized();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-            {
-                HttpContext.Session.Clear();
-                return Unauthorized(new { message = "Phiên Oracle đã bị terminate." });
-            }
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
 
             try
             {
@@ -350,6 +294,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
         [HttpPost("lock")]
         [Authorize]
         public IActionResult LockUser([FromBody] UnlockEmployeeDto dto)
@@ -357,19 +302,8 @@ namespace WebAPI.Areas.Admin.Controllers
             if (dto == null || string.IsNullOrEmpty(dto.Username))
                 return BadRequest(new { message = "Username không hợp lệ." });
 
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username))
-                return Unauthorized();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-            {
-                HttpContext.Session.Clear();
-                return Unauthorized(new { message = "Phiên Oracle đã bị terminate." });
-            }
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
 
             try
             {

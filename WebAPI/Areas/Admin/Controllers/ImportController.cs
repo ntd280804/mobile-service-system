@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
 using WebAPI.Helpers;
-using WebAPI.Models;
+
 using WebAPI.Services;
 
 namespace WebAPI.Areas.Admin.Controllers
@@ -15,15 +16,18 @@ namespace WebAPI.Areas.Admin.Controllers
     {
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
+        private readonly OracleSessionHelper _oracleSessionHelper;
 
-        public ImportController(OracleConnectionManager connManager, JwtHelper jwtHelper)
+        public ImportController(OracleConnectionManager connManager, JwtHelper jwtHelper ,  OracleSessionHelper oracleSessionHelper)
         {
             _connManager = connManager;
             _jwtHelper = jwtHelper;
+            _oracleSessionHelper = oracleSessionHelper;
         }
 
         // GET: api/admin/import/getallimport
         [HttpGet("getallimport")]
+        [Authorize]
         public IActionResult GetAllImports()
         {
             var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
@@ -67,6 +71,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
 
         [HttpGet("details/{stockinId}")]
+        [Authorize]
         public IActionResult GetImportDetails(int stockinId)
         {
             var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
@@ -154,6 +159,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
 
         [HttpPost("post")]
+        [Authorize]
         public IActionResult ImportStockStepByStepWithTransaction([FromBody] ImportStockDto dto)
         {
             if (dto.Items == null || dto.Items.Count == 0)
@@ -320,6 +326,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
         [HttpGet("verifysign/{stockinId}")]
+        [Authorize]
         public IActionResult VerifyStockInSignature(int stockinId)
         {
             var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();

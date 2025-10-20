@@ -3,12 +3,12 @@
   "WorkspaceRootPath": "D:\\DOCUMENT\\mobile-service-system\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\admin\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\admin\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\public\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\public\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -17,33 +17,33 @@
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedWidth": 223,
+          "DockedWidth": 466,
           "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "ProfileController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\ProfileController.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Areas\\Admin\\Controllers\\ProfileController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\ProfileController.cs",
-              "RelativeToolTip": "WebAPI\\Areas\\Admin\\Controllers\\ProfileController.cs",
-              "ViewState": "AgIAACIBAAAAAAAAAADwvzcBAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-16T16:27:12.85Z",
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "WebApp\\Areas\\Public\\Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAEsAAAAAAAAAAAAAAE0AAABeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-10-20T16:12:10.641Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "CustomerController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\CustomerController.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Areas\\Public\\Controllers\\CustomerController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\CustomerController.cs",
-              "RelativeToolTip": "WebAPI\\Areas\\Public\\Controllers\\CustomerController.cs",
-              "ViewState": "AgIAACwAAAAAAAAAAAAAwFkAAAAAAAAAAAAAAA==",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "RelativeToolTip": "WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "ViewState": "AgIAABsAAAAAAAAAAAAYwD4AAABBAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-16T16:23:47.551Z",
+              "WhenOpened": "2025-10-20T16:11:58.999Z",
               "EditorCaption": ""
             }
           ]

@@ -210,7 +210,7 @@
         <li class="nav-item mt-3">
             <form method="post" asp-area="Admin" asp-controller="Employee" asp-action="Logout">
                 <button type="submit" class="nav-link btn w-100 text-start text-white bg-dark" id="logout-btn">
-                    Logout (Admin2)
+                    Logout (@username)
                 </button>
 
             </form>
@@ -259,7 +259,7 @@
         // Lấy username từ Razor, đảm bảo không null
         const username = '@(username ?? "")';
         const sessionId = '@(HttpContextAccessor.HttpContext.Session.GetString("SessionId") ?? "")';
-
+        console.log('👤 sessionId:', sessionId);
         // Tạo SignalR connection
         const connection = new signalR.HubConnectionBuilder()
             .withUrl('http://10.147.20.199:5131/Hubs/notification?sessionId=' + encodeURIComponent(sessionId))

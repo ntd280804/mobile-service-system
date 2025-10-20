@@ -167,7 +167,13 @@ namespace WebApp.Areas.Admin.Controllers
                     await _httpClient.PostAsync("api/Admin/Employee/logout", null);
                 }
 
-                HttpContext.Session.Clear();
+                // Chỉ xóa session liên quan đến Admin
+                HttpContext.Session.Remove("JwtToken");
+                HttpContext.Session.Remove("Username");
+                HttpContext.Session.Remove("Role");
+                HttpContext.Session.Remove("Platform");
+                HttpContext.Session.Remove("SessionId");
+
                 TempData["Message"] = "Logout thành công!";
             }
             catch (Exception ex)

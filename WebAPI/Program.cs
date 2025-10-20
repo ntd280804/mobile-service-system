@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WebAPI;
-using WebAPI.Data;
+
 using WebAPI.Helpers;
 using WebAPI.Hubs;
 using WebAPI.Services;
@@ -16,27 +16,23 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // --- DbContext Oracle ---
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseOracle(builder.Configuration.GetConnectionString("OracleDb"))
-);
+var username = builder.Configuration.GetConnectionString("DefaultUsername");      
+var password = builder.Configuration.GetConnectionString("DefaultPassword");
+
+var connectionStringTemplate = builder.Configuration.GetConnectionString("OracleDb");
+var connectionString = connectionStringTemplate
+    .Replace("{username}", username)
+    .Replace("{password}", password);
 
 // --- Session ---
 builder.Services.AddDistributedMemoryCache();
-// Admin
 builder.Services.AddSession(options =>
 {
-    options.Cookie.Name = ".WebAPI.Admin.Session";
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
+    options.Cookie.Name = ".WebAPI.Session"; // single cookie
 });
 
-// Public
-builder.Services.AddSession(options =>
-{
-    options.Cookie.Name = ".WebAPI.Public.Session";
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
-    options.Cookie.HttpOnly = true;
-});
 
 
 // --- CORS ---
@@ -108,6 +104,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddSingleton<JwtHelper>();
+builder.Services.AddSingleton<OracleSessionHelper>();
 builder.Services.AddSingleton<OracleConnectionManager>();
 builder.Services.AddSingleton<QrGeneratorSingleton>();
 // Add SignalR

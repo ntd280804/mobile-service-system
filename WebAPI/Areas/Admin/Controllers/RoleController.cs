@@ -13,14 +13,16 @@ namespace WebAPI.Areas.Admin.Controllers
     {
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
+        private readonly OracleSessionHelper _oracleSessionHelper;
 
-        public RoleController(OracleConnectionManager connManager, JwtHelper jwtHelper)
+        public RoleController(OracleConnectionManager connManager, JwtHelper jwtHelper, OracleSessionHelper oracleSessionHelper)
         {
             _connManager = connManager;
             _jwtHelper = jwtHelper;
+            _oracleSessionHelper = oracleSessionHelper;
         }
 
-        // GET: api/Admin/Role/users
+        
         // GET: api/Admin/Role/users
         [HttpGet("users")]
         [Authorize]

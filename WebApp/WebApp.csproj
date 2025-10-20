@@ -7,8 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Areas\Public\Data\" />
+    <Compile Remove="Areas\Admin\Data\**" />
+    <Compile Remove="Areas\Public\Data\**" />
+    <Content Remove="Areas\Admin\Data\**" />
+    <Content Remove="Areas\Public\Data\**" />
+    <EmbeddedResource Remove="Areas\Admin\Data\**" />
+    <EmbeddedResource Remove="Areas\Public\Data\**" />
+    <None Remove="Areas\Admin\Data\**" />
+    <None Remove="Areas\Public\Data\**" />
   </ItemGroup>
 
   <ItemGroup>
