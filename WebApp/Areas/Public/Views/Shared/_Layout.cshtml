@@ -83,6 +83,7 @@
         .withUrl('@Configuration["SignalR:NotificationHubUrl"]?sessionId=' + encodeURIComponent(sessionId))
         .withAutomaticReconnect()
         .build();
+        const dashboardUrl = '@Url.Action("Index", "Home", new { area = "Public" })';
 
             // Lắng nghe ForceLogout từ server
             connection.on('ForceLogout', async function(message) {
@@ -120,16 +121,22 @@
             startConnection();
 
             // 🔐 Đồng bộ login/logout đa tab
-            const channel = new BroadcastChannel('auth_channel');
+            const channel = new BroadcastChannel('Cauth_channel');
 
-            channel.onmessage = (event) => {
-                console.log('📢 Nhận auth event từ tab khác:', event.data);
-                if (event.data === 'logout') {
+                    channel.onmessage = (event) => {
+            console.log('📢 Nhận auth event từ tab khác:', event.data);
+            if (event.data === 'logout') {
+                setTimeout(() => {
                     window.location.href = loginUrl;
-                } else if (event.data === 'login') {
+                }, 1000); // 1000 ms = 1 giây
+            } else if (event.data === 'login') {
+                setTimeout(() => {
                     window.location.href = dashboardUrl;
-                }
-            };
+                }, 1000);
+                
+            }
+        };
+
 
             // Gửi sự kiện logout từ form
             const logoutForm = document.querySelector('form[action$="Logout"]');
@@ -140,8 +147,13 @@
                 });
             }
 
-            // Nếu cần, gửi sự kiện login khi load trang (nếu muốn)
-            // channel.postMessage('login');
+                    const loginLink = document.querySelector('form[action$="Login"]');
+        if (loginLink) {
+            loginLink.addEventListener('click', () => {
+                channel.postMessage('login');
+                console.log('📡 Gửi login event sang các tab khác');
+            });
+        }
     </script>
 
 </body>

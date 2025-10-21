@@ -209,10 +209,7 @@
         <!-- ĐĂNG XUẤT -->
         <li class="nav-item mt-3">
             <form method="post" asp-area="Admin" asp-controller="Employee" asp-action="Logout">
-                <button type="submit" class="nav-link btn w-100 text-start text-white bg-dark" id="logout-btn">
-                    Logout (@username)
-                </button>
-
+                <button type="submit" class="nav-link btn btn-link text-start">Logout (@username)</button>
             </form>
         </li>
     }
@@ -266,6 +263,7 @@
         .withUrl('@Configuration["SignalR:NotificationHubUrl"]?sessionId=' + encodeURIComponent(sessionId))
         .withAutomaticReconnect()
         .build();
+        const dashboardUrl = '@Url.Action("Index", "Home", new { area = "Admin" })';
 
         // Lắng nghe ForceLogout từ server
         connection.on('ForceLogout', async function(message) {
@@ -303,14 +301,19 @@
         startConnection();
 
         // 🔐 Đồng bộ login/logout đa tab
-        const channel = new BroadcastChannel('auth_channel');
+        const channel = new BroadcastChannel('Aauth_channel');
 
         channel.onmessage = (event) => {
             console.log('📢 Nhận auth event từ tab khác:', event.data);
             if (event.data === 'logout') {
-                window.location.href = loginUrl;
+                setTimeout(() => {
+                    window.location.href = loginUrl;
+                }, 1000); // 1000 ms = 1 giây
             } else if (event.data === 'login') {
-                window.location.href = dashboardUrl;
+                setTimeout(() => {
+                    window.location.href = dashboardUrl;
+                }, 1000);
+                
             }
         };
 
@@ -322,9 +325,14 @@
                 console.log('📡 Gửi logout event sang các tab khác');
             });
         }
+        const loginLink = document.querySelector('a[href$="Login"]');
+if (loginLink) {
+    loginLink.addEventListener('click', () => {
+        channel.postMessage('login');
+        console.log('📡 Gửi login event sang các tab khác');
+    });
+}
 
-        // Nếu cần, gửi sự kiện login khi load trang (nếu muốn)
-        // channel.postMessage('login');
     </script>
 
 </body>
