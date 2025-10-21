@@ -1,0 +1,71 @@
+﻿@model List<WebApp.Areas.Admin.Controllers.PartController.PartDto>
+
+@{
+    ViewData["Title"] = "Danh sách linh kiện";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+<table class="table table-bordered table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Manufacturer</th>
+            <th>Serial</th>
+            <th>QR</th>
+            <th>Status</th>
+            <th>StockinItemId</th>
+            <th>OrderId</th>
+            <th>Price</th>
+            <th>Actions</th> <!-- Thêm cột hành động -->
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.PartId</td>
+                    <td>@item.Name</td>
+                    <td>@item.Manufacturer</td>
+                    <td>@item.Serial</td>
+                    <td>
+                        @if (item.QRImage != null && item.QRImage.Length > 0)
+                        {
+                            var base64 = Convert.ToBase64String(item.QRImage);
+                            var imgSrc = $"data:image/png;base64,{base64}";
+                            <img src="@imgSrc" alt="QR Code" style="width:80px; height:80px;" />
+                        }
+                    </td>
+                    <td>@item.Status</td>
+                    <td>@item.StockinItemId</td>
+                    <td>@item.OrderId</td>
+                    <td>@item.Price</td>
+                    <td>
+                        <a class="btn btn-sm btn-info"
+                           asp-area="Admin"
+                           asp-controller="Part"
+                           asp-action="Details"
+                           asp-route-id="@item.PartId">Xem chi tiết</a>
+                    </td>
+
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7" class="text-center">Không có linh kiện nào.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
