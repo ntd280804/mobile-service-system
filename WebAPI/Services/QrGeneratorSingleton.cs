@@ -14,7 +14,7 @@ namespace WebAPI.Services
             _qrGenerator = new QRCodeGenerator();
         }
 
-        // Generate QR code as byte[] PNG
+        
         public byte[] GenerateQRImage(string data)
         {
             using var qrData = _qrGenerator.CreateQrCode(data, QRCodeGenerator.ECCLevel.Q);

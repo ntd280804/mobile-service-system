@@ -1,1215 +1,241 @@
---------------------------------------------------------
---  File created - Monday-October-20-2025   
---------------------------------------------------------
---------------------------------------------------------
---  DDL for Type ODCIVARCHAR2LIST_ARRAY
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE TYPE "APP"."ODCIVARCHAR2LIST_ARRAY" AS TABLE OF VARCHAR2(4000);
-
-/
---------------------------------------------------------
---  DDL for Sequence PART_SEQ
---------------------------------------------------------
-
-   CREATE SEQUENCE  "APP"."PART_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 11 NOCACHE  NOORDER  NOCYCLE  NOKEEP  NOSCALE  GLOBAL ;
---------------------------------------------------------
---  DDL for Sequence STOCKIN_ITEM_SEQ
---------------------------------------------------------
-
-   CREATE SEQUENCE  "APP"."STOCKIN_ITEM_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 14 NOCACHE  NOORDER  NOCYCLE  NOKEEP  NOSCALE  GLOBAL ;
---------------------------------------------------------
---  DDL for Sequence STOCKIN_SEQ
---------------------------------------------------------
-
-   CREATE SEQUENCE  "APP"."STOCKIN_SEQ"  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 11 NOCACHE  NOORDER  NOCYCLE  NOKEEP  NOSCALE  GLOBAL ;
---------------------------------------------------------
---  DDL for Table ASSIGNMENT
---------------------------------------------------------
-
-  CREATE TABLE "APP"."ASSIGNMENT" 
-   (	"ASSIGN_ID" NUMBER, 
-	"ORDER_ID" NUMBER, 
-	"EMP_ID" NUMBER, 
-	"START_DATE" DATE, 
-	"END_DATE" DATE, 
-	"STATUS" VARCHAR2(50 BYTE)
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table CREATE$JAVA$LOB$TABLE
---------------------------------------------------------
-
-  CREATE TABLE "APP"."CREATE$JAVA$LOB$TABLE" 
-   (	"NAME" VARCHAR2(700 BYTE), 
-	"LOB" BLOB, 
-	"LOADTIME" DATE
-   ) SEGMENT CREATION IMMEDIATE 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS" 
- LOB ("LOB") STORE AS SECUREFILE (
-  TABLESPACE "USERS" ENABLE STORAGE IN ROW 4000 CHUNK 8192
-  NOCACHE LOGGING  NOCOMPRESS  KEEP_DUPLICATES 
-  STORAGE(INITIAL 262144 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)) ;
---------------------------------------------------------
---  DDL for Table CUSTOMER
---------------------------------------------------------
-
-  CREATE TABLE "APP"."CUSTOMER" 
-   (	"PHONE" VARCHAR2(20 BYTE), 
-	"FULL_NAME" VARCHAR2(100 BYTE), 
-	"PASSWORD_HASH" VARCHAR2(256 BYTE), 
-	"PUBLIC_KEY" CLOB, 
-	"STATUS" VARCHAR2(10 BYTE) DEFAULT 'ACTIVE', 
-	"CREATED_AT" TIMESTAMP (6) DEFAULT SYSTIMESTAMP, 
-	"EMAIL" VARCHAR2(100 BYTE), 
-	"ADDRESS" VARCHAR2(200 BYTE)
-   ) SEGMENT CREATION IMMEDIATE 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS" 
- LOB ("PUBLIC_KEY") STORE AS SECUREFILE (
-  TABLESPACE "USERS" ENABLE STORAGE IN ROW 4000 CHUNK 8192
-  NOCACHE LOGGING  NOCOMPRESS  KEEP_DUPLICATES 
-  STORAGE(INITIAL 262144 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)) ;
---------------------------------------------------------
---  DDL for Table CUSTOMER_APPOINTMENT
---------------------------------------------------------
-
-  CREATE TABLE "APP"."CUSTOMER_APPOINTMENT" 
-   (	"APPOINTMENT_ID" NUMBER, 
-	"CUSTOMER_PHONE" VARCHAR2(20 BYTE), 
-	"APPOINTMENT_DATE" DATE, 
-	"STATUS" VARCHAR2(20 BYTE) DEFAULT 'SCHEDULED', 
-	"DESCRIPTION" VARCHAR2(500 BYTE)
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table CUSTOMER_KEYS
---------------------------------------------------------
-
-  CREATE TABLE "APP"."CUSTOMER_KEYS" 
-   (	"CUSTOMER_ID" VARCHAR2(20 BYTE), 
-	"PRIVATE_KEY" CLOB
-   ) SEGMENT CREATION IMMEDIATE 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS" 
- LOB ("PRIVATE_KEY") STORE AS SECUREFILE (
-  TABLESPACE "USERS" ENABLE STORAGE IN ROW 4000 CHUNK 8192
-  NOCACHE LOGGING  NOCOMPRESS  KEEP_DUPLICATES 
-  STORAGE(INITIAL 262144 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)) ;
---------------------------------------------------------
---  DDL for Table EMPLOYEE
---------------------------------------------------------
-
-  CREATE TABLE "APP"."EMPLOYEE" 
-   (	"EMP_ID" NUMBER GENERATED BY DEFAULT AS IDENTITY MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE  NOKEEP  NOSCALE , 
-	"FULL_NAME" VARCHAR2(100 BYTE), 
-	"USERNAME" VARCHAR2(50 BYTE), 
-	"PASSWORD_HASH" VARCHAR2(256 BYTE), 
-	"PUBLIC_KEY" CLOB, 
-	"STATUS" VARCHAR2(10 BYTE) DEFAULT 'ACTIVE', 
-	"CREATED_AT" TIMESTAMP (6) DEFAULT SYSTIMESTAMP, 
-	"EMAIL" VARCHAR2(100 BYTE), 
-	"PHONE" VARCHAR2(20 BYTE)
-   ) SEGMENT CREATION IMMEDIATE 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS" 
- LOB ("PUBLIC_KEY") STORE AS SECUREFILE (
-  TABLESPACE "USERS" ENABLE STORAGE IN ROW 4000 CHUNK 8192
-  NOCACHE LOGGING  NOCOMPRESS  KEEP_DUPLICATES 
-  STORAGE(INITIAL 262144 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)) ;
-  GRANT SELECT ON "APP"."EMPLOYEE" TO "ADMIN1";
-  GRANT UPDATE ON "APP"."EMPLOYEE" TO "ADMIN1";
-  GRANT SELECT ON "APP"."EMPLOYEE" TO "TIEPTAN1";
-  GRANT UPDATE ON "APP"."EMPLOYEE" TO "TIEPTAN1";
-  GRANT UPDATE ON "APP"."EMPLOYEE" TO "ADMIN2";
-  GRANT SELECT ON "APP"."EMPLOYEE" TO "ADMIN2";
-  GRANT SELECT ON "APP"."EMPLOYEE" TO "ADMIN3";
-  GRANT UPDATE ON "APP"."EMPLOYEE" TO "ADMIN3";
-  GRANT SELECT ON "APP"."EMPLOYEE" TO "ADMIN4";
-  GRANT UPDATE ON "APP"."EMPLOYEE" TO "ADMIN4";
-  GRANT SELECT ON "APP"."EMPLOYEE" TO "ABC1";
-  GRANT UPDATE ON "APP"."EMPLOYEE" TO "ABC1";
---------------------------------------------------------
---  DDL for Table EMPLOYEE_KEYS
---------------------------------------------------------
-
-  CREATE TABLE "APP"."EMPLOYEE_KEYS" 
-   (	"EMP_ID" NUMBER, 
-	"PRIVATE_KEY" CLOB
-   ) SEGMENT CREATION IMMEDIATE 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS" 
- LOB ("PRIVATE_KEY") STORE AS SECUREFILE (
-  TABLESPACE "USERS" ENABLE STORAGE IN ROW 4000 CHUNK 8192
-  NOCACHE LOGGING  NOCOMPRESS  KEEP_DUPLICATES 
-  STORAGE(INITIAL 262144 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)) ;
---------------------------------------------------------
---  DDL for Table EMPLOYEE_SHIFT
---------------------------------------------------------
-
-  CREATE TABLE "APP"."EMPLOYEE_SHIFT" 
-   (	"SHIFT_ID" NUMBER, 
-	"EMP_ID" NUMBER, 
-	"SHIFT_DATE" DATE, 
-	"START_TIME" TIMESTAMP (6), 
-	"END_TIME" TIMESTAMP (6), 
-	"STATUS" VARCHAR2(20 BYTE) DEFAULT 'SCHEDULED'
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table ORDER_REQUEST
---------------------------------------------------------
-
-  CREATE TABLE "APP"."ORDER_REQUEST" 
-   (	"ORDER_ID" NUMBER, 
-	"CUSTOMER_PHONE" VARCHAR2(20 BYTE), 
-	"RECEIVER_EMP" NUMBER, 
-	"ORDER_TYPE" VARCHAR2(20 BYTE), 
-	"RECEIVED_DATE" DATE, 
-	"STATUS" VARCHAR2(50 BYTE), 
-	"DESCRIPTION" VARCHAR2(500 BYTE)
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table PART
---------------------------------------------------------
-
-  CREATE TABLE "APP"."PART" 
-   (	"PART_ID" NUMBER, 
-	"NAME" VARCHAR2(100 BYTE), 
-	"MANUFACTURER" VARCHAR2(100 BYTE), 
-	"SERIAL" VARCHAR2(50 BYTE), 
-	"STATUS" VARCHAR2(50 BYTE), 
-	"STOCKIN_ITEM_ID" NUMBER, 
-	"ORDER_ID" NUMBER
-   ) SEGMENT CREATION IMMEDIATE 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table PART_REQUEST
---------------------------------------------------------
-
-  CREATE TABLE "APP"."PART_REQUEST" 
-   (	"REQUEST_ID" NUMBER, 
-	"ORDER_ID" NUMBER, 
-	"EMP_ID" NUMBER, 
-	"REQUEST_DATE" DATE, 
-	"STATUS" VARCHAR2(50 BYTE)
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table PART_REQUEST_ITEM
---------------------------------------------------------
-
-  CREATE TABLE "APP"."PART_REQUEST_ITEM" 
-   (	"REQUEST_ITEM_ID" NUMBER, 
-	"REQUEST_ID" NUMBER, 
-	"PART_ID" NUMBER
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table STOCK_IN
---------------------------------------------------------
-
-  CREATE TABLE "APP"."STOCK_IN" 
-   (	"STOCKIN_ID" NUMBER, 
-	"EMP_ID" NUMBER, 
-	"IN_DATE" DATE, 
-	"NOTE" VARCHAR2(200 BYTE)
-   ) SEGMENT CREATION IMMEDIATE 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table STOCK_IN_ITEM
---------------------------------------------------------
-
-  CREATE TABLE "APP"."STOCK_IN_ITEM" 
-   (	"STOCKIN_ITEM_ID" NUMBER, 
-	"STOCKIN_ID" NUMBER, 
-	"PART_NAME" VARCHAR2(100 BYTE), 
-	"MANUFACTURER" VARCHAR2(100 BYTE), 
-	"SERIAL" VARCHAR2(50 BYTE), 
-	"STATUS" VARCHAR2(50 BYTE) DEFAULT 'IN_STOCK'
-   ) SEGMENT CREATION IMMEDIATE 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table STOCK_OUT
---------------------------------------------------------
-
-  CREATE TABLE "APP"."STOCK_OUT" 
-   (	"STOCKOUT_ID" NUMBER, 
-	"ORDER_ID" NUMBER, 
-	"EMP_ID" NUMBER, 
-	"OUT_DATE" DATE, 
-	"NOTE" VARCHAR2(200 BYTE)
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table STOCK_OUT_ITEM
---------------------------------------------------------
-
-  CREATE TABLE "APP"."STOCK_OUT_ITEM" 
-   (	"STOCKOUT_ITEM_ID" NUMBER, 
-	"STOCKOUT_ID" NUMBER, 
-	"PART_ID" NUMBER
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
---------------------------------------------------------
---  DDL for Table USER_OTP_LOG
---------------------------------------------------------
-
-  CREATE TABLE "APP"."USER_OTP_LOG" 
-   (	"ID" NUMBER GENERATED BY DEFAULT AS IDENTITY MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 NOORDER  NOCYCLE  NOKEEP  NOSCALE , 
-	"USER_ID" NUMBER, 
-	"USERNAME" VARCHAR2(100 BYTE), 
-	"OTP" VARCHAR2(10 BYTE), 
-	"CREATED_AT" TIMESTAMP (6) DEFAULT SYSTIMESTAMP, 
-	"EXPIRED_AT" TIMESTAMP (6), 
-	"USED" CHAR(1 BYTE) DEFAULT 'N'
-   ) SEGMENT CREATION DEFERRED 
-  PCTFREE 10 PCTUSED 40 INITRANS 1 MAXTRANS 255 
- NOCOMPRESS LOGGING
-  TABLESPACE "USERS" ;
-REM INSERTING into APP.ASSIGNMENT
-SET DEFINE OFF;
-REM INSERTING into APP.CREATE$JAVA$LOB$TABLE
-SET DEFINE OFF;
-REM INSERTING into APP.CUSTOMER
-SET DEFINE OFF;
-Insert into APP.CUSTOMER (PHONE,FULL_NAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,ADDRESS) values ('0332880207','abc','BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD','ACTIVE',to_timestamp('16-OCT-25 06.06.19.788865000 AM','DD-MON-RR HH.MI.SSXFF AM'),'abc@gmail.com','371aaaa');
-Insert into APP.CUSTOMER (PHONE,FULL_NAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,ADDRESS) values ('0583118314','abc','BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD','ACTIVE',to_timestamp('16-OCT-25 06.07.36.422827000 AM','DD-MON-RR HH.MI.SSXFF AM'),'abc1@gmail.com','123');
-Insert into APP.CUSTOMER (PHONE,FULL_NAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,ADDRESS) values ('123','123','A665A45920422F9D417E4867EFDC4FB8A04A1F3FFF1FA07E998E86F7F7A27AE3','ACTIVE',to_timestamp('19-OCT-25 10.01.52.310431000 AM','DD-MON-RR HH.MI.SSXFF AM'),'123@gmail.com','123');
-Insert into APP.CUSTOMER (PHONE,FULL_NAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,ADDRESS) values ('1234','1234','03AC674216F3E15C761EE1A5E255F067953623C8B388B4459E13F978D7C846F4','ACTIVE',to_timestamp('19-OCT-25 10.03.39.057941000 AM','DD-MON-RR HH.MI.SSXFF AM'),'1234@gmail.com','1234');
-REM INSERTING into APP.CUSTOMER_APPOINTMENT
-SET DEFINE OFF;
-REM INSERTING into APP.CUSTOMER_KEYS
-SET DEFINE OFF;
-Insert into APP.CUSTOMER_KEYS (CUSTOMER_ID) values ('0332880207');
-Insert into APP.CUSTOMER_KEYS (CUSTOMER_ID) values ('0583118314');
-Insert into APP.CUSTOMER_KEYS (CUSTOMER_ID) values ('123');
-Insert into APP.CUSTOMER_KEYS (CUSTOMER_ID) values ('1234');
-REM INSERTING into APP.EMPLOYEE
-SET DEFINE OFF;
-Insert into APP.EMPLOYEE (EMP_ID,FULL_NAME,USERNAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,PHONE) values (1,'Admin1','Admin1','0AFB00138D8E73348EC1FE41FD3D3A8FCBD90156B263BFA5791BA0E095F42CFC','ACTIVE',to_timestamp('16-OCT-25 05.51.45.189478000 AM','DD-MON-RR HH.MI.SSXFF AM'),'Admin1@example.com','0909123456');
-Insert into APP.EMPLOYEE (EMP_ID,FULL_NAME,USERNAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,PHONE) values (2,'Nguyễn Trần Qiang','Tieptan1','D78ACC7C4CB41047239B0FEE9F5176644AB065FA488ACFC66B0BBD13D4F3768B','ACTIVE',to_timestamp('16-OCT-25 05.51.54.137427000 AM','DD-MON-RR HH.MI.SSXFF AM'),'Tieptan1@gmail.com','1234567890');
-Insert into APP.EMPLOYEE (EMP_ID,FULL_NAME,USERNAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,PHONE) values (6,'Admin2','Admin2','0A7E44CEEF76BDB001C9DB079D5DE4CD3FC583D6A67338863A764F454C3811C4','ACTIVE',to_timestamp('16-OCT-25 05.55.40.641940000 AM','DD-MON-RR HH.MI.SSXFF AM'),'Admin2@example.com','0909523456');
-Insert into APP.EMPLOYEE (EMP_ID,FULL_NAME,USERNAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,PHONE) values (41,'ABC','Admin4','CEC0F51A767107CABF9DCED5F17C60E60BD4858DB0019681BA69CCFC28112488','ACTIVE',to_timestamp('19-OCT-25 07.20.07.143408000 AM','DD-MON-RR HH.MI.SSXFF AM'),'Admin4@gmail.com','1234567898');
-Insert into APP.EMPLOYEE (EMP_ID,FULL_NAME,USERNAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,PHONE) values (42,'ABC','ABC1','B5D4045C3F466FA91FE2CC6ABE79232A1A57CDF104F7A26E716E0A1E2789DF78','ACTIVE',to_timestamp('19-OCT-25 08.16.38.949143000 AM','DD-MON-RR HH.MI.SSXFF AM'),'ABC@gmai.com','1234567876');
-Insert into APP.EMPLOYEE (EMP_ID,FULL_NAME,USERNAME,PASSWORD_HASH,STATUS,CREATED_AT,EMAIL,PHONE) values (21,'NguyenTranDinh','Admin3','16AEFDB4E6FEEDB53469C0210C8DEECC650E822550F743C409E00B9A4FEA1393','ACTIVE',to_timestamp('17-OCT-25 01.07.56.574081000 AM','DD-MON-RR HH.MI.SSXFF AM'),'Admin3@gmail.com','1234567893');
-REM INSERTING into APP.EMPLOYEE_KEYS
-SET DEFINE OFF;
-Insert into APP.EMPLOYEE_KEYS (EMP_ID) values (1);
-Insert into APP.EMPLOYEE_KEYS (EMP_ID) values (2);
-Insert into APP.EMPLOYEE_KEYS (EMP_ID) values (6);
-Insert into APP.EMPLOYEE_KEYS (EMP_ID) values (21);
-Insert into APP.EMPLOYEE_KEYS (EMP_ID) values (41);
-Insert into APP.EMPLOYEE_KEYS (EMP_ID) values (42);
-REM INSERTING into APP.EMPLOYEE_SHIFT
-SET DEFINE OFF;
-REM INSERTING into APP.ORDER_REQUEST
-SET DEFINE OFF;
-REM INSERTING into APP.PART
-SET DEFINE OFF;
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (6,'A','A','A','IN_STOCK',6,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (7,'A','A','B','IN_STOCK',8,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (8,'a','a','a','IN_STOCK',9,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (9,'a','a','b','IN_STOCK',12,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (10,'A','A','C','IN_STOCK',13,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (1,'RAM 8GB','Kingston','RAM123456','IN_STOCK',2,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (2,'SSD 512GB','Samsung','SSD654321','IN_STOCK',2,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (3,'CPU','Intel','SN001','IN_STOCK',3,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (4,'RAM','Kingston','SN002','IN_STOCK',4,null);
-Insert into APP.PART (PART_ID,NAME,MANUFACTURER,SERIAL,STATUS,STOCKIN_ITEM_ID,ORDER_ID) values (5,'SSD','Samsung','SN003','IN_STOCK',5,null);
-REM INSERTING into APP.PART_REQUEST
-SET DEFINE OFF;
-REM INSERTING into APP.PART_REQUEST_ITEM
-SET DEFINE OFF;
-REM INSERTING into APP.STOCK_IN
-SET DEFINE OFF;
-Insert into APP.STOCK_IN (STOCKIN_ID,EMP_ID,IN_DATE,NOTE) values (3,1,to_date('19-OCT-25','DD-MON-RR'),'ABC');
-Insert into APP.STOCK_IN (STOCKIN_ID,EMP_ID,IN_DATE,NOTE) values (9,1,to_date('19-OCT-25','DD-MON-RR'),'abc');
-Insert into APP.STOCK_IN (STOCKIN_ID,EMP_ID,IN_DATE,NOTE) values (5,1,to_date('19-OCT-25','DD-MON-RR'),'A');
-Insert into APP.STOCK_IN (STOCKIN_ID,EMP_ID,IN_DATE,NOTE) values (6,1,to_date('19-OCT-25','DD-MON-RR'),'abc');
-Insert into APP.STOCK_IN (STOCKIN_ID,EMP_ID,IN_DATE,NOTE) values (10,1,to_date('19-OCT-25','DD-MON-RR'),'ABC');
-Insert into APP.STOCK_IN (STOCKIN_ID,EMP_ID,IN_DATE,NOTE) values (1,1,to_date('19-OCT-25','DD-MON-RR'),'Nhập lô linh kiện mới');
-Insert into APP.STOCK_IN (STOCKIN_ID,EMP_ID,IN_DATE,NOTE) values (2,1,to_date('19-OCT-25','DD-MON-RR'),'Nhập kho test');
-REM INSERTING into APP.STOCK_IN_ITEM
-SET DEFINE OFF;
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (6,3,'A','A','A','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (8,5,'A','A','B','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (9,6,'a','a','a','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (12,9,'a','a','b','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (13,10,'A','A','C','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (1,1,'RAM 8GB','Kingston','RAM123456','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (2,1,'SSD 512GB','Samsung','SSD654321','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (3,2,'CPU','Intel','SN001','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (4,2,'RAM','Kingston','SN002','IN_STOCK');
-Insert into APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID,STOCKIN_ID,PART_NAME,MANUFACTURER,SERIAL,STATUS) values (5,2,'SSD','Samsung','SN003','IN_STOCK');
-REM INSERTING into APP.STOCK_OUT
-SET DEFINE OFF;
-REM INSERTING into APP.STOCK_OUT_ITEM
-SET DEFINE OFF;
-REM INSERTING into APP.USER_OTP_LOG
-SET DEFINE OFF;
---------------------------------------------------------
---  DDL for Procedure CREATE_PART
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."CREATE_PART" (
-    p_stockin_item_id IN NUMBER,
-    p_part_name IN VARCHAR2,
-    p_manufacturer IN VARCHAR2,
-    p_serial IN VARCHAR2
-)
-AS
-BEGIN
-    INSERT INTO APP.PART (PART_ID, NAME, MANUFACTURER, SERIAL, STATUS, STOCKIN_ITEM_ID)
-    VALUES (PART_SEQ.NEXTVAL, p_part_name, p_manufacturer, p_serial, 'IN_STOCK', p_stockin_item_id);
-END CREATE_PART;
-
-/
-
-  GRANT EXECUTE ON "APP"."CREATE_PART" TO "ADMIN2";
---------------------------------------------------------
---  DDL for Procedure CREATE_STOCKIN
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."CREATE_STOCKIN" (
-    p_emp_id IN NUMBER,
-    p_note IN VARCHAR2,
-    p_stockin_id OUT NUMBER
-)
-AS
-BEGIN
-    INSERT INTO APP.STOCK_IN (STOCKIN_ID, EMP_ID, IN_DATE, NOTE)
-    VALUES (STOCKIN_SEQ.NEXTVAL, p_emp_id, SYSDATE, p_note)
-    RETURNING STOCKIN_ID INTO p_stockin_id;
-END CREATE_STOCKIN;
-
-/
-
-  GRANT EXECUTE ON "APP"."CREATE_STOCKIN" TO "ADMIN2";
---------------------------------------------------------
---  DDL for Procedure CREATE_STOCKIN_ITEM
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."CREATE_STOCKIN_ITEM" (
-    p_stockin_id IN NUMBER,
-    p_part_name IN VARCHAR2,
-    p_manufacturer IN VARCHAR2,
-    p_serial IN VARCHAR2,
-    p_stockin_item_id OUT NUMBER
-)
-AS
-BEGIN
-    INSERT INTO APP.STOCK_IN_ITEM (STOCKIN_ITEM_ID, STOCKIN_ID, PART_NAME, MANUFACTURER, SERIAL, STATUS)
-    VALUES (STOCKIN_ITEM_SEQ.NEXTVAL, p_stockin_id, p_part_name, p_manufacturer, p_serial, 'IN_STOCK')
-    RETURNING STOCKIN_ITEM_ID INTO p_stockin_item_id;
-END CREATE_STOCKIN_ITEM;
-
-/
-
-  GRANT EXECUTE ON "APP"."CREATE_STOCKIN_ITEM" TO "ADMIN2";
---------------------------------------------------------
---  DDL for Procedure GET_ALL_EMPLOYEES
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."GET_ALL_EMPLOYEES" (
-    p_cursor OUT SYS_REFCURSOR
-)
-AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT e.EMP_ID,
-               e.FULL_NAME,
-               e.USERNAME,
-               e.EMAIL,
-               e.PHONE,
-               -- Lấy trạng thái từ DBA_USERS
-               (SELECT ACCOUNT_STATUS 
-                FROM DBA_USERS d 
-                WHERE d.USERNAME = UPPER(e.USERNAME)) AS STATUS
-        FROM APP.EMPLOYEE e;
-END;
-
-/
-
-  GRANT EXECUTE ON "APP"."GET_ALL_EMPLOYEES" TO "ADMIN1";
-  GRANT EXECUTE ON "APP"."GET_ALL_EMPLOYEES" TO "TIEPTAN1";
-  GRANT EXECUTE ON "APP"."GET_ALL_EMPLOYEES" TO "ADMIN2";
-  GRANT EXECUTE ON "APP"."GET_ALL_EMPLOYEES" TO "ADMIN3";
-  GRANT EXECUTE ON "APP"."GET_ALL_EMPLOYEES" TO "ADMIN4";
-  GRANT EXECUTE ON "APP"."GET_ALL_EMPLOYEES" TO "ABC1";
---------------------------------------------------------
---  DDL for Procedure GET_ALL_IMPORTS
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."GET_ALL_IMPORTS" (
-    cur_out OUT SYS_REFCURSOR
-)
-AS
-BEGIN
-    OPEN cur_out FOR
-    SELECT si.STOCKIN_ID, si.EMP_ID, si.IN_DATE, si.NOTE,
-           sii.STOCKIN_ITEM_ID, sii.PART_NAME, sii.MANUFACTURER, sii.SERIAL, sii.STATUS
-    FROM APP.STOCK_IN si
-    LEFT JOIN APP.STOCK_IN_ITEM sii ON si.STOCKIN_ID = sii.STOCKIN_ID
-    ORDER BY si.STOCKIN_ID;
-END GET_ALL_IMPORTS;
-
-/
-
-  GRANT EXECUTE ON "APP"."GET_ALL_IMPORTS" TO "ADMIN2";
---------------------------------------------------------
---  DDL for Procedure GET_EMPLOYEE_BY_ID
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."GET_EMPLOYEE_BY_ID" (
-    p_empid  IN  NUMBER,
-    p_cursor OUT SYS_REFCURSOR
-)
-AS
-BEGIN
-    OPEN p_cursor FOR
-        SELECT e.EMP_ID,
-               e.FULL_NAME,
-               e.USERNAME,
-               e.EMAIL,
-               e.PHONE,
-               -- Lấy trạng thái từ DBA_USERS
-               (SELECT d.ACCOUNT_STATUS
-                FROM DBA_USERS d
-                WHERE d.USERNAME = UPPER(e.USERNAME)) AS STATUS
-        FROM APP.EMPLOYEE e
-        WHERE e.EMP_ID = p_empid;
-END;
-
-/
-
-  GRANT EXECUTE ON "APP"."GET_EMPLOYEE_BY_ID" TO "ADMIN1";
-  GRANT EXECUTE ON "APP"."GET_EMPLOYEE_BY_ID" TO "TIEPTAN1";
-  GRANT EXECUTE ON "APP"."GET_EMPLOYEE_BY_ID" TO "ADMIN2";
-  GRANT EXECUTE ON "APP"."GET_EMPLOYEE_BY_ID" TO "ADMIN3";
-  GRANT EXECUTE ON "APP"."GET_EMPLOYEE_BY_ID" TO "ADMIN4";
-  GRANT EXECUTE ON "APP"."GET_EMPLOYEE_BY_ID" TO "ABC1";
---------------------------------------------------------
---  DDL for Procedure GET_IMPORT_BY_ID
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."GET_IMPORT_BY_ID" (
-    p_stockin_id IN NUMBER,
-    cur_out OUT SYS_REFCURSOR
-)
-AS
-BEGIN
-    OPEN cur_out FOR
-    SELECT si.STOCKIN_ID, si.EMP_ID, si.IN_DATE, si.NOTE,
-           sii.STOCKIN_ITEM_ID, sii.PART_NAME, sii.MANUFACTURER, sii.SERIAL, sii.STATUS
-    FROM APP.STOCK_IN si
-    LEFT JOIN APP.STOCK_IN_ITEM sii ON si.STOCKIN_ID = sii.STOCKIN_ID
-    WHERE si.STOCKIN_ID = p_stockin_id;
-END GET_IMPORT_BY_ID;
-
-/
-
-  GRANT EXECUTE ON "APP"."GET_IMPORT_BY_ID" TO "ADMIN2";
---------------------------------------------------------
---  DDL for Procedure LOGIN_CUSTOMER
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."LOGIN_CUSTOMER" (
-    p_phone        IN  VARCHAR2,
-    p_password     IN  VARCHAR2,
-    p_out_phone    OUT VARCHAR2,
-    p_out_result   OUT VARCHAR2
-) AS
-    PRAGMA AUTONOMOUS_TRANSACTION;
-
-    v_hash       VARCHAR2(256);
-    v_db_hash    VARCHAR2(256);
-    v_status     VARCHAR2(10);
-    v_fail_count NUMBER;
-BEGIN
-    v_hash := HASH_PASSWORD(p_password);
-
-    BEGIN
-        SELECT PASSWORD_HASH, STATUS
-        INTO v_db_hash, v_status
-        FROM CUSTOMER
-        WHERE PHONE = p_phone;
-        p_out_phone := p_phone;
-
-        IF v_status = 'LOCKED' THEN
-            p_out_result := 'ACCOUNT LOCKED';
-            RETURN;
-        END IF;
-
-        IF v_db_hash = v_hash THEN
-            p_out_result := 'SUCCESS';
-        ELSE
-            p_out_result := 'FAILED';
-        END IF;
-
-    EXCEPTION
-        WHEN NO_DATA_FOUND THEN
-
-            p_out_phone := NULL;
-            
-            p_out_result := 'FAILED';
-    END;
-END LOGIN_CUSTOMER;
-
-/
---------------------------------------------------------
---  DDL for Procedure LOGIN_EMPLOYEE
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."LOGIN_EMPLOYEE" (
-    p_username     IN  VARCHAR2,
-    p_password     IN  VARCHAR2,
-    p_out_username OUT VARCHAR2,
-    p_out_result   OUT VARCHAR2,
-    p_out_role     OUT VARCHAR2
-) AS
-    PRAGMA AUTONOMOUS_TRANSACTION;
-
-    v_hash       VARCHAR2(256);
-    v_db_hash    VARCHAR2(256);
-    v_status     VARCHAR2(30);
-BEGIN
-    v_hash := HASH_PASSWORD(p_password);
-
-    BEGIN
-        -- Lấy mật khẩu từ bảng EMPLOYEE
-        SELECT PASSWORD_HASH
-        INTO v_db_hash
-        FROM EMPLOYEE
-        WHERE USERNAME = p_username;
-
-        p_out_username := p_username;
-
-        -- Lấy trạng thái từ DBA_USERS
-        BEGIN
-            SELECT ACCOUNT_STATUS
-            INTO v_status
-            FROM DBA_USERS
-            WHERE USERNAME = UPPER(p_username);
-        EXCEPTION
-            WHEN NO_DATA_FOUND THEN
-                v_status := 'UNKNOWN';
-        END;
-
-        IF v_status LIKE 'LOCKED%' THEN
-            p_out_result := 'ACCOUNT LOCKED';
-            p_out_role := NULL;
-            RETURN;
-        END IF;
-
-        IF v_db_hash = v_hash THEN
-            p_out_result := 'SUCCESS';
-
-            -- Lấy role của user
-            BEGIN
-                SELECT LISTAGG(GRANTED_ROLE, ', ') WITHIN GROUP (ORDER BY GRANTED_ROLE)
-                INTO p_out_role
-                FROM DBA_ROLE_PRIVS
-                WHERE GRANTEE = UPPER(p_username);
-            EXCEPTION
-                WHEN NO_DATA_FOUND THEN
-                    p_out_role := NULL;
-            END;
-
-        ELSE
-            p_out_result := 'FAILED';
-            p_out_role := NULL;
-        END IF;
-
-    EXCEPTION
-        WHEN NO_DATA_FOUND THEN
-            p_out_username := NULL;
-            p_out_result := 'FAILED';
-            p_out_role := NULL;
-    END;
-END LOGIN_EMPLOYEE;
-
-/
---------------------------------------------------------
---  DDL for Procedure REGISTER_CUSTOMER
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."REGISTER_CUSTOMER" (
-    p_phone     IN VARCHAR2,   -- dùng làm PK
-    p_full_name IN VARCHAR2,
-    p_password  IN VARCHAR2,
-    p_email     IN VARCHAR2,
-    p_address   IN VARCHAR2
-)
-AS
-    v_hash VARCHAR2(256);
-    v_pub  CLOB;
-    v_priv CLOB;
-BEGIN
-    -- Hash mật khẩu
-    v_hash := HASH_PASSWORD(p_password);
-
-    -- Sinh cặp RSA
-    RSA_GENERATE_KEYPAIR(2048);
-    v_pub  := RSA_GET_PUBLIC_KEY();
-    v_priv := RSA_GET_PRIVATE_KEY();
-
-    -- 1. Tạo Oracle DB user trước
-    BEGIN
-        EXECUTE IMMEDIATE 'CREATE USER "' || p_phone || '"' ||
-                          ' IDENTIFIED BY "' || p_password || '"' ||
-                          ' DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS';
-
-        EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO "' || p_phone || '"';
-        -- Nếu cần có thể gán thêm quyền select/execute tùy mục đích sử dụng
-    EXCEPTION
-        WHEN OTHERS THEN
-            RAISE_APPLICATION_ERROR(-20002, 'Không thể tạo DB User cho Customer ' || p_phone || ': ' || SQLERRM);
-    END;
-
-    -- 2. Insert vào bảng CUSTOMER (chỉ khi tạo DB user thành công)
-    BEGIN
-        INSERT INTO CUSTOMER(PHONE, FULL_NAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, ADDRESS, STATUS)
-        VALUES (p_phone, p_full_name, v_hash, v_pub, p_email, p_address, 'ACTIVE');
-
-        -- 3. Lưu private key
-        INSERT INTO CUSTOMER_KEYS(CUSTOMER_ID, PRIVATE_KEY)
-        VALUES (p_phone, v_priv);
-
-        COMMIT;
-    EXCEPTION
-        WHEN OTHERS THEN
-            -- Nếu lỗi ở bước insert thì rollback + xóa DB user vừa tạo
-            ROLLBACK;
-            BEGIN
-                EXECUTE IMMEDIATE 'DROP USER "' || p_phone || '" CASCADE';
-            EXCEPTION
-                WHEN OTHERS THEN NULL;
-            END;
-            RAISE;
-    END;
-
-END REGISTER_CUSTOMER;
-
-/
---------------------------------------------------------
---  DDL for Procedure REGISTER_EMPLOYEE
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."REGISTER_EMPLOYEE" (
-    p_empid     IN NUMBER DEFAULT NULL,   -- Nếu NULL, để Oracle tự sinh
-    p_full_name IN VARCHAR2,
-    p_username  IN VARCHAR2,
-    p_password  IN VARCHAR2,
-    p_email     IN VARCHAR2,
-    p_phone     IN VARCHAR2
-)
-AS
-    v_hash        VARCHAR2(256);
-    v_pub         CLOB;
-    v_priv        CLOB;
-    v_empid_used  NUMBER;
-BEGIN
-    -- Hash mật khẩu
-    v_hash := HASH_PASSWORD(p_password);
-
-    -- Sinh cặp RSA
-    RSA_GENERATE_KEYPAIR(2048);
-    v_pub  := RSA_GET_PUBLIC_KEY();
-    v_priv := RSA_GET_PRIVATE_KEY();
-
-    -- 1. Tạo Oracle DB user trước
-    BEGIN
-        EXECUTE IMMEDIATE 'CREATE USER ' || p_username ||
-                  ' IDENTIFIED BY "' || p_password || '" DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS';
-        EXECUTE IMMEDIATE 'GRANT CONNECT, RESOURCE TO ' || p_username;
-
-        -- Gán quyền cần thiết
-        EXECUTE IMMEDIATE 'GRANT SELECT, UPDATE ON EMPLOYEE TO ' || p_username;
-        EXECUTE IMMEDIATE 'GRANT EXECUTE ON REGISTER_EMPLOYEE TO ' || p_username;
-        EXECUTE IMMEDIATE 'GRANT EXECUTE ON GET_ALL_EMPLOYEES TO ' || p_username;
-        EXECUTE IMMEDIATE 'GRANT EXECUTE ON GET_EMPLOYEE_BY_ID TO ' || p_username;
-
-    EXCEPTION
-        WHEN OTHERS THEN
-            -- Nếu tạo user DB bị lỗi → dừng toàn bộ
-            RAISE_APPLICATION_ERROR(-20001, 'Không thể tạo DB User cho nhân viên: ' || SQLERRM);
-    END;
-
-    -- 2. Nếu DB user tạo thành công → insert vào EMPLOYEE
-    IF p_empid IS NULL THEN
-        INSERT INTO EMPLOYEE(FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE)
-        VALUES (p_full_name, p_username, v_hash, v_pub, p_email, p_phone)
-        RETURNING EMP_ID INTO v_empid_used;
-    ELSE
-        INSERT INTO EMPLOYEE(EMP_ID, FULL_NAME, USERNAME, PASSWORD_HASH, PUBLIC_KEY, EMAIL, PHONE)
-        VALUES (p_empid, p_full_name, p_username, v_hash, v_pub, p_email, p_phone);
-        v_empid_used := p_empid;
-    END IF;
-
-    -- 3. Lưu private key
-    INSERT INTO EMPLOYEE_KEYS(EMP_ID, PRIVATE_KEY)
-    VALUES (v_empid_used, v_priv);
-    
-    COMMIT;
-
-EXCEPTION
-    WHEN OTHERS THEN
-        -- Nếu lỗi sau khi tạo user DB, xóa user để rollback sạch
-        BEGIN
-            EXECUTE IMMEDIATE 'DROP USER ' || p_username || ' CASCADE';
-        EXCEPTION
-            WHEN OTHERS THEN NULL;
-        END;
-        RAISE;
-END;
-
-/
-
-  GRANT EXECUTE ON "APP"."REGISTER_EMPLOYEE" TO "ADMIN";
-  GRANT EXECUTE ON "APP"."REGISTER_EMPLOYEE" TO "ADMIN1";
-  GRANT EXECUTE ON "APP"."REGISTER_EMPLOYEE" TO "TIEPTAN1";
-  GRANT EXECUTE ON "APP"."REGISTER_EMPLOYEE" TO "ADMIN2";
-  GRANT EXECUTE ON "APP"."REGISTER_EMPLOYEE" TO "ADMIN3";
-  GRANT EXECUTE ON "APP"."REGISTER_EMPLOYEE" TO "ADMIN4";
-  GRANT EXECUTE ON "APP"."REGISTER_EMPLOYEE" TO "ABC1";
---------------------------------------------------------
---  DDL for Procedure RSA_GENERATE_KEYPAIR
---------------------------------------------------------
-set define off;
-
-  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."RSA_GENERATE_KEYPAIR" (p_size NUMBER)
-AS LANGUAGE JAVA
-NAME 'CryptoRSAWrapper.generateKeyPair(int)';
-
-/
---------------------------------------------------------
---  DDL for Function HASH_PASSWORD
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE FUNCTION "APP"."HASH_PASSWORD" (p_password VARCHAR2) RETURN VARCHAR2 IS
-    v_raw RAW(32);
-BEGIN
-    v_raw := DBMS_CRYPTO.HASH(
-        UTL_I18N.STRING_TO_RAW(p_password, 'AL32UTF8'),
-        DBMS_CRYPTO.HASH_SH256
-    );
-    RETURN RAWTOHEX(v_raw);
-END;
-
-/
---------------------------------------------------------
---  DDL for Function RSA_DECRYPT
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE FUNCTION "APP"."RSA_DECRYPT" (p_cipher VARCHAR2, p_priv VARCHAR2) RETURN VARCHAR2 AS LANGUAGE JAVA
-NAME 'CryptoRSAWrapper.decrypt(java.lang.String, java.lang.String) return java.lang.String';
-
-/
---------------------------------------------------------
---  DDL for Function RSA_ENCRYPT
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE FUNCTION "APP"."RSA_ENCRYPT" (p_plain VARCHAR2, p_pub VARCHAR2) RETURN VARCHAR2 AS LANGUAGE JAVA
-NAME 'CryptoRSAWrapper.encrypt(java.lang.String, java.lang.String) return java.lang.String';
-
-/
---------------------------------------------------------
---  DDL for Function RSA_GET_PRIVATE_KEY
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE FUNCTION "APP"."RSA_GET_PRIVATE_KEY" RETURN VARCHAR2 AS LANGUAGE JAVA
-NAME 'CryptoRSAWrapper.getPrivateKey() return java.lang.String';
-
-/
---------------------------------------------------------
---  DDL for Function RSA_GET_PUBLIC_KEY
---------------------------------------------------------
-
-  CREATE OR REPLACE EDITIONABLE FUNCTION "APP"."RSA_GET_PUBLIC_KEY" RETURN VARCHAR2 AS LANGUAGE JAVA
-NAME 'CryptoRSAWrapper.getPublicKey() return java.lang.String';
-
-/
---------------------------------------------------------
---  Constraints for Table EMPLOYEE_SHIFT
---------------------------------------------------------
-
-  ALTER TABLE "APP"."EMPLOYEE_SHIFT" MODIFY ("EMP_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE_SHIFT" MODIFY ("SHIFT_DATE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE_SHIFT" MODIFY ("START_TIME" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE_SHIFT" MODIFY ("END_TIME" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE_SHIFT" ADD PRIMARY KEY ("SHIFT_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table CREATE$JAVA$LOB$TABLE
---------------------------------------------------------
-
-  ALTER TABLE "APP"."CREATE$JAVA$LOB$TABLE" ADD UNIQUE ("NAME")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table STOCK_IN_ITEM
---------------------------------------------------------
-
-  ALTER TABLE "APP"."STOCK_IN_ITEM" MODIFY ("STOCKIN_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_IN_ITEM" MODIFY ("PART_NAME" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_IN_ITEM" MODIFY ("SERIAL" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_IN_ITEM" ADD PRIMARY KEY ("STOCKIN_ITEM_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
-  ALTER TABLE "APP"."STOCK_IN_ITEM" ADD UNIQUE ("SERIAL")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table USER_OTP_LOG
---------------------------------------------------------
-
-  ALTER TABLE "APP"."USER_OTP_LOG" MODIFY ("ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."USER_OTP_LOG" MODIFY ("USER_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."USER_OTP_LOG" MODIFY ("USERNAME" NOT NULL ENABLE);
-  ALTER TABLE "APP"."USER_OTP_LOG" MODIFY ("OTP" NOT NULL ENABLE);
-  ALTER TABLE "APP"."USER_OTP_LOG" ADD PRIMARY KEY ("ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table ASSIGNMENT
---------------------------------------------------------
-
-  ALTER TABLE "APP"."ASSIGNMENT" MODIFY ("ORDER_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."ASSIGNMENT" MODIFY ("EMP_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."ASSIGNMENT" ADD PRIMARY KEY ("ASSIGN_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table EMPLOYEE_KEYS
---------------------------------------------------------
-
-  ALTER TABLE "APP"."EMPLOYEE_KEYS" ADD PRIMARY KEY ("EMP_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table PART
---------------------------------------------------------
-
-  ALTER TABLE "APP"."PART" MODIFY ("NAME" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART" MODIFY ("SERIAL" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART" MODIFY ("STATUS" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART" MODIFY ("STOCKIN_ITEM_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART" ADD PRIMARY KEY ("PART_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
-  ALTER TABLE "APP"."PART" ADD UNIQUE ("SERIAL")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table CUSTOMER
---------------------------------------------------------
-
-  ALTER TABLE "APP"."CUSTOMER" MODIFY ("FULL_NAME" NOT NULL ENABLE);
-  ALTER TABLE "APP"."CUSTOMER" ADD PRIMARY KEY ("PHONE")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table CUSTOMER_KEYS
---------------------------------------------------------
-
-  ALTER TABLE "APP"."CUSTOMER_KEYS" ADD PRIMARY KEY ("CUSTOMER_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table PART_REQUEST_ITEM
---------------------------------------------------------
-
-  ALTER TABLE "APP"."PART_REQUEST_ITEM" MODIFY ("REQUEST_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART_REQUEST_ITEM" MODIFY ("PART_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART_REQUEST_ITEM" ADD PRIMARY KEY ("REQUEST_ITEM_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table STOCK_IN
---------------------------------------------------------
-
-  ALTER TABLE "APP"."STOCK_IN" MODIFY ("EMP_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_IN" MODIFY ("IN_DATE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_IN" ADD PRIMARY KEY ("STOCKIN_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table STOCK_OUT_ITEM
---------------------------------------------------------
-
-  ALTER TABLE "APP"."STOCK_OUT_ITEM" MODIFY ("STOCKOUT_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_OUT_ITEM" MODIFY ("PART_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_OUT_ITEM" ADD PRIMARY KEY ("STOCKOUT_ITEM_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table CUSTOMER_APPOINTMENT
---------------------------------------------------------
-
-  ALTER TABLE "APP"."CUSTOMER_APPOINTMENT" MODIFY ("CUSTOMER_PHONE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."CUSTOMER_APPOINTMENT" MODIFY ("APPOINTMENT_DATE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."CUSTOMER_APPOINTMENT" ADD PRIMARY KEY ("APPOINTMENT_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table PART_REQUEST
---------------------------------------------------------
-
-  ALTER TABLE "APP"."PART_REQUEST" MODIFY ("ORDER_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART_REQUEST" MODIFY ("EMP_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART_REQUEST" MODIFY ("REQUEST_DATE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART_REQUEST" MODIFY ("STATUS" NOT NULL ENABLE);
-  ALTER TABLE "APP"."PART_REQUEST" ADD PRIMARY KEY ("REQUEST_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table STOCK_OUT
---------------------------------------------------------
-
-  ALTER TABLE "APP"."STOCK_OUT" MODIFY ("ORDER_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_OUT" MODIFY ("EMP_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_OUT" MODIFY ("OUT_DATE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."STOCK_OUT" ADD PRIMARY KEY ("STOCKOUT_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table EMPLOYEE
---------------------------------------------------------
-
-  ALTER TABLE "APP"."EMPLOYEE" MODIFY ("EMP_ID" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE" MODIFY ("FULL_NAME" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE" MODIFY ("USERNAME" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE" MODIFY ("PASSWORD_HASH" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE" MODIFY ("EMAIL" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE" MODIFY ("PHONE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."EMPLOYEE" ADD PRIMARY KEY ("EMP_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
-  ALTER TABLE "APP"."EMPLOYEE" ADD UNIQUE ("USERNAME")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
-  ALTER TABLE "APP"."EMPLOYEE" ADD UNIQUE ("EMAIL")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
-  ALTER TABLE "APP"."EMPLOYEE" ADD UNIQUE ("PHONE")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645
-  PCTINCREASE 0 FREELISTS 1 FREELIST GROUPS 1
-  BUFFER_POOL DEFAULT FLASH_CACHE DEFAULT CELL_FLASH_CACHE DEFAULT)
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Constraints for Table ORDER_REQUEST
---------------------------------------------------------
-
-  ALTER TABLE "APP"."ORDER_REQUEST" MODIFY ("CUSTOMER_PHONE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."ORDER_REQUEST" MODIFY ("RECEIVER_EMP" NOT NULL ENABLE);
-  ALTER TABLE "APP"."ORDER_REQUEST" MODIFY ("ORDER_TYPE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."ORDER_REQUEST" MODIFY ("RECEIVED_DATE" NOT NULL ENABLE);
-  ALTER TABLE "APP"."ORDER_REQUEST" MODIFY ("STATUS" NOT NULL ENABLE);
-  ALTER TABLE "APP"."ORDER_REQUEST" ADD PRIMARY KEY ("ORDER_ID")
-  USING INDEX PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS 
-  TABLESPACE "USERS"  ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table ASSIGNMENT
---------------------------------------------------------
-
-  ALTER TABLE "APP"."ASSIGNMENT" ADD CONSTRAINT "FK_ASSIGN_ORDER" FOREIGN KEY ("ORDER_ID")
-	  REFERENCES "APP"."ORDER_REQUEST" ("ORDER_ID") ENABLE;
-  ALTER TABLE "APP"."ASSIGNMENT" ADD CONSTRAINT "FK_ASSIGN_EMPLOYEE" FOREIGN KEY ("EMP_ID")
-	  REFERENCES "APP"."EMPLOYEE" ("EMP_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table CUSTOMER_APPOINTMENT
---------------------------------------------------------
-
-  ALTER TABLE "APP"."CUSTOMER_APPOINTMENT" ADD CONSTRAINT "FK_APPOINTMENT_CUSTOMER" FOREIGN KEY ("CUSTOMER_PHONE")
-	  REFERENCES "APP"."CUSTOMER" ("PHONE") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table CUSTOMER_KEYS
---------------------------------------------------------
-
-  ALTER TABLE "APP"."CUSTOMER_KEYS" ADD CONSTRAINT "FK_CUSTOMER_KEYS" FOREIGN KEY ("CUSTOMER_ID")
-	  REFERENCES "APP"."CUSTOMER" ("PHONE") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table EMPLOYEE_KEYS
---------------------------------------------------------
-
-  ALTER TABLE "APP"."EMPLOYEE_KEYS" ADD CONSTRAINT "FK_EMPLOYEE_KEYS" FOREIGN KEY ("EMP_ID")
-	  REFERENCES "APP"."EMPLOYEE" ("EMP_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table EMPLOYEE_SHIFT
---------------------------------------------------------
-
-  ALTER TABLE "APP"."EMPLOYEE_SHIFT" ADD CONSTRAINT "FK_SHIFT_EMPLOYEE" FOREIGN KEY ("EMP_ID")
-	  REFERENCES "APP"."EMPLOYEE" ("EMP_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table ORDER_REQUEST
---------------------------------------------------------
-
-  ALTER TABLE "APP"."ORDER_REQUEST" ADD CONSTRAINT "FK_ORDER_CUSTOMER" FOREIGN KEY ("CUSTOMER_PHONE")
-	  REFERENCES "APP"."CUSTOMER" ("PHONE") ENABLE;
-  ALTER TABLE "APP"."ORDER_REQUEST" ADD CONSTRAINT "FK_ORDER_EMPLOYEE" FOREIGN KEY ("RECEIVER_EMP")
-	  REFERENCES "APP"."EMPLOYEE" ("EMP_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table PART
---------------------------------------------------------
-
-  ALTER TABLE "APP"."PART" ADD CONSTRAINT "FK_PART_STOCKINITEM" FOREIGN KEY ("STOCKIN_ITEM_ID")
-	  REFERENCES "APP"."STOCK_IN_ITEM" ("STOCKIN_ITEM_ID") ENABLE;
-  ALTER TABLE "APP"."PART" ADD CONSTRAINT "FK_PART_ORDER" FOREIGN KEY ("ORDER_ID")
-	  REFERENCES "APP"."ORDER_REQUEST" ("ORDER_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table PART_REQUEST
---------------------------------------------------------
-
-  ALTER TABLE "APP"."PART_REQUEST" ADD CONSTRAINT "FK_PARTREQUEST_ORDER" FOREIGN KEY ("ORDER_ID")
-	  REFERENCES "APP"."ORDER_REQUEST" ("ORDER_ID") ENABLE;
-  ALTER TABLE "APP"."PART_REQUEST" ADD CONSTRAINT "FK_PARTREQUEST_EMPLOYEE" FOREIGN KEY ("EMP_ID")
-	  REFERENCES "APP"."EMPLOYEE" ("EMP_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table PART_REQUEST_ITEM
---------------------------------------------------------
-
-  ALTER TABLE "APP"."PART_REQUEST_ITEM" ADD CONSTRAINT "FK_PARTREQUESTITEM_REQUEST" FOREIGN KEY ("REQUEST_ID")
-	  REFERENCES "APP"."PART_REQUEST" ("REQUEST_ID") ENABLE;
-  ALTER TABLE "APP"."PART_REQUEST_ITEM" ADD CONSTRAINT "FK_PARTREQUESTITEM_PART" FOREIGN KEY ("PART_ID")
-	  REFERENCES "APP"."PART" ("PART_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table STOCK_IN
---------------------------------------------------------
-
-  ALTER TABLE "APP"."STOCK_IN" ADD CONSTRAINT "FK_STOCKIN_EMPLOYEE" FOREIGN KEY ("EMP_ID")
-	  REFERENCES "APP"."EMPLOYEE" ("EMP_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table STOCK_IN_ITEM
---------------------------------------------------------
-
-  ALTER TABLE "APP"."STOCK_IN_ITEM" ADD CONSTRAINT "FK_STOCKINITEM_STOCKIN" FOREIGN KEY ("STOCKIN_ID")
-	  REFERENCES "APP"."STOCK_IN" ("STOCKIN_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table STOCK_OUT
---------------------------------------------------------
-
-  ALTER TABLE "APP"."STOCK_OUT" ADD CONSTRAINT "FK_STOCKOUT_ORDER" FOREIGN KEY ("ORDER_ID")
-	  REFERENCES "APP"."ORDER_REQUEST" ("ORDER_ID") ENABLE;
-  ALTER TABLE "APP"."STOCK_OUT" ADD CONSTRAINT "FK_STOCKOUT_EMPLOYEE" FOREIGN KEY ("EMP_ID")
-	  REFERENCES "APP"."EMPLOYEE" ("EMP_ID") ENABLE;
---------------------------------------------------------
---  Ref Constraints for Table STOCK_OUT_ITEM
---------------------------------------------------------
-
-  ALTER TABLE "APP"."STOCK_OUT_ITEM" ADD CONSTRAINT "FK_STOCKOUTITEM_STOCKOUT" FOREIGN KEY ("STOCKOUT_ID")
-	  REFERENCES "APP"."STOCK_OUT" ("STOCKOUT_ID") ENABLE;
-  ALTER TABLE "APP"."STOCK_OUT_ITEM" ADD CONSTRAINT "FK_STOCKOUTITEM_PART" FOREIGN KEY ("PART_ID")
-	  REFERENCES "APP"."PART" ("PART_ID") ENABLE;
+-- ===========================================
+-- 0. XÓA TẤT CẢ CÁC BẢNG (Child trước Parent)
+-- ===========================================
+
+-- Drop bảng child trước để tránh lỗi constraint
+DROP TABLE CUSTOMER_APPOINTMENT CASCADE CONSTRAINTS PURGE;
+DROP TABLE EMPLOYEE_SHIFT CASCADE CONSTRAINTS PURGE;
+DROP TABLE USER_OTP_LOG CASCADE CONSTRAINTS PURGE;
+DROP TABLE PART_REQUEST_ITEM CASCADE CONSTRAINTS PURGE;
+DROP TABLE PART_REQUEST CASCADE CONSTRAINTS PURGE;
+DROP TABLE STOCK_OUT_ITEM CASCADE CONSTRAINTS PURGE;
+DROP TABLE STOCK_OUT CASCADE CONSTRAINTS PURGE;
+DROP TABLE PART CASCADE CONSTRAINTS PURGE;
+DROP TABLE STOCK_IN_ITEM CASCADE CONSTRAINTS PURGE;
+DROP TABLE STOCK_IN CASCADE CONSTRAINTS PURGE;
+DROP TABLE ASSIGNMENT CASCADE CONSTRAINTS PURGE;
+DROP TABLE ORDER_REQUEST CASCADE CONSTRAINTS PURGE;
+DROP TABLE CUSTOMER CASCADE CONSTRAINTS PURGE;
+DROP TABLE EMPLOYEE CASCADE CONSTRAINTS PURGE;
+
+
+-- ===========================================
+-- 1. BẢNG CHÍNH
+-- ===========================================
+
+-- 1.1 Bảng EMPLOYEE: thông tin nhân viên
+CREATE TABLE EMPLOYEE (
+    EMP_ID         NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    FULL_NAME      VARCHAR2(100) NOT NULL,
+    USERNAME       VARCHAR2(50) UNIQUE NOT NULL,
+    PASSWORD_HASH  VARCHAR2(256) NOT NULL,
+    PUBLIC_KEY     CLOB,
+    STATUS         VARCHAR2(10) DEFAULT 'ACTIVE',
+    CREATED_AT     TIMESTAMP DEFAULT SYSTIMESTAMP,
+    EMAIL          VARCHAR2(100) UNIQUE NOT NULL,
+    PHONE          VARCHAR2(20) UNIQUE NOT NULL
+);
+
+-- 1.2 Bảng CUSTOMER: thông tin khách hàng
+CREATE TABLE CUSTOMER (
+    PHONE         VARCHAR2(20) PRIMARY KEY,
+    FULL_NAME     VARCHAR2(100) NOT NULL,
+    PASSWORD_HASH VARCHAR2(256),
+    PUBLIC_KEY    CLOB,
+    STATUS        VARCHAR2(10) DEFAULT 'ACTIVE',
+    CREATED_AT    TIMESTAMP DEFAULT SYSTIMESTAMP,
+    EMAIL         VARCHAR2(100),
+    ADDRESS       VARCHAR2(200)
+);
+
+-- ===========================================
+-- 4. BẢNG QUẢN LÝ ORDER / ASSIGNMENT
+-- ===========================================
+
+-- 4.1 Bảng ORDER_REQUEST: lưu thông tin order
+CREATE TABLE ORDER_REQUEST (
+    ORDER_ID       NUMBER PRIMARY KEY,
+    CUSTOMER_PHONE VARCHAR2(20) NOT NULL,
+    RECEIVER_EMP   NUMBER NOT NULL,
+    ORDER_TYPE     VARCHAR2(20) NOT NULL,
+    RECEIVED_DATE  DATE NOT NULL,
+    STATUS         VARCHAR2(50) NOT NULL,
+    DESCRIPTION    VARCHAR2(500),
+    CONSTRAINT fk_order_customer FOREIGN KEY (CUSTOMER_PHONE) REFERENCES CUSTOMER(PHONE),
+    CONSTRAINT fk_order_employee FOREIGN KEY (RECEIVER_EMP) REFERENCES EMPLOYEE(EMP_ID)
+);
+
+-- 4.2 Bảng ASSIGNMENT: giao việc nhân viên cho order
+CREATE TABLE ASSIGNMENT (
+    ASSIGN_ID     NUMBER PRIMARY KEY,
+    ORDER_ID      NUMBER NOT NULL,
+    EMP_ID        NUMBER NOT NULL,
+    START_DATE    DATE,
+    END_DATE      DATE,
+    STATUS        VARCHAR2(50),
+    CONSTRAINT fk_assign_order FOREIGN KEY (ORDER_ID) REFERENCES ORDER_REQUEST(ORDER_ID),
+    CONSTRAINT fk_assign_employee FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID)
+);
+
+
+-- ===========================================
+-- 5. BẢNG QUẢN LÝ KHO
+-- ===========================================
+
+-- 5.1 Bảng STOCK_IN: nhập kho
+CREATE TABLE STOCK_IN (
+    STOCKIN_ID    NUMBER PRIMARY KEY,
+    EMP_ID        NUMBER NOT NULL,
+    IN_DATE       DATE NOT NULL,
+    NOTE          VARCHAR2(200),
+	SIGNATURE     VARCHAR2(4000),
+    CONSTRAINT fk_stockin_employee FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID)
+);
+
+-- 5.2 Bảng STOCK_IN_ITEM: chi tiết nhập kho
+CREATE TABLE STOCK_IN_ITEM (
+    STOCKIN_ITEM_ID NUMBER PRIMARY KEY,
+    STOCKIN_ID      NUMBER NOT NULL,
+    PART_NAME       VARCHAR2(100) NOT NULL,
+    MANUFACTURER    VARCHAR2(100),
+    SERIAL          VARCHAR2(50) UNIQUE NOT NULL,
+	PRICE			NUMBER(20,2),
+    CONSTRAINT fk_stockinitem_stockin FOREIGN KEY (STOCKIN_ID) REFERENCES STOCK_IN(STOCKIN_ID)
+);
+
+-- 5.3 Bảng PART: chi tiết linh kiện
+CREATE TABLE PART (
+    PART_ID        NUMBER PRIMARY KEY,
+    NAME           VARCHAR2(100) NOT NULL,
+    MANUFACTURER   VARCHAR2(100),
+    SERIAL         VARCHAR2(50) UNIQUE NOT NULL,
+    STATUS         VARCHAR2(50) NOT NULL,
+    STOCKIN_ITEM_ID NUMBER NOT NULL,
+    ORDER_ID       NUMBER NULL,
+	PRICE			NUMBER(20,2),
+    CONSTRAINT fk_part_stockinitem FOREIGN KEY (STOCKIN_ITEM_ID) REFERENCES STOCK_IN_ITEM(STOCKIN_ITEM_ID),
+    CONSTRAINT fk_part_order FOREIGN KEY (ORDER_ID) REFERENCES ORDER_REQUEST(ORDER_ID)
+);
+
+-- 5.4 Bảng STOCK_OUT: xuất kho
+CREATE TABLE STOCK_OUT (
+    STOCKOUT_ID   NUMBER PRIMARY KEY,
+    ORDER_ID      NUMBER NOT NULL,
+    EMP_ID        NUMBER NOT NULL,
+    OUT_DATE      DATE NOT NULL,
+    NOTE          VARCHAR2(200),
+	SIGNATURE     VARCHAR2(4000),
+    CONSTRAINT fk_stockout_order FOREIGN KEY (ORDER_ID) REFERENCES ORDER_REQUEST(ORDER_ID),
+    CONSTRAINT fk_stockout_employee FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID)
+);
+
+-- 5.5 Bảng STOCK_OUT_ITEM: chi tiết xuất kho
+CREATE TABLE STOCK_OUT_ITEM (
+    STOCKOUT_ITEM_ID NUMBER PRIMARY KEY,
+    STOCKOUT_ID      NUMBER NOT NULL,
+    PART_ID          NUMBER NOT NULL,
+    CONSTRAINT fk_stockoutitem_stockout FOREIGN KEY (STOCKOUT_ID) REFERENCES STOCK_OUT(STOCKOUT_ID),
+    CONSTRAINT fk_stockoutitem_part FOREIGN KEY (PART_ID) REFERENCES PART(PART_ID)
+);
+
+
+-- ===========================================
+-- 6. BẢNG QUẢN LÝ YÊU CẦU LINH KIỆN
+-- ===========================================
+
+-- 6.1 Bảng PART_REQUEST: yêu cầu linh kiện từ order
+CREATE TABLE PART_REQUEST (
+    REQUEST_ID   NUMBER PRIMARY KEY,
+    ORDER_ID     NUMBER NOT NULL,
+    EMP_ID       NUMBER NOT NULL,
+    REQUEST_DATE DATE NOT NULL,
+    STATUS       VARCHAR2(50) NOT NULL,
+    CONSTRAINT fk_partrequest_order FOREIGN KEY (ORDER_ID) REFERENCES ORDER_REQUEST(ORDER_ID),
+    CONSTRAINT fk_partrequest_employee FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID)
+);
+
+-- 6.2 Bảng PART_REQUEST_ITEM: chi tiết yêu cầu linh kiện
+CREATE TABLE PART_REQUEST_ITEM (
+    REQUEST_ITEM_ID NUMBER PRIMARY KEY,
+    REQUEST_ID      NUMBER NOT NULL,
+    PART_ID         NUMBER NOT NULL,
+    CONSTRAINT fk_partrequestitem_request FOREIGN KEY (REQUEST_ID) REFERENCES PART_REQUEST(REQUEST_ID),
+    CONSTRAINT fk_partrequestitem_part FOREIGN KEY (PART_ID) REFERENCES PART(PART_ID)
+);
+
+
+-- ===========================================
+-- 7. BẢNG OTP
+-- ===========================================
+
+CREATE TABLE USER_OTP_LOG (
+    ID         NUMBER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    USER_ID    NUMBER NOT NULL,
+    USERNAME   VARCHAR2(100) NOT NULL,
+    OTP        VARCHAR2(10) NOT NULL,
+    CREATED_AT TIMESTAMP DEFAULT SYSTIMESTAMP,
+    EXPIRED_AT TIMESTAMP,
+    USED       CHAR(1) DEFAULT 'N'
+);
+
+
+-- ===========================================
+-- 8. BẢNG LỊCH LÀM VIỆC
+-- ===========================================
+
+CREATE TABLE EMPLOYEE_SHIFT (
+    SHIFT_ID     NUMBER PRIMARY KEY,
+    EMP_ID       NUMBER NOT NULL,
+    SHIFT_DATE   DATE NOT NULL,
+    START_TIME   TIMESTAMP NOT NULL,
+    END_TIME     TIMESTAMP NOT NULL,
+    STATUS       VARCHAR2(20) DEFAULT 'SCHEDULED',
+    CONSTRAINT fk_shift_employee FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID)
+);
+
+
+-- ===========================================
+-- 9. BẢNG LỊCH HẸN KHÁCH HÀNG
+-- ===========================================
+
+CREATE TABLE CUSTOMER_APPOINTMENT (
+    APPOINTMENT_ID NUMBER PRIMARY KEY,
+    CUSTOMER_PHONE VARCHAR2(20) NOT NULL,
+    APPOINTMENT_DATE DATE NOT NULL,
+    STATUS         VARCHAR2(20) DEFAULT 'SCHEDULED',
+    DESCRIPTION    VARCHAR2(500),
+    CONSTRAINT fk_appointment_customer FOREIGN KEY (CUSTOMER_PHONE) REFERENCES CUSTOMER(PHONE)
+);
+
+-- ===========================================
+-- BẢNG HÓA ĐƠN
+-- ===========================================
+
+CREATE TABLE INVOICE (
+    INVOICE_ID      NUMBER PRIMARY KEY,
+    STOCKOUT_ID     NUMBER NOT NULL,            -- Liên kết với xuất kho
+    CUSTOMER_PHONE  VARCHAR2(20) NOT NULL,      -- Khách hàng mua
+    EMP_ID          NUMBER NOT NULL,            -- Nhân viên xuất hóa đơn
+    INVOICE_DATE    DATE DEFAULT SYSDATE,
+    TOTAL_AMOUNT    NUMBER(20,2) DEFAULT 0,
+    STATUS          VARCHAR2(20) DEFAULT 'PENDING', -- PENDING, PAID, CANCELLED
+    CONSTRAINT fk_invoice_stockout FOREIGN KEY (STOCKOUT_ID) REFERENCES STOCK_OUT(STOCKOUT_ID),
+    CONSTRAINT fk_invoice_customer FOREIGN KEY (CUSTOMER_PHONE) REFERENCES CUSTOMER(PHONE),
+    CONSTRAINT fk_invoice_employee FOREIGN KEY (EMP_ID) REFERENCES EMPLOYEE(EMP_ID)
+);
+
+
+-- ===========================================
+-- BẢNG CHI TIẾT HÓA ĐƠN
+-- ===========================================
+
+CREATE TABLE INVOICE_ITEM (
+    INVOICE_ITEM_ID NUMBER PRIMARY KEY,
+    INVOICE_ID      NUMBER NOT NULL,
+    STOCKOUT_ITEM_ID NUMBER NOT NULL,           -- Liên kết với item xuất kho
+    PART_ID         NUMBER NOT NULL,            -- Dễ truy xuất thông tin part
+    PRICE           NUMBER(20,2) NOT NULL,
+    CONSTRAINT fk_invoiceitem_invoice FOREIGN KEY (INVOICE_ID) REFERENCES INVOICE(INVOICE_ID),
+    CONSTRAINT fk_invoiceitem_stockoutitem FOREIGN KEY (STOCKOUT_ITEM_ID) REFERENCES STOCK_OUT_ITEM(STOCKOUT_ITEM_ID),
+    CONSTRAINT fk_invoiceitem_part FOREIGN KEY (PART_ID) REFERENCES PART(PART_ID)
+);

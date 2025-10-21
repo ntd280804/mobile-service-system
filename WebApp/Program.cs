@@ -1,4 +1,6 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using WebApp.Helpers;
+
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddControllersWithViews();
@@ -30,7 +32,7 @@ builder.WebHost.ConfigureKestrel(options =>
         listenOptions.UseHttps(); // Dùng dev certificate
     });
 });
-
+builder.Services.AddSingleton<OracleClientHelper>();
 
 // --- Nếu muốn HttpContext trong Helper/Service ---
 builder.Services.AddHttpContextAccessor();

@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using WebApp.Helpers;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -10,10 +11,12 @@ namespace WebApp.Areas.Admin.Controllers
     public class RoleController : Controller
     {
         private readonly HttpClient _httpClient;
+        private readonly OracleClientHelper _OracleClientHelper;
 
-        public RoleController(IHttpClientFactory httpClientFactory)
+        public RoleController(IHttpClientFactory httpClientFactory,OracleClientHelper _oracle)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
+            _OracleClientHelper = _oracle;
         }
 
         // DTOs
@@ -40,24 +43,13 @@ namespace WebApp.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var token = HttpContext.Session.GetString("JwtToken");
-            var username = HttpContext.Session.GetString("Username");
-            var platform = HttpContext.Session.GetString("Platform");
-            var sessionId = HttpContext.Session.GetString("SessionId");
-
-            if (string.IsNullOrEmpty(token) ||
-                string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(platform) ||
-                string.IsNullOrEmpty(sessionId))
-            {
-                return RedirectToAction("Login", "Employee", new { area = "Admin" });
-            }
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
 
             var model = new UserRoleViewModel();
 
             try
             {
-                SetOracleHeadersFromSession();
 
                 // Get users
                 var responseUser = await _httpClient.GetAsync("api/Admin/Role/users");
@@ -100,10 +92,11 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["CreateRoleMessage"] = "❌ Tên role không được để trống.";
                 return RedirectToAction(nameof(Index));
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
+                
 
                 var response = await _httpClient.PostAsync($"api/Admin/Role/createrole/{Uri.EscapeDataString(roleName)}", null);
 
@@ -132,10 +125,11 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["DeleteRoleMessage"] = "❌ Tên role không được để trống.";
                 return RedirectToAction(nameof(Index));
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
+                
 
                 var response = await _httpClient.DeleteAsync($"api/Admin/Role/deleterole/{Uri.EscapeDataString(roleName)}");
 
@@ -164,10 +158,11 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["AssignRoleMessage"] = "❌ Vui lòng chọn user và role.";
                 return RedirectToAction(nameof(Index));
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
+                
 
                 var payload = new { UserName = userName, RoleName = roleName };
                 var json = JsonContent.Create(payload);
@@ -200,10 +195,11 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["RevokeRoleMessage"] = "❌ Vui lòng chọn user và role.";
                 return RedirectToAction(nameof(Index));
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
+                
 
                 var payload = new { UserName = userName, RoleName = roleName };
                 var json = JsonContent.Create(payload);
@@ -232,10 +228,11 @@ namespace WebApp.Areas.Admin.Controllers
         {
             if (string.IsNullOrWhiteSpace(username))
                 return BadRequest(new { message = "Username is required." });
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
+                
 
                 var result = await _httpClient.GetFromJsonAsync<List<RoleDto>>(
                     $"api/Admin/Role/roles-of-user/{Uri.EscapeDataString(username)}"
@@ -256,27 +253,5 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
 
-        // Helper to set Oracle headers
-        private void SetOracleHeaders(string token, string username, string platform, string sessionId)
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
-
-            _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
-            _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
-            _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
-        }
-
-        private void SetOracleHeadersFromSession()
-        {
-            var token = HttpContext.Session.GetString("JwtToken");
-            var username = HttpContext.Session.GetString("Username");
-            var platform = HttpContext.Session.GetString("Platform");
-            var sessionId = HttpContext.Session.GetString("SessionId");
-            SetOracleHeaders(token, username, platform, sessionId);
-        }
     }
 }

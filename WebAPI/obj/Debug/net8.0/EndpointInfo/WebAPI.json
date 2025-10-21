@@ -250,6 +250,95 @@
         }
       }
     },
+    "/api/admin/Export/getallexport": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/Export/details/{stockoutId}": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "parameters": [
+          {
+            "name": "stockoutId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/Export/post": {
+      "post": {
+        "tags": [
+          "Export"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportStockDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportStockDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportStockDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/Export/verifysign/{stockoutId}": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "parameters": [
+          {
+            "name": "stockoutId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/admin/Import/getallimport": {
       "get": {
         "tags": [
@@ -331,6 +420,18 @@
               "format": "int32"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Admin/Part": {
+      "get": {
+        "tags": [
+          "Part"
         ],
         "responses": {
           "200": {
@@ -458,28 +559,6 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Admin/QR/{serial}": {
-      "get": {
-        "tags": [
-          "QR"
-        ],
-        "parameters": [
-          {
-            "name": "serial",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -784,6 +863,61 @@
         },
         "additionalProperties": false
       },
+      "ExportItemDto": {
+        "type": "object",
+        "properties": {
+          "partName": {
+            "type": "string",
+            "nullable": true
+          },
+          "manufacturer": {
+            "type": "string",
+            "nullable": true
+          },
+          "serial": {
+            "type": "string",
+            "nullable": true
+          },
+          "price": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExportStockDto": {
+        "type": "object",
+        "properties": {
+          "stockOutId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "empId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "inDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "privateKeyPem": {
+            "type": "string",
+            "nullable": true
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportItemDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ImportItemDto": {
         "type": "object",
         "properties": {
@@ -813,9 +947,9 @@
             "type": "integer",
             "format": "int32"
           },
-          "empId": {
-            "type": "integer",
-            "format": "int32"
+          "empUsername": {
+            "type": "string",
+            "nullable": true
           },
           "note": {
             "type": "string",
@@ -825,7 +959,7 @@
             "type": "string",
             "format": "date-time"
           },
-          "privateKeyPem": {
+          "privateKey": {
             "type": "string",
             "nullable": true
           },

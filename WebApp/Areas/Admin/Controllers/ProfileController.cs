@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Headers;
+using WebApp.Helpers;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -9,31 +10,11 @@ namespace WebApp.Areas.Admin.Controllers
     {
 
         private readonly HttpClient _httpClient;
-
-        public ProfileController(IHttpClientFactory httpClientFactory)
+        private readonly OracleClientHelper _OracleClientHelper;
+        public ProfileController(IHttpClientFactory httpClientFactory,OracleClientHelper _oracleclienthelper)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
-        }
-        private void SetOracleHeaders(string token, string username, string platform, string sessionId)
-        {
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
-
-            _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
-            _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
-            _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
-        }
-
-        private void SetOracleHeadersFromSession()
-        {
-            var token = HttpContext.Session.GetString("JwtToken");
-            var username = HttpContext.Session.GetString("Username");
-            var platform = HttpContext.Session.GetString("Platform");
-            var sessionId = HttpContext.Session.GetString("SessionId");
-            SetOracleHeaders(token, username, platform, sessionId);
+            _OracleClientHelper = _oracleclienthelper;
         }
         public class UserDto
         {
@@ -82,10 +63,11 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["CreateProfileMessage"] = "❌ Tên profile không được để trống.";
                 return RedirectToAction(nameof(Index));
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
+                
                 var json = new StringContent(
                     System.Text.Json.JsonSerializer.Serialize(request),
                     System.Text.Encoding.UTF8,
@@ -125,10 +107,11 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["DeleteProfileMessage"] = "❌ Tên profile không được để trống.";
                 return RedirectToAction(nameof(Index));
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
+                
                 var response = await _httpClient.DeleteAsync($"api/Admin/Profile/{Uri.EscapeDataString(profileName)}");
 
                 if (response.IsSuccessStatusCode)
@@ -160,10 +143,11 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["AssignProfileMessage"] = "❌ Vui lòng chọn user và profile.";
                 return RedirectToAction(nameof(Index));
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
+                
                 var payload = new AssignProfileRequest
                 {
                     Username = username,
@@ -206,10 +190,10 @@ namespace WebApp.Areas.Admin.Controllers
                 return RedirectToAction("Login", "Employee", new { area = "Admin" });
 
             var model = new UserProfileViewModel();
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                SetOracleHeadersFromSession();
                 // Lấy danh sách user
                 var responseUser = await _httpClient.GetAsync("api/Admin/Profile/users");
                 if (responseUser.IsSuccessStatusCode)

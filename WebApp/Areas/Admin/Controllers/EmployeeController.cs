@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using WebApp.Helpers;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -11,41 +12,22 @@ namespace WebApp.Areas.Admin.Controllers
         
     {
         private readonly HttpClient _httpClient;
+        private readonly OracleClientHelper _OracleClientHelper;
 
-        public EmployeeController(IHttpClientFactory httpClientFactory)
+        public EmployeeController(IHttpClientFactory httpClientFactory, OracleClientHelper _oracleClientHelper)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
+            _OracleClientHelper = _oracleClientHelper;
         }
 
         // --- Index: lấy danh sách nhân viên ---
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            var token = HttpContext.Session.GetString("JwtToken");
-            var username = HttpContext.Session.GetString("Username");
-            var platform = HttpContext.Session.GetString("Platform");
-            var sessionId = HttpContext.Session.GetString("SessionId");
-
-            if (string.IsNullOrEmpty(token) ||
-                string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(platform) ||
-                string.IsNullOrEmpty(sessionId))
-            {
-                return RedirectToAction("Login", "Employee", new { area = "Admin" });
-            }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-                // ✅ Thêm 3 header Oracle
-                _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
-                _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
-                _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
-
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
 
                 var response = await _httpClient.GetAsync("api/Admin/Employee");
 
@@ -150,32 +132,14 @@ namespace WebApp.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                var token = HttpContext.Session.GetString("JwtToken");
-                var username = HttpContext.Session.GetString("Username");
-                var platform = HttpContext.Session.GetString("Platform");
-                var sessionId = HttpContext.Session.GetString("SessionId");
-                if (!string.IsNullOrEmpty(token))
-                {
-                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                    // ✅ Thêm 3 header Oracle
-                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
-                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
-                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
-
-                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
-                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
-                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
-                    await _httpClient.PostAsync("api/Admin/Employee/logout", null);
-                }
+               await _httpClient.PostAsync("api/Admin/Employee/logout", null);
 
                 // Chỉ xóa session liên quan đến Admin
-                HttpContext.Session.Remove("JwtToken");
-                HttpContext.Session.Remove("Username");
-                HttpContext.Session.Remove("Role");
-                HttpContext.Session.Remove("Platform");
-                HttpContext.Session.Remove("SessionId");
+                _OracleClientHelper.ClearSession();
 
                 TempData["Message"] = "Logout thành công!";
             }
@@ -196,27 +160,10 @@ namespace WebApp.Areas.Admin.Controllers
         public async Task<IActionResult> Register(EmployeeRegisterDto dto)
         {
             if (!ModelState.IsValid) return View(dto);
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                var token = HttpContext.Session.GetString("JwtToken");
-                var username = HttpContext.Session.GetString("Username");
-                var platform = HttpContext.Session.GetString("Platform");
-                var sessionId = HttpContext.Session.GetString("SessionId");
-                if (string.IsNullOrEmpty(token))
-                    return RedirectToAction("Login");
-
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-                // ✅ Thêm 3 header Oracle
-                _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
-                _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
-                _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
-
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
-
                 // Gửi POST request
                 var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/register", dto);
 
@@ -255,15 +202,10 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["Error"] = "Username không được để trống.";
                 return RedirectToAction("Index");
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                var token = HttpContext.Session.GetString("JwtToken");
-                if (string.IsNullOrEmpty(token))
-                    return RedirectToAction("Login");
-
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
                 var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/unlock", new { Username = username });
                 if (response.IsSuccessStatusCode)
                 {
@@ -293,15 +235,10 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["Error"] = "Username không được để trống.";
                 return RedirectToAction("Index");
             }
-
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
-                var token = HttpContext.Session.GetString("JwtToken");
-                if (string.IsNullOrEmpty(token))
-                    return RedirectToAction("Login");
-
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
                 var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/lock", new { Username = username });
                 if (response.IsSuccessStatusCode)
                 {

@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using WebApp.Helpers;
 
 namespace WebApp.Areas.Public.Controllers
 {
@@ -12,10 +13,11 @@ namespace WebApp.Areas.Public.Controllers
     public class CustomerController : Controller
     {
         private readonly HttpClient _httpClient;
-
-        public CustomerController(IHttpClientFactory httpClientFactory)
+        private readonly OracleClientHelper _OracleClientHelper;
+        public CustomerController(IHttpClientFactory httpClientFactory,OracleClientHelper _or)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
+            _OracleClientHelper = _or;
         }
 
 
@@ -91,30 +93,12 @@ namespace WebApp.Areas.Public.Controllers
         
         public async Task<IActionResult> Logout()
         {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect,false))
+                return redirect;
             try
             {
-                var token = HttpContext.Session.GetString("CJwtToken");
-                var username = HttpContext.Session.GetString("CUsername");
-                var platform = HttpContext.Session.GetString("CPlatform");
-                var sessionId = HttpContext.Session.GetString("CSessionId");
-                if (!string.IsNullOrEmpty(token))
-                {
-                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                    // ✅ Thêm 3 header Oracle
-                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
-                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
-                    _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
-
-                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
-                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
-                    _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
-                    var response = await _httpClient.PostAsync("api/Public/Customer/logout", null);
-                }
-                HttpContext.Session.Remove("CJwtToken");
-                HttpContext.Session.Remove("CUsername");
-                HttpContext.Session.Remove("CRole");
-                HttpContext.Session.Remove("CPlatform");
-                HttpContext.Session.Remove("CSessionId");
+                var response = await _httpClient.PostAsync("api/Public/Customer/logout", null);
+                _OracleClientHelper.ClearSession(false); // Xóa session Public
 
                 TempData["Message"] = "Logout thành công!";
             }
