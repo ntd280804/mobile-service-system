@@ -1,18 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NuGet.Common;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
-
+using WebApp.Helpers;
 namespace WebApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class ImportController : Controller
     {
         private readonly HttpClient _httpClient;
+        private readonly OracleClientHelper _OracleClientHelper;
 
-        public ImportController(IHttpClientFactory httpClientFactory)
+        public ImportController(IHttpClientFactory httpClientFactory, OracleClientHelper _oracleClientHelper)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
+            _OracleClientHelper = _oracleClientHelper;
         }
 
         // DTOs
@@ -26,16 +29,16 @@ namespace WebApp.Areas.Admin.Controllers
 
         public class ImportStockDto
         {
-            public int EmpId { get; set; }
+            public string EmpUsername { get; set; }
             public string Note { get; set; }
-            public string PrivateKeyPem { get; set; }
+            public string PrivateKey { get; set; }
             public List<ImportItemDto> Items { get; set; } = new();
         }
 
         public class ImportViewModel
         {
             public int StockInId { get; set; }
-            public int EmpId { get; set; }
+            public string EmpUsername { get; set; }
             public DateTime InDate { get; set; }
             public string Note { get; set; }
             public ImportItemDto StockInItem { get; set; }
@@ -44,7 +47,7 @@ namespace WebApp.Areas.Admin.Controllers
         public class ImportDetailViewModel
         {
             public int StockInId { get; set; }
-            public int EmpId { get; set; }
+            public string EmpUsername { get; set; }
             public DateTime InDate { get; set; }
             public string Note { get; set; }
             public List<ImportItemDto> Items { get; set; } = new();
@@ -54,9 +57,11 @@ namespace WebApp.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
-            SetOracleHeadersFromSession();
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
+                
                 var response = await _httpClient.GetAsync("api/admin/import/getallimport");
                 if (!response.IsSuccessStatusCode)
                 {
@@ -80,7 +85,8 @@ namespace WebApp.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            SetOracleHeadersFromSession(); // thêm header Oracle từ session
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
 
             try
             {
@@ -128,7 +134,8 @@ namespace WebApp.Areas.Admin.Controllers
                 return View(model);
             }
 
-            SetOracleHeadersFromSession();
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
             try
             {
                 var response = await _httpClient.PostAsJsonAsync("api/admin/import/post", model);
@@ -154,7 +161,8 @@ namespace WebApp.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> Verifysign(int id)
         {
-            SetOracleHeadersFromSession();
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
 
             try
             {
@@ -200,26 +208,6 @@ namespace WebApp.Areas.Admin.Controllers
         {
             public int StockInId { get; set; }
             public bool IsValid { get; set; }
-        }
-
-
-        // Helper: set header Oracle từ session
-        private void SetOracleHeadersFromSession()
-        {
-            var username = HttpContext.Session.GetString("Username");
-            var platform = HttpContext.Session.GetString("Platform");
-            var sessionId = HttpContext.Session.GetString("SessionId");
-
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Username");
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-Platform");
-            _httpClient.DefaultRequestHeaders.Remove("X-Oracle-SessionId");
-
-            if (!string.IsNullOrEmpty(username))
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
-            if (!string.IsNullOrEmpty(platform))
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
-            if (!string.IsNullOrEmpty(sessionId))
-                _httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
         }
     }
 }

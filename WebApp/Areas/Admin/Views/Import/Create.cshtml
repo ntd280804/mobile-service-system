@@ -1,7 +1,12 @@
 ﻿@model WebApp.Areas.Admin.Controllers.ImportController.ImportStockDto
-
+@inject IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "Import Stock";
+    var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
+    if (string.IsNullOrEmpty(Model.EmpUsername))
+    {
+        Model.EmpUsername = username;
+    }
 }
 
 <h2>Danh sách Stock In</h2>
@@ -19,8 +24,7 @@
 
 <form asp-action="Create" method="post">
     <div>
-        <label asp-for="EmpId"></label>
-        <input asp-for="EmpId" />
+        <input type="hidden" asp-for="EmpUsername" />
     </div>
     <div>
         <label asp-for="Note"></label>
@@ -29,9 +33,12 @@
 
     <!-- Private Key -->
     <div>
-        <label asp-for="PrivateKeyPem">Private Key PEM</label>
-        <textarea asp-for="PrivateKeyPem" rows="10" cols="70" style="white-space:pre;" wrap="off"></textarea>
+        <label>Private Key </label><br />
+        <input type="file" id="private-key-file" accept=".txt" />
+        <input type="hidden" id="PrivateKey" name="PrivateKey" />
+
     </div>
+
 
     <!-- Danh sách Items -->
     <div>
@@ -81,6 +88,7 @@
 
 @section Scripts {
     <script>
+
         document.addEventListener("DOMContentLoaded", function () {
             const container = document.getElementById("items-container");
             const addButton = document.getElementById("add-item");
@@ -147,5 +155,16 @@
                 });
             }
         });
+                document.getElementById("private-key-file").addEventListener("change", function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function () {
+                document.getElementById("PrivateKey").value = reader.result;
+            };
+            reader.readAsText(file, "UTF-16");
+        });
+
     </script>
 }

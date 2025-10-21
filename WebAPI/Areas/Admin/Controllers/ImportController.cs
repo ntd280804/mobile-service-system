@@ -30,17 +30,11 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult GetAllImports()
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(platform) || string.IsNullOrEmpty(sessionId))
-                return Unauthorized(new { message = "Missing Oracle session headers" });
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
 
             try
             {
-                var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = "APP.GET_ALL_IMPORTS";
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -55,7 +49,7 @@ namespace WebAPI.Areas.Admin.Controllers
                     result.Add(new
                     {
                         StockInId = reader["STOCKIN_ID"],
-                        EmpId = reader["EMP_ID"],
+                        EmpUsername = reader["EmpUsername"],
                         InDate = reader["IN_DATE"],
                         Note = reader["NOTE"]
                     });
@@ -74,18 +68,11 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult GetImportDetails(int stockinId)
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(platform) ||
-                string.IsNullOrEmpty(sessionId))
-                return Unauthorized(new { message = "Missing Oracle session headers" });
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
 
             try
             {
-                var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
 
                 using var cmd = conn.CreateCommand();
                 cmd.CommandText = "APP.GET_IMPORT_BY_ID";
@@ -96,7 +83,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 cmd.Parameters.Add(outputCursor);
 
                 var items = new List<ImportItemDto>();
-                int? empId = null;
+                string? empUsername = null;
                 DateTime? inDate = null;
                 string note = null;
 
@@ -108,9 +95,9 @@ namespace WebAPI.Areas.Admin.Controllers
                 while (reader.Read())
                 {
                     // Thông tin chung STOCK_IN (lấy 1 lần)
-                    if (empId == null)
+                    if (empUsername == null)
                     {
-                        empId = Convert.ToInt32(reader["EmpId"]);
+                        empUsername = Convert.ToString(reader["EmpUsername"]);
                         inDate = Convert.ToDateTime(reader["InDate"]);
                         note = reader["Note"]?.ToString();
                     }
@@ -128,7 +115,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 var result = new ImportStockDto
                 {
                     StockInId = stockinId,
-                    EmpId = empId ?? 0,
+                    EmpUsername = empUsername ?? "",
                     InDate = inDate ?? DateTime.MinValue,
                     Note = note,
                     Items = items
@@ -164,48 +151,34 @@ namespace WebAPI.Areas.Admin.Controllers
         {
             if (dto.Items == null || dto.Items.Count == 0)
                 return BadRequest("No items to import");
-            if (string.IsNullOrEmpty(dto.PrivateKeyPem))
+            if (string.IsNullOrEmpty(dto.PrivateKey))
                 return BadRequest("Missing private key");
 
-            var privateKeyPem = dto.PrivateKeyPem;
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(platform) ||
-                string.IsNullOrEmpty(sessionId))
-                return Unauthorized(new { message = "Missing Oracle session headers" });
-
+            var privateKeyPem = dto.PrivateKey;
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
             try
             {
-                var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
 
                 // --- Bắt đầu transaction ---
                 using var transaction = conn.BeginTransaction();
 
                 int stockInId;
-
-                // --- 1. Tạo signature trước ---
-                //string stockDataJson = JsonSerializer.Serialize(new
-                //{
-                //    dto.EmpId,
-                //    dto.Note,
-                //    Items = dto.Items.Select(i => new { i.PartName, i.Manufacturer, i.Serial })
-                //});
-
-                //byte[] dataBytes = Encoding.UTF8.GetBytes(stockDataJson);
-                //using var sha256 = SHA256.Create();
-                //byte[] hash = sha256.ComputeHash(dataBytes);
-
-                //string privateKeyPath = "privateKey.pem"; // đường dẫn private key
-                //using var rsa = RSA.Create();
-                //rsa.ImportFromPem(File.ReadAllText(privateKeyPath));
-
-                //byte[] signatureBytes = rsa.SignHash(hash, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-                //string signatureBase64 = Convert.ToBase64String(signatureBytes);
                 string signatureBase64 = "DUMMY_SIGNATURE_FOR_DEMO_PURPOSES";
 
+                int empId;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "APP.GET_EMPLOYEE_ID_BY_USERNAME";
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.Add("p_username", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.EmpUsername;
+                    var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
+                    cmd.Parameters.Add(pEmpId);
+
+                    cmd.ExecuteNonQuery();
+                    empId = Convert.ToInt32(pEmpId.Value.ToString());
+                }
                 // --- 2. CREATE_STOCKIN với signature ---
                 using (var cmd = conn.CreateCommand())
                 {
@@ -213,7 +186,7 @@ namespace WebAPI.Areas.Admin.Controllers
                     cmd.CommandText = "APP.CREATE_STOCKIN";
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = dto.EmpId;
+                    cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = empId;
                     cmd.Parameters.Add("p_note", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.Note ?? "";
                     cmd.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = signatureBase64;
 
@@ -309,7 +282,7 @@ namespace WebAPI.Areas.Admin.Controllers
                     StackTrace = ex.StackTrace,
                     Parameters = new
                     {
-                        dto.EmpId,
+                        dto.EmpUsername,
                         dto.Note,
                         Items = dto.Items.Select(item => $"{item.PartName}|{item.Manufacturer}|{item.Serial}").ToArray()
                     }
@@ -329,16 +302,11 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult VerifyStockInSignature(int stockinId)
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(platform) || string.IsNullOrEmpty(sessionId))
-                return Unauthorized(new { message = "Missing Oracle session headers" });
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
 
             try
             {
-                var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
 
                 // --- 1. GET_EMP_ID_FROM_STOCKIN ---
                 int empId;
@@ -461,10 +429,10 @@ namespace WebAPI.Areas.Admin.Controllers
     public class ImportStockDto
     {
         public int StockInId { get; set; }
-        public int EmpId { get; set; }
+        public string EmpUsername { get; set; }
         public string Note { get; set; }
         public DateTime InDate { get; set; }
-        public string PrivateKeyPem { get; set; }
+        public string PrivateKey { get; set; }
         public List<ImportItemDto> Items { get; set; }
     }
 }
