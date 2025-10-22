@@ -145,13 +145,24 @@
                 </a>
                 <ul class="collapse nav flex-column ms-3" id="collapseRoleProfile">
                     <li><a class="nav-link" asp-area="Admin" asp-controller="Role" asp-action="Index">Phân quyền</a></li>
-                    <li><a class="nav-link" asp-area="Admin" asp-controller="Profile" asp-action="Index">Hồ sơ cá nhân</a></li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Profile" asp-action="Index">Profile</a></li>
                 </ul>
             </li>
         }
         <!-- QUẢN LÝ KHÁCH HÀNG -->
         <li>
-            <a class="nav-link" asp-area="Admin" asp-controller="Customer" asp-action="Index">Quản lý khách hàng</a>
+            @if (roles.Contains("ADMIN"))
+        {
+            <li>
+                <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseCustomer" role="button" aria-expanded="false" aria-controls="collapseCustomer">
+                    Quản lý khách hàng <span class="ms-auto">▾</span>
+                </a>
+                <ul class="collapse nav flex-column ms-3" id="collapseCustomer">
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Customer" asp-action="Index">Danh sách khách hàng</a></li>
+                     <li><a class="nav-link" asp-area="Admin" asp-controller="Booking" asp-action="Index">Danh sách đặt lịch</a></li>
+                </ul>
+            </li>
+        }
         </li>
 
         <!-- QUẢN LÝ NHẬP XUẤT KHO -->
@@ -180,7 +191,6 @@
             </a>
             <ul class="collapse nav flex-column ms-3" id="collapseParts">
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Part" asp-action="Index">Danh sách linh kiện</a></li>
-                <li><a class="nav-link" asp-area="Admin" asp-controller="PartRequest" asp-action="Create">Tạo yêu cầu linh kiện</a></li>
                 <li><a class="nav-link" asp-area="Admin" asp-controller="PartRequest" asp-action="Index">Danh sách yêu cầu</a></li>
             </ul>
         </li>
@@ -191,15 +201,14 @@
                 Quản lý Order <span class="ms-auto">▾</span>
             </a>
             <ul class="collapse nav flex-column ms-3" id="collapseOrder">
-                <li><a class="nav-link" asp-area="Admin" asp-controller="Warranty" asp-action="Index">Bảo hành</a></li>
-                <li><a class="nav-link" asp-area="Admin" asp-controller="Repair" asp-action="Index">Sửa chữa</a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="Index">Danh sách đơn hàng</a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="WarrantyIndex">Danh sách đơn bảo hành</a></li>
+                <li><a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="RepairIndex">Danh sách đơn sửa chữa</a></li>
             </ul>
         </li>
 
         <!-- QUẢN LÝ ĐẶT LỊCH -->
-        <li>
-            <a class="nav-link" asp-area="Admin" asp-controller="Booking" asp-action="Index">Quản lý đặt lịch</a>
-        </li>
+       
 
         <!-- QUẢN LÝ LỊCH LÀM VIỆC -->
         <li>

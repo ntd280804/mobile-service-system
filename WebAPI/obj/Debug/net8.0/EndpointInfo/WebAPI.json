@@ -250,95 +250,6 @@
         }
       }
     },
-    "/api/admin/Export/getallexport": {
-      "get": {
-        "tags": [
-          "Export"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/admin/Export/details/{stockoutId}": {
-      "get": {
-        "tags": [
-          "Export"
-        ],
-        "parameters": [
-          {
-            "name": "stockoutId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/admin/Export/post": {
-      "post": {
-        "tags": [
-          "Export"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExportStockDto"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExportStockDto"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExportStockDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/admin/Export/verifysign/{stockoutId}": {
-      "get": {
-        "tags": [
-          "Export"
-        ],
-        "parameters": [
-          {
-            "name": "stockoutId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/admin/Import/getallimport": {
       "get": {
         "tags": [
@@ -418,6 +329,68 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Admin/Order": {
+      "get": {
+        "tags": [
+          "Order"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Order"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Admin/Order/by-order-type": {
+      "get": {
+        "tags": [
+          "Order"
+        ],
+        "parameters": [
+          {
+            "name": "orderType",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -749,6 +722,36 @@
         },
         "additionalProperties": false
       },
+      "CreateOrderRequest": {
+        "type": "object",
+        "properties": {
+          "customerPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "receiverEmpName": {
+            "type": "string",
+            "nullable": true
+          },
+          "handlerEmpName": {
+            "type": "string",
+            "nullable": true
+          },
+          "orderType": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateProfileRequest": {
         "type": "object",
         "properties": {
@@ -858,61 +861,6 @@
           },
           "phone": {
             "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "ExportItemDto": {
-        "type": "object",
-        "properties": {
-          "partName": {
-            "type": "string",
-            "nullable": true
-          },
-          "manufacturer": {
-            "type": "string",
-            "nullable": true
-          },
-          "serial": {
-            "type": "string",
-            "nullable": true
-          },
-          "price": {
-            "type": "integer",
-            "format": "int64"
-          }
-        },
-        "additionalProperties": false
-      },
-      "ExportStockDto": {
-        "type": "object",
-        "properties": {
-          "stockOutId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "empId": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "note": {
-            "type": "string",
-            "nullable": true
-          },
-          "inDate": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "privateKeyPem": {
-            "type": "string",
-            "nullable": true
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ExportItemDto"
-            },
             "nullable": true
           }
         },

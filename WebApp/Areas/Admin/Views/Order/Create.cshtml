@@ -1,0 +1,70 @@
+﻿@model WebApp.Areas.Admin.Controllers.OrderController.CreateOrderRequest
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
+    if (string.IsNullOrEmpty(Model.ReceiverEmpName))
+    {
+        Model.ReceiverEmpName = username;
+    }
+    Model.Status = "Đã tiếp nhận";
+}
+@{
+    ViewData["Title"] = "Tạo đơn hàng mới";
+}
+@{
+    var orderTypeList = new List<SelectListItem>
+    {
+        new SelectListItem { Value = "WARRANTY", Text = "WARRANTY" },
+        new SelectListItem { Value = "REPAIR", Text = "REPAIR" }
+    };
+}
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="Create" method="post">
+    <div class="form-group">
+        <label>Customer Phone</label>
+        <select asp-for="CustomerPhone" class="form-control" id="CustomerPhoneSelect">
+            <option value="">-- Chọn khách hàng --</option>
+        </select>
+        <span asp-validation-for="CustomerPhone" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Handler Username</label>
+        <select asp-for="HandlerEmpName" class="form-control" id="HandlerEmpSelect">
+            <option value="">-- Chọn nhân viên xử lý --</option>
+        </select>
+        <span asp-validation-for="HandlerEmpName" class="text-danger"></span>
+    </div>
+
+
+    <div class="form-group">
+        
+        <input type="hidden" asp-for="ReceiverEmpName" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Order Type</label>
+        @Html.DropDownListFor(m => m.OrderType, orderTypeList, "-- Chọn loại đơn --", new { @class = "form-control" })
+        <span asp-validation-for="OrderType" class="text-danger"></span>
+    </div>
+
+
+
+    <div class="form-group">
+        <input type="hidden" asp-for="Status" class="form-control" />
+        
+    </div>
+
+    <div class="form-group">
+        <label>Description</label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary mt-2">Tạo đơn</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

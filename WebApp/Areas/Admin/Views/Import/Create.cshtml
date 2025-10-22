@@ -1,13 +1,5 @@
 ﻿@model WebApp.Areas.Admin.Controllers.ImportController.ImportStockDto
-@inject IHttpContextAccessor HttpContextAccessor
-@{
-    ViewData["Title"] = "Import Stock";
-    var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
-    if (string.IsNullOrEmpty(Model.EmpUsername))
-    {
-        Model.EmpUsername = username;
-    }
-}
+
 
 <h2>Danh sách Stock In</h2>
 

@@ -1,0 +1,66 @@
+﻿@model List<WebApp.Areas.Admin.Controllers.OrderController.OrderDto>
+
+@{
+    ViewData["Title"] = "Danh sách đơn hàng bảo hành";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+<a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="Create">Thêm mới</a>
+<table class="table table-bordered table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>#</th>
+            <th>Customer Phone</th>
+            <th>Receiver Emp</th>
+            <th>Handler Emp</th>
+            <th>Order Type</th>
+            <th>Received Date</th>
+            <th>Status</th>
+            <th>Description</th>
+            <th>Actions</th> <!-- Cột hành động -->
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.OrderId</td>
+                    <td>@order.CustomerPhone</td>
+                    <td>@order.ReceiverEmpName</td>
+                    <td>@order.HandlerEmpName</td>
+                    <td>@order.OrderType</td>
+                    <td>@order.ReceivedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@order.Status</td>
+                    <td>@order.Description</td>
+                    <td>
+                        <a class="btn btn-sm btn-primary" href="@Url.Action("Details", "Order", new { id = order.OrderId })">Chi tiết</a>
+                        <a class="btn btn-sm btn-primary" href="@Url.Action("UpdateStatus", "Order", new { id = order.OrderId })">Cập nhật trạng thái</a>
+                        <a class="btn btn-sm btn-primary" href="@Url.Action("PartRequest", "Order", new { id = order.OrderId })">Yêu cầu linh kiện</a>
+                        @if (order.Status != "COMPLETED")
+                        {
+                            <form method="post" asp-action="Complete" asp-controller="Order" class="d-inline">
+                                <input type="hidden" name="orderId" value="@order.OrderId" />
+                                <button type="submit" class="btn btn-sm btn-success">Hoàn thành</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="8" class="text-center">Không có đơn hàng nào.</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -100,64 +100,6 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
-    "Method": "GetExportDetails",
-    "RelativePath": "api/admin/Export/details/{stockoutId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "stockoutId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
-    "Method": "GetAllExports",
-    "RelativePath": "api/admin/Export/getallexport",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
-    "Method": "ExportStockStepByStepWithTransaction",
-    "RelativePath": "api/admin/Export/post",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "dto",
-        "Type": "WebAPI.Areas.Admin.Controllers.ExportStockDto",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
-    "Method": "VerifyStockOutSignature",
-    "RelativePath": "api/admin/Export/verifysign/{stockoutId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "stockoutId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
     "Method": "GetImportDetails",
     "RelativePath": "api/admin/Import/details/{stockinId}",
@@ -211,6 +153,48 @@
         "Name": "stockinId",
         "Type": "System.Int32",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "GetAllOrders",
+    "RelativePath": "api/Admin/Order",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "CreateOrder",
+    "RelativePath": "api/Admin/Order",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "WebAPI.Areas.Admin.Controllers.OrderController\u002BCreateOrderRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "GetByOrderType",
+    "RelativePath": "api/Admin/Order/by-order-type",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "orderType",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []
