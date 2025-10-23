@@ -41,7 +41,7 @@ namespace WebApp.Areas.Admin.Controllers
             public string EmpUsername { get; set; }
             public DateTime InDate { get; set; }
             public string Note { get; set; }
-            public ImportItemDto StockInItem { get; set; }
+            
         }
 
         public class ImportDetailViewModel

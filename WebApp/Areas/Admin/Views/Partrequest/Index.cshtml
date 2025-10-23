@@ -1,4 +1,59 @@
-﻿@page
-@model WebApp.Areas.Admin.Views.Partrequest.IndexModel
+﻿@model List<WebApp.Areas.Admin.Controllers.PartrequestController.PartRequestViewModel>
+
 @{
+    ViewData["Title"] = "Danh sách yêu cầu linh kiện";
 }
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Request Id</th>
+            <th>EMPLOYEE USERNAME</th>
+            <th>In Date</th>
+            <th>ORDER_ID</th>
+            <th>STATUS</th>
+            <th>ACTION</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.REQUEST_ID</td>
+                <td>@item.EmpUsername</td>
+                <td>@item.REQUEST_DATE.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@item.ORDER_ID</td>
+                <td>@item.STATUS</td>
+                <td>
+                    <a class="btn btn-sm btn-info"
+                       asp-area="Admin"
+                       asp-controller="Partrequest"
+                       asp-action="Details"
+                       asp-route-id="@item.REQUEST_ID">Xem chi tiết</a>
+                    <a class="btn btn-sm btn-info"
+                       asp-area="Admin"
+                       asp-controller="Partrequest"
+                       asp-action="Accept"
+                       asp-route-id="@item.REQUEST_ID">Duyệt yêu cầu</a>
+                    <a class="btn btn-sm btn-info"
+                       asp-area="Admin"
+                       asp-controller="Partrequest"
+                       asp-action="Deny"
+                       asp-route-id="@item.REQUEST_ID">Từ chối</a>
+                </td>
+
+            </tr>
+        }
+    </tbody>
+</table>

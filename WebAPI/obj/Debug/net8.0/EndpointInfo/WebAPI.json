@@ -413,6 +413,18 @@
         }
       }
     },
+    "/api/Admin/Partrequest/getallpartrequest": {
+      "get": {
+        "tags": [
+          "Partrequest"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Admin/Profile/users": {
       "get": {
         "tags": [

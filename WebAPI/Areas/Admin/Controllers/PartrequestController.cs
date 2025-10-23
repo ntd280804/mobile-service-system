@@ -28,5 +28,45 @@ namespace WebAPI.Areas.Admin.Controllers
             _oracleSessionHelper = oracleSessionHelper;
             _qrGenerator = _QR;
         }
+        // GET: api/admin/partrequest/getallpartrequests
+        [HttpGet("getallpartrequest")]
+        [Authorize]
+        public IActionResult GetAllImports()
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.GET_ALL_PART_REQUESTS";
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(outputCursor);
+
+                var result = new List<object>();
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    result.Add(new
+                    {
+                        REQUEST_ID = reader["REQUEST_ID"],
+                        ORDER_ID = reader["ORDER_ID"],
+                        EmpUsername = reader["EmpUsername"],
+                        REQUEST_DATE = reader["REQUEST_DATE"],
+                        STATUS = reader["STATUS"]
+                    });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal Server Error", detail = ex.Message });
+            }
+        }
+
+
     }
 }

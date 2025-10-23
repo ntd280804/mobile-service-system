@@ -210,6 +210,16 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartrequestController",
+    "Method": "GetAllImports",
+    "RelativePath": "api/Admin/Partrequest/getallpartrequest",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ProfileController",
     "Method": "GetAllProfiles",
     "RelativePath": "api/Admin/Profile",

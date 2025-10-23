@@ -9,12 +9,24 @@
   <ItemGroup>
     <Compile Remove="Areas\Admin\Data\**" />
     <Compile Remove="Areas\Admin\Views\**" />
+    <Compile Remove="Areas\Public\Data\**" />
+    <Compile Remove="Areas\Public\Models\**" />
+    <Compile Remove="Areas\Public\Views\**" />
     <Content Remove="Areas\Admin\Data\**" />
     <Content Remove="Areas\Admin\Views\**" />
+    <Content Remove="Areas\Public\Data\**" />
+    <Content Remove="Areas\Public\Models\**" />
+    <Content Remove="Areas\Public\Views\**" />
     <EmbeddedResource Remove="Areas\Admin\Data\**" />
     <EmbeddedResource Remove="Areas\Admin\Views\**" />
+    <EmbeddedResource Remove="Areas\Public\Data\**" />
+    <EmbeddedResource Remove="Areas\Public\Models\**" />
+    <EmbeddedResource Remove="Areas\Public\Views\**" />
     <None Remove="Areas\Admin\Data\**" />
     <None Remove="Areas\Admin\Views\**" />
+    <None Remove="Areas\Public\Data\**" />
+    <None Remove="Areas\Public\Models\**" />
+    <None Remove="Areas\Public\Views\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,12 +43,6 @@
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="23.26.0" />
     <PackageReference Include="QRCoder" Version="1.7.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Areas\Public\Data\" />
-    <Folder Include="Areas\Public\Models\" />
-    <Folder Include="Areas\Public\Views\" />
   </ItemGroup>
 
 </Project>

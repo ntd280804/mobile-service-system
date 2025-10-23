@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
@@ -140,9 +141,32 @@ namespace WebAPI.Areas.Admin.Controllers
             {
                 string platform = dto.Platform;
                 string sessionId = Guid.NewGuid().ToString();
+                var conn = _connManager.CreateDefaultConnection();
+                string hashedPwd;
+                using (var cmd1 = new OracleCommand("APP.HASH_PASSWORD_20CHARS", conn))
+                {
+                    cmd1.CommandType = CommandType.StoredProcedure; // function cũng dùng StoredProcedure
 
+                    // Tham số RETURN
+                    var returnParam = new OracleParameter("returnVal", OracleDbType.Varchar2, 50)
+                    {
+                        Direction = ParameterDirection.ReturnValue
+                    };
+                    cmd1.Parameters.Add(returnParam);
+
+                    // Tham số input
+                    cmd1.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
+
+                    cmd1.ExecuteNonQuery();
+
+                    hashedPwd = returnParam.Value?.ToString();
+
+                }
+
+                if (string.IsNullOrEmpty(hashedPwd))
+                    throw new Exception("HASH_PASSWORD_20CHARS trả về null hoặc rỗng");
                 // Tạo connection Oracle riêng cho session này
-                var conn = _connManager.CreateConnection(dto.Username, dto.Password, platform, sessionId);
+                conn = _connManager.CreateConnection(dto.Username, hashedPwd, platform, sessionId);
 
                 using var cmd = new OracleCommand("APP.LOGIN_EMPLOYEE", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
