@@ -1,0 +1,61 @@
+﻿@model WebApp.Areas.Public.Controllers.AppointmentController.CreateAppointmentDto
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Import Stock";
+    var username = HttpContextAccessor.HttpContext.Session.GetString("CUsername");
+    if (string.IsNullOrEmpty(Model.CustomerPhone))
+    {
+        Model.CustomerPhone = username;
+    }
+}
+@{
+    Layout = "~/Areas/Public/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Đặt lịch";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @Html.ValidationSummary(true)
+    </div>
+}
+@{
+    var minDate = DateTime.Now.ToString("yyyy-MM-dd"); // ngày hôm nay
+    var maxDate = DateTime.Now.AddDays(30).ToString("yyyy-MM-dd"); // 30 ngày tới
+}
+
+<form asp-action="Booking" method="post">
+    <div>
+        <input asp-for="CustomerPhone" type="hidden"/>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AppointmentDate" class="form-label"></label>
+        <input asp-for="AppointmentDate"
+               type="date"
+               class="form-control"
+               min="@minDate"
+               max="@maxDate" />
+        <span asp-validation-for="AppointmentDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Đặt lịch</button>
+</form>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

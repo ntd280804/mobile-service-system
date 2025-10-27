@@ -1,5 +1,57 @@
 [
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.AppointmentController",
+    "Method": "GetAll",
+    "RelativePath": "api/Admin/Appointment/all",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.CustomerController",
+    "Method": "GetAll",
+    "RelativePath": "api/Admin/Customer",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.CustomerController",
+    "Method": "LockUser",
+    "RelativePath": "api/Admin/Customer/lock",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Admin.Controllers.CustomerController\u002BUnlockCustomerDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.CustomerController",
+    "Method": "UnlockUser",
+    "RelativePath": "api/Admin/Customer/unlock",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Admin.Controllers.CustomerController\u002BUnlockCustomerDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
     "Method": "GetAll",
     "RelativePath": "api/Admin/Employee",
@@ -401,6 +453,38 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.AppointmentController",
+    "Method": "Create",
+    "RelativePath": "api/Public/Appointment/create",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Public.Controllers.AppointmentController\u002BCreateAppointmentDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.AppointmentController",
+    "Method": "GetByPhone",
+    "RelativePath": "api/Public/Appointment/get-by-phone",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "phone",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
     "ReturnTypes": []
   },
   {

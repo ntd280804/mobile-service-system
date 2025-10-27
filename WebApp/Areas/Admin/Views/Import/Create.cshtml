@@ -1,7 +1,15 @@
 ﻿@model WebApp.Areas.Admin.Controllers.ImportController.ImportStockDto
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Import Stock";
+    var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
+    if (string.IsNullOrEmpty(Model.EmpUsername))
+    {
+        Model.EmpUsername = username;
+    }
+}
 
-
-<h2>Danh sách Stock In</h2>
+<h2>@ViewData["Title"]</h2>
 
 @if (TempData["Error"] != null)
 {
@@ -12,7 +20,6 @@
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
-<a class="btn btn-primary mb-3" href="@Url.Action("Create", "Import", new { area = "Admin" })">Thêm Stock In</a>
 
 <form asp-action="Create" method="post">
     <div>

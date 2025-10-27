@@ -1,0 +1,68 @@
+﻿@model List<WebApp.Areas.Admin.Controllers.CustomerController.CustomerDto>
+
+@{
+    ViewData["Title"] = "Danh sách khách hàng";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+@* <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="Register">Thêm mới</a> *@
+<table class="table table-bordered table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>Phone</th>
+            <th>Full Name</th>
+            <th>Status</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th> <!-- Thêm cột hành động -->
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var emp in Model)
+            {
+                <tr>
+                    <td>@emp.Phone</td>
+                    <td>@emp.FullName</td>
+                    <td>@emp.Status</td>
+                    <td>@emp.Email</td>
+                    <td>@emp.Roles</td>
+                    <td>
+                        <a class="btn btn-sm btn-primary" href="@Url.Action("Edit", "Customer", new { id = emp.Phone })">Edit</a>
+
+                        @if (emp.Status == "OPEN")
+                        {
+                            <form method="post" asp-action="Lock" asp-controller="Customer" class="d-inline">
+                                <input type="hidden" name="Phone" value="@emp.Phone" />
+                                <button type="submit" class="btn btn-sm btn-warning">Lock</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-action="Unlock" asp-controller="Customer" class="d-inline">
+                                <input type="hidden" name="Phone" value="@emp.Phone" />
+                                <button type="submit" class="btn btn-sm btn-success">Unlock</button>
+                            </form>
+                        }
+                    </td>
+
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7" class="text-center">Không có khách hàng nào.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

@@ -411,9 +411,6 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { Message = "General Error", Error = ex.Message });
             }
         }
-
-
-
     }
 
 

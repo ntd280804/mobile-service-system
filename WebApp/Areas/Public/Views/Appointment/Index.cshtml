@@ -1,0 +1,39 @@
+﻿@model List<WebApp.Areas.Public.Controllers.AppointmentController.AppointmentViewModel>
+
+<h2>Lịch hẹn của bạn</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (Model.Any())
+{
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Số điện thoại</th>
+                <th>Ngày hẹn</th>
+                <th>Trạng thái</th>
+                <th>Mô tả</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.AppointmentId</td>
+                    <td>@item.CustomerPhone</td>
+                    <td>@item.AppointmentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@item.Status</td>
+                    <td>@item.Description</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Không có lịch hẹn nào.</p>
+}

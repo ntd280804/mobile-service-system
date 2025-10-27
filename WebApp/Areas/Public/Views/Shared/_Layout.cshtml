@@ -30,6 +30,18 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-area="Public" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
+                        @if (!string.IsNullOrEmpty(username))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="Public" asp-controller="Appointment" asp-action="Booking">Đặt lịch</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="Public" asp-controller="Appointment" asp-action="Index">Xem lịch đặt</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="Public" asp-controller="Order" asp-action="Index">Xem đơn hàng</a>
+                            </li>
+                        }
                     </ul>
 
                     <!-- Menu phải -->
@@ -71,6 +83,7 @@
 
     <!-- Bootstrap JS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
     <script>
             // Lấy username từ Razor, đảm bảo không null
