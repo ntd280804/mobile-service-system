@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
-import '../widgets/custom_button.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/api_service.dart';
+import '../../auth/widgets/custom_button.dart';
+import '../../employee/screens/employee_home_screen.dart';
+import '../../customer/screens/customer_home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,9 +21,27 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _result = "Đang xử lý...");
     final msg = await ApiService.login(_userCtrl.text.trim(), _passCtrl.text);
     if (msg == 'OK') {
-      setState(() => _result = 'Đăng nhập thành công');
+      // Sau khi đăng nhập thành công, đọc role đã được lưu và chuyển hướng
+      await _handlePostLogin();
     } else {
       setState(() => _result = msg);
+    }
+  }
+
+  Future<void> _handlePostLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final roles = prefs.getString('oracle_roles') ?? '';
+    // roles có thể là chuỗi phân tách bằng dấu phẩy, ví dụ "ADMIN,THUKO"
+    final roleList = roles.split(',').map((r) => r.trim().toUpperCase()).where((r) => r.isNotEmpty).toList();
+
+    // Nếu là employee/admin (có role ADMIN) thì chuyển đến employee UI,
+    // ngược lại chuyển đến customer UI.
+    if (roleList.contains('ADMIN')) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const EmployeeHomeScreen()));
+    } else {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const CustomerHomeScreen()));
     }
   }
 
