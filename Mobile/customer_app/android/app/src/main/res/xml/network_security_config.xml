@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- ⚠️ DEVELOPMENT ONLY: Trust all certificates (bypass SSL) -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Cho phép TẤT CẢ domain (bỏ qua SSL validation) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">10.147.20.56</domain>
+        <domain includeSubdomains="true">10.147.20.199</domain>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>
