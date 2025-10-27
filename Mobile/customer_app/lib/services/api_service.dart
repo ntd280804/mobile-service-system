@@ -50,7 +50,7 @@ class ApiService {
         if (sessionId != null && sessionId.isNotEmpty) {
           options.headers['X-Oracle-SessionId'] = sessionId;
         }
-        options.headers['X-Oracle-Platform'] = 'mobile';
+        options.headers['X-Oracle-Platform'] = 'MOBILE';
         handler.next(options);
       },
     ));
