@@ -176,10 +176,24 @@ class ApiService {
   Future<List<Map<String, dynamic>>> getAppointments() async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get(ApiConfig.getAppointments);
-      final list = (resp.data as List).cast<Map<String, dynamic>>();
-      return list;
-    } catch (_) {
+      final username = await _storage.getUsername();
+      if (username == null || username.isEmpty) {
+        throw 'Không tìm thấy username trong bộ nhớ';
+      }
+
+      final resp = await _dio.get(
+        '${ApiConfig.getAppointmentsByPhone}?phone=$username',
+      );
+
+      if (resp.data is List) {
+        return (resp.data as List)
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Lỗi getAppointments: $e');
       return [];
     }
   }
