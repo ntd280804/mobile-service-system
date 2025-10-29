@@ -84,6 +84,128 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
           );
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openCreateAppointmentSheet,
+        tooltip: 'Đặt lịch hẹn',
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _openCreateAppointmentSheet() {
+    final descController = TextEditingController();
+    DateTime? selectedDate = DateTime.now();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Tạo lịch hẹn',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selectedDate == null
+                              ? 'Chưa chọn ngày'
+                              : 'Ngày: ${selectedDate!.toLocal().toString().split(' ').first}',
+                        ),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.date_range),
+                        label: const Text('Chọn ngày'),
+                        onPressed: () async {
+                          final now = DateTime.now();
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate ?? now,
+                            firstDate: DateTime(now.year, now.month, now.day),
+                            lastDate: DateTime(now.year + 1),
+                          );
+                          if (picked != null) {
+                            setSheetState(() => selectedDate = picked);
+                          }
+                        },
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: descController,
+                    decoration: const InputDecoration(
+                      labelText: 'Mô tả (tuỳ chọn)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text('Tạo lịch hẹn'),
+                      onPressed: () async {
+                        if (selectedDate == null) return;
+
+                        // Không cho chọn ngày quá khứ
+                        final today = DateTime.now();
+                        final onlyDate = DateTime(
+                          selectedDate!.year,
+                          selectedDate!.month,
+                          selectedDate!.day,
+                        );
+                        final onlyToday = DateTime(today.year, today.month, today.day);
+                        if (onlyDate.isBefore(onlyToday)) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Ngày hẹn phải từ hôm nay trở đi')),
+                            );
+                          }
+                          return;
+                        }
+
+                        try {
+                          await _api.createAppointment(onlyDate, description: descController.text);
+                          if (!mounted) return;
+                          Navigator.of(context).pop();
+                          setState(() {
+                            _appointmentsFuture = _api.getAppointments();
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đặt lịch thành công')),
+                          );
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

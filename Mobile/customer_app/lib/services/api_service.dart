@@ -197,4 +197,36 @@ class ApiService {
       return [];
     }
   }
+
+  Future<void> createAppointment(DateTime date, {String? description}) async {
+    await _ensureInterceptors();
+    try {
+      final username = await _storage.getUsername();
+      if (username == null || username.isEmpty) {
+        throw 'Không tìm thấy username trong bộ nhớ';
+      }
+
+      // Chuẩn hóa về đầu ngày (date-only)
+      final dateOnly = DateTime(date.year, date.month, date.day);
+
+      final payload = {
+        'customerPhone': username,
+        'appointmentDate': dateOnly.toIso8601String(),
+        if (description != null && description.trim().isNotEmpty)
+          'description': description.trim(),
+      };
+
+      await _dio.post(
+        ApiConfig.createAppointment,
+        data: payload,
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['detail'] ?? 'Đặt lịch thất bại')
+          : 'Đặt lịch thất bại';
+      throw msg;
+    } catch (_) {
+      throw 'Không thể kết nối máy chủ';
+    }
+  }
 }

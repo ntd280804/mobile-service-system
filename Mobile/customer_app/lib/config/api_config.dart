@@ -9,5 +9,5 @@ class ApiConfig {
   static const String logout = '/api/Public/Customer/logout';
   static const String getOrders = '/api/Public/Customer/orders';
   static const String getAppointmentsByPhone = '/api/Public/Appointment/get-by-phone';
-
+  static const String createAppointment = '/api/Public/Appointment/Create';
 }
