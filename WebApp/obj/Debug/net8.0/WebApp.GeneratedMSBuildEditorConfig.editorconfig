@@ -68,6 +68,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcT3JkZXJcQ3JlYXRlLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Order/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcT3JkZXJcRGV0YWlscy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Order/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcT3JkZXJcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -90,6 +94,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Partrequest/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcUGFydHJlcXVlc3RcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Part/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcUGFydFxEZXRhaWxzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Part/Index.cshtml]
@@ -138,6 +146,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXEhvbWVcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/SecurityDemo/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXFNlY3VyaXR5RGVtb1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/Shared/Error.cshtml]

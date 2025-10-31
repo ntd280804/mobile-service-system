@@ -4,6 +4,7 @@ using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using WebAPI.Services;
 using WebAPI.Helpers;
+using WebAPI.Models.Permission;
 namespace WebAPI.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -251,12 +252,6 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-        public class AssignRoleRequest
-        {
-            public string UserName { get; set; }
-            public string RoleName { get; set; }
-        }
-
         // POST: api/Admin/Role/revokerole
         [HttpPost("revokerole")]
         [Authorize]
@@ -297,13 +292,6 @@ namespace WebAPI.Areas.Admin.Controllers
             {
                 return StatusCode(500, new { message = "Failed to revoke role.", detail = ex.Message });
             }
-        }
-
-
-        public class RevokeRoleRequest
-        {
-            public string UserName { get; set; }
-            public string RoleName { get; set; }
         }
     }
 }

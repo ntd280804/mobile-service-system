@@ -8,6 +8,11 @@ using System.Data;
 using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Services;
+using WebAPI.Models;
+using WebAPI.Models.Auth;
+using System.Security.Cryptography;
+using System.Text;
+using System.IO;
 
 namespace WebAPI.Areas.Admin.Controllers
 {
@@ -133,9 +138,9 @@ namespace WebAPI.Areas.Admin.Controllers
         // 🔵 LOGIN
         // =====================
         [HttpPost("login")]
-        public IActionResult Login([FromBody] EmployeeLoginDto dto)
+        public ActionResult<ApiResponse<EmployeeLoginResult>> Login([FromBody] EmployeeLoginDto dto)
         {
-            if (dto == null) return BadRequest(new { message = "Dữ liệu không hợp lệ." });
+            if (dto == null) return BadRequest(ApiResponse<EmployeeLoginResult>.Fail("Dữ liệu không hợp lệ."));
 
             try
             {
@@ -192,26 +197,71 @@ namespace WebAPI.Areas.Admin.Controllers
                 var roles = outRoleParam.Value?.ToString();
 
                 if (result != "SUCCESS")
-                    return Unauthorized(new { result, message = "Đăng nhập thất bại." });
+                    return Unauthorized(ApiResponse<EmployeeLoginResult>.Fail("Đăng nhập thất bại."));
 
                 // Tạo JWT token
                 var token = _jwtHelper.GenerateToken(username, roles, sessionId);
 
-                return Ok(new { username, roles, result, sessionId, token });
+                return Ok(ApiResponse<EmployeeLoginResult>.Ok(new EmployeeLoginResult
+                {
+                    Username = username,
+                    Roles = roles,
+                    Result = result,
+                    SessionId = sessionId,
+                    Token = token
+                }));
             }
             catch (OracleException ex)
             {
                 return ex.Number switch
                 {
-                    1017 => Unauthorized(new { result = "FAILED", message = "Sai username hoặc mật khẩu." }),
-                    28000 => Unauthorized(new { result = "LOCKED", message = "Tài khoản bị khóa." }),
-                    28001 => Unauthorized(new { result = "EXPIRED", message = "Mật khẩu đã hết hạn." }),
-                    _ => StatusCode(500, new { result = "FAILED", message = $"Oracle error {ex.Number}: {ex.Message}" })
+                    1017 => Unauthorized(ApiResponse<EmployeeLoginResult>.Fail("Sai username hoặc mật khẩu.")),
+                    28000 => Unauthorized(ApiResponse<EmployeeLoginResult>.Fail("Tài khoản bị khóa.")),
+                    28001 => Unauthorized(ApiResponse<EmployeeLoginResult>.Fail("Mật khẩu đã hết hạn.")),
+                    _ => StatusCode(500, ApiResponse<EmployeeLoginResult>.Fail($"Oracle error {ex.Number}: {ex.Message}"))
                 };
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { result = "FAILED", message = ex.Message });
+                return StatusCode(500, ApiResponse<EmployeeLoginResult>.Fail(ex.Message));
+            }
+        }
+
+        
+
+        [HttpPost("login-secure")]
+        public ActionResult<ApiResponse<EmployeeLoginResult>> LoginSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        {
+            if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
+                return BadRequest(ApiResponse<EmployeeLoginResult>.Fail("Invalid encrypted payload"));
+
+            try
+            {
+                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
+                byte[] aesKey = new byte[32];
+                byte[] iv = new byte[16];
+                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
+                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
+
+                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
+                using (Aes aes = Aes.Create())
+                {
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
+                    using (var ms = new MemoryStream(cipherBytes))
+                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                    using (var reader = new StreamReader(cs, Encoding.UTF8))
+                    {
+                        string plaintext = reader.ReadToEnd();
+                        var dto = System.Text.Json.JsonSerializer.Deserialize<EmployeeLoginDto>(plaintext);
+                        if (dto == null)
+                            return BadRequest(ApiResponse<EmployeeLoginResult>.Fail("Cannot parse payload"));
+                        return Login(dto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<EmployeeLoginResult>.Fail(ex.Message));
             }
         }
 

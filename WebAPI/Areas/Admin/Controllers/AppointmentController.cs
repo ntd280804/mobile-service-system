@@ -7,6 +7,8 @@ using System.Data;
 using WebAPI.Helpers;
 
 using WebAPI.Services;
+using WebAPI.Models.Appointment;
+
 namespace WebAPI.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -28,14 +30,6 @@ namespace WebAPI.Areas.Admin.Controllers
             _connManager = connManager;
             _jwtHelper = jwtHelper;
             _oracleSessionHelper = oracleSessionHelper;
-        }
-        public class AppointmentDto
-        {
-            public int AppointmentId { get; set; }
-            public string CustomerPhone { get; set; }
-            public DateTime AppointmentDate { get; set; }
-            public string Status { get; set; }
-            public string Description { get; set; }
         }
 
         [HttpGet("all")]

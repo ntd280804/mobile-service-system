@@ -1,4 +1,4 @@
-﻿@model List<WebApp.Areas.Admin.Controllers.PartrequestController.PartRequestViewModel>
+﻿@model List<WebApp.Models.PartRequestViewModel>
 
 @{
     ViewData["Title"] = "Danh sách yêu cầu linh kiện";
@@ -41,6 +41,9 @@
                        asp-controller="Partrequest"
                        asp-action="Details"
                        asp-route-id="@item.REQUEST_ID">Xem chi tiết</a>
+
+                    @if (item.STATUS == "PENDING")
+                    {                    
                     <a class="btn btn-sm btn-info"
                        asp-area="Admin"
                        asp-controller="Partrequest"
@@ -51,6 +54,7 @@
                        asp-controller="Partrequest"
                        asp-action="Deny"
                        asp-route-id="@item.REQUEST_ID">Từ chối</a>
+                       }
                 </td>
 
             </tr>

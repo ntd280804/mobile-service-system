@@ -1,4 +1,4 @@
-﻿@model List<WebApp.Areas.Admin.Controllers.ImportController.ImportViewModel>
+﻿@model List<WebApp.Models.ImportViewModel>
 
 @{
     ViewData["Title"] = "Danh sách Import";
@@ -49,6 +49,12 @@
                        asp-controller="Import"
                        asp-action="Verifysign"
                        asp-route-id="@item.StockInId">Xác thực chữ kí số</a>
+
+                    <a class="btn btn-sm btn-secondary"
+                       asp-area="Admin"
+                       asp-controller="Import"
+                       asp-action="Invoice"
+                       asp-route-id="@item.StockInId">Tạo hóa đơn nhập (PDF)</a>
                 </td>
             </tr>
         }

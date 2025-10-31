@@ -219,10 +219,10 @@ D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\staticwebassets.build.
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\staticwebassets.build.json.cache
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\staticwebassets.development.json
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\staticwebassets.build.endpoints.json
-D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\WebApp.csproj.Up2Date
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\WebApp.dll
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\refint\WebApp.dll
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\WebApp.pdb
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\WebApp.genruntimeconfig.cache
 D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\ref\WebApp.dll
+D:\DOCUMENT\mobile-service-system\WebApp\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

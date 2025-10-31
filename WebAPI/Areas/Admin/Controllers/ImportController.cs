@@ -17,12 +17,14 @@ namespace WebAPI.Areas.Admin.Controllers
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
         private readonly OracleSessionHelper _oracleSessionHelper;
+        private readonly InvoicePdfService _invoicePdfService;
 
-        public ImportController(OracleConnectionManager connManager, JwtHelper jwtHelper ,  OracleSessionHelper oracleSessionHelper)
+        public ImportController(OracleConnectionManager connManager, JwtHelper jwtHelper ,  OracleSessionHelper oracleSessionHelper, InvoicePdfService invoicePdfService)
         {
             _connManager = connManager;
             _jwtHelper = jwtHelper;
             _oracleSessionHelper = oracleSessionHelper;
+            _invoicePdfService = invoicePdfService;
         }
 
         // GET: api/admin/import/getallimport
@@ -60,6 +62,93 @@ namespace WebAPI.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Internal Server Error", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("invoice/{stockinId}")]
+        [Authorize]
+        public IActionResult GetImportInvoicePdf(int stockinId)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                // 1) Load import header + items
+                var items = new List<ImportItemDto>();
+                string? empUsername = null;
+                DateTime? inDate = null;
+                string note = null;
+
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "APP.GET_IMPORT_BY_ID";
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockinId;
+                    var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
+                    cmd.Parameters.Add(outputCursor);
+
+                    using var reader = cmd.ExecuteReader();
+                    if (!reader.HasRows)
+                        return NotFound(new { message = $"StockIn ID {stockinId} not found" });
+
+                    while (reader.Read())
+                    {
+                        if (empUsername == null)
+                        {
+                            empUsername = Convert.ToString(reader["EmpUsername"]);
+                            inDate = Convert.ToDateTime(reader["InDate"]);
+                            note = reader["Note"]?.ToString();
+                        }
+
+                        items.Add(new ImportItemDto
+                        {
+                            PartName = reader["PartName"]?.ToString(),
+                            Manufacturer = reader["Manufacturer"]?.ToString(),
+                            Serial = reader["Serial"]?.ToString(),
+                            Price = reader["Price"] != DBNull.Value ? Convert.ToInt64(reader["Price"]) : 0
+                        });
+                    }
+                }
+
+                var dto = new ImportStockDto
+                {
+                    StockInId = stockinId,
+                    EmpUsername = empUsername ?? string.Empty,
+                    InDate = inDate ?? DateTime.MinValue,
+                    Note = note,
+                    Items = items
+                };
+
+                // 2) Load persisted signature
+                string signature;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "APP.GET_STOCKIN_SIGNATURE";
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockinId;
+                    var pSig = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
+                    cmd.Parameters.Add(pSig);
+                    cmd.ExecuteNonQuery();
+
+                    if (pSig.Value == DBNull.Value || pSig.Value == null)
+                        signature = string.Empty;
+                    else
+                        signature = ((Oracle.ManagedDataAccess.Types.OracleClob)pSig.Value).Value;
+                }
+
+                // 3) Generate PDF without verify URL
+                var pdfBytes = _invoicePdfService.GenerateImportInvoicePdf(dto, signature ?? string.Empty, null, null);
+
+                return File(pdfBytes, "application/pdf", $"ImportInvoice_{stockinId}.pdf");
+            }
+            catch (OracleException ex)
+            {
+                return StatusCode(500, new { Message = "Oracle Error", ErrorCode = ex.Number, Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "General Error", Error = ex.Message });
             }
         }
 

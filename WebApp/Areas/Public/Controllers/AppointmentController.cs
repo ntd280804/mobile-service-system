@@ -6,6 +6,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
+using WebApp.Models;
 
 namespace WebApp.Areas.Public.Controllers
 {
@@ -26,12 +27,7 @@ namespace WebApp.Areas.Public.Controllers
 
         }
 
-        public class CreateAppointmentDto
-        {
-            public string CustomerPhone { get; set; }
-            public DateTime AppointmentDate { get; set; }
-            public string Description { get; set; }
-        }
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Booking(CreateAppointmentDto dto)
@@ -75,14 +71,7 @@ namespace WebApp.Areas.Public.Controllers
             }
         }
 
-        public class AppointmentViewModel
-        {
-            public int AppointmentId { get; set; }
-            public string CustomerPhone { get; set; }
-            public DateTime AppointmentDate { get; set; }
-            public string Status { get; set; }
-            public string Description { get; set; }
-        }
+        
         [HttpGet]
         public async Task<IActionResult> Index()
         {

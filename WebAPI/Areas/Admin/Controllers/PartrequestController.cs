@@ -67,6 +67,66 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
+        [HttpPost("accept/{requestId}")]
+        [Authorize]
+        public IActionResult AcceptPartRequest(int requestId)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.ACCEPT_PART_REQUEST";
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_request_id", OracleDbType.Int32, ParameterDirection.Input).Value = requestId;
+                cmd.ExecuteNonQuery();
+
+                return Ok(new { message = "Accepted" });
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal Server Error", detail = ex.Message });
+            }
+        }
+
+        [HttpPost("deny/{requestId}")]
+        [Authorize]
+        public IActionResult DenyPartRequest(int requestId)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.DENY_PART_REQUEST";
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_request_id", OracleDbType.Int32, ParameterDirection.Input).Value = requestId;
+                cmd.ExecuteNonQuery();
+
+                return Ok(new { message = "Denied" });
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal Server Error", detail = ex.Message });
+            }
+        }
+
 
     }
 }

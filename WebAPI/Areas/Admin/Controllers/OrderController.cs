@@ -6,6 +6,7 @@ using System.Data;
 using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Services;
+using WebAPI.Models.Order;
 
 namespace WebAPI.Areas.Admin.Controllers
 {
@@ -79,17 +80,6 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Lỗi khi lấy danh sách đơn hàng", detail = ex.Message });
             }
         }
-        public class OrderDto
-        {
-            public decimal OrderId { get; set; }
-            public string CustomerPhone { get; set; } = string.Empty;
-            public string ReceiverEmpName { get; set; } = string.Empty;
-            public string HandlerEmpName { get; set; } = string.Empty;
-            public string OrderType { get; set; } = string.Empty;
-            public DateTime ReceivedDate { get; set; }
-            public string Status { get; set; } = string.Empty;
-            public string Description { get; set; } = string.Empty;
-        }
         [HttpGet("by-order-type")]
         [Authorize]
         public IActionResult GetByOrderType([FromQuery] string orderType)
@@ -144,16 +134,6 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Lỗi khi lấy danh sách đơn hàng theo OrderType", detail = ex.Message });
             }
         }
-        public class CreateOrderRequest
-        {
-            public string CustomerPhone { get; set; } = string.Empty;
-            public string ReceiverEmpName { get; set; } = string.Empty;
-            public string HandlerEmpName { get; set; } = string.Empty;
-            public string OrderType { get; set; } = string.Empty;
-            
-            public string Status { get; set; } = string.Empty;
-            public string Description { get; set; } = string.Empty;
-        }
         [HttpPost]
         [Authorize]
         public IActionResult CreateOrder([FromBody] CreateOrderRequest request)
@@ -195,6 +175,56 @@ namespace WebAPI.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi khi tạo đơn hàng", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("details/{orderId}")]
+        [Authorize]
+        public IActionResult GetOrderDetails(int orderId)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.GET_ORDER_BY_ID", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_order_id", OracleDbType.Int32, ParameterDirection.Input).Value = orderId;
+                var cursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(cursor);
+
+                using var reader = cmd.ExecuteReader();
+                if (!reader.HasRows)
+                    return NotFound(new { message = $"Order ID {orderId} not found" });
+
+                OrderDto? order = null;
+                if (reader.Read())
+                {
+                    order = new OrderDto
+                    {
+                        OrderId = reader.GetDecimal(0),
+                        CustomerPhone = reader.GetString(1),
+                        ReceiverEmpName = reader.GetString(2),
+                        HandlerEmpName = reader.GetString(3),
+                        OrderType = reader.GetString(4),
+                        ReceivedDate = reader.GetDateTime(5),
+                        Status = reader.GetString(6),
+                        Description = reader.IsDBNull(7) ? string.Empty : reader.GetString(7)
+                    };
+                }
+
+                return Ok(order);
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi lấy chi tiết đơn hàng", detail = ex.Message });
             }
         }
 

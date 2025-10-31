@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "OYCACOojVog=",
+  "dgSpecHash": "tbnZznBw3ZQ=",
   "success": true,
   "projectFilePath": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\WebAPI.csproj",
   "expectedPackageFiles": [
@@ -150,6 +150,7 @@
     "C:\\Users\\ntdmi\\.nuget\\packages\\oracle.entityframeworkcore\\9.23.90\\oracle.entityframeworkcore.9.23.90.nupkg.sha512",
     "C:\\Users\\ntdmi\\.nuget\\packages\\oracle.manageddataaccess.core\\23.26.0\\oracle.manageddataaccess.core.23.26.0.nupkg.sha512",
     "C:\\Users\\ntdmi\\.nuget\\packages\\qrcoder\\1.7.0\\qrcoder.1.7.0.nupkg.sha512",
+    "C:\\Users\\ntdmi\\.nuget\\packages\\questpdf\\2024.10.2\\questpdf.2024.10.2.nupkg.sha512",
     "C:\\Users\\ntdmi\\.nuget\\packages\\swashbuckle.aspnetcore\\6.6.2\\swashbuckle.aspnetcore.6.6.2.nupkg.sha512",
     "C:\\Users\\ntdmi\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\6.6.2\\swashbuckle.aspnetcore.swagger.6.6.2.nupkg.sha512",
     "C:\\Users\\ntdmi\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\6.6.2\\swashbuckle.aspnetcore.swaggergen.6.6.2.nupkg.sha512",

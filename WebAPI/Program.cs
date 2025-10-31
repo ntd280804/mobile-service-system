@@ -2,13 +2,15 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using WebAPI;
-
 using WebAPI.Helpers;
 using WebAPI.Hubs;
 using WebAPI.Services;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// QuestPDF license configuration
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 // --- Add services --- 
 builder.Services.AddControllers();
@@ -107,6 +109,8 @@ builder.Services.AddSingleton<JwtHelper>();
 builder.Services.AddSingleton<OracleSessionHelper>();
 builder.Services.AddSingleton<OracleConnectionManager>();
 builder.Services.AddSingleton<QrGeneratorSingleton>();
+builder.Services.AddSingleton<InvoicePdfService>();
+builder.Services.AddSingleton<RsaKeyService>();
 // Add SignalR
 builder.Services.AddSignalR();
 builder.WebHost.ConfigureKestrel(options =>

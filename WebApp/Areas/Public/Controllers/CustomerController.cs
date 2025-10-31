@@ -6,6 +6,8 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
+using WebApp.Services;
+using WebApp.Models;
 
 namespace WebApp.Areas.Public.Controllers
 {
@@ -13,11 +15,13 @@ namespace WebApp.Areas.Public.Controllers
     public class CustomerController : Controller
     {
         private readonly HttpClient _httpClient;
+        private readonly SecurityClient _securityClient;
         private readonly OracleClientHelper _OracleClientHelper;
-        public CustomerController(IHttpClientFactory httpClientFactory,OracleClientHelper _or)
+        public CustomerController(IHttpClientFactory httpClientFactory,OracleClientHelper _or, SecurityClient securityClient)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
             _OracleClientHelper = _or;
+            _securityClient = securityClient;
         }
 
 
@@ -45,41 +49,23 @@ namespace WebApp.Areas.Public.Controllers
                     Password = password,
                     Platform = platform
                 };
-                var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/login", loginData);
+                await _securityClient.InitializeAsync(HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!, "public-web");
+                var apiResult = await _securityClient.PostEncryptedAsync<object, LoginResultEnvelope>("api/Public/Customer/login-secure", loginData);
 
-                if (response.IsSuccessStatusCode)
+                if (apiResult.Result == "SUCCESS")
                 {
-                    var result = await response.Content.ReadFromJsonAsync<CustomerLoginDto>();
-                    if (result == null)
-                    {
-                        ModelState.AddModelError("", "API trả về dữ liệu null.");
-                        return View();
-                    }
+                    TempData["Message"] = $"Login thành công! ({apiResult.Username})";
 
-                    if (result.Result == "SUCCESS")
-                    {
-                        TempData["Message"] = $"Login thành công! ({result.Username})";
+                    HttpContext.Session.SetString("CJwtToken", apiResult.Token ?? "");
+                    HttpContext.Session.SetString("CUsername", apiResult.Username ?? "");
+                    HttpContext.Session.SetString("CRole", apiResult.Roles ?? "");
+                    HttpContext.Session.SetString("CPlatform", platform);
+                    HttpContext.Session.SetString("CSessionId", apiResult.SessionId ?? "");
 
-                        HttpContext.Session.SetString("CJwtToken", result.token ?? "");
-                        HttpContext.Session.SetString("CUsername", result.Username ?? "");
-                        HttpContext.Session.SetString("CRole", result.roles ?? "");
-                        HttpContext.Session.SetString("CPlatform", platform); // lưu platform
-                        HttpContext.Session.SetString("CSessionId", result.sessionId ?? ""); // nếu API trả về sessionId
-
-                        return RedirectToAction("Index", "Home", new { area = "Public" });
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("", $"Login thất bại: {result.Result} - {result.message}");
-                        return View();
-                    }
+                    return RedirectToAction("Index", "Home", new { area = "Public" });
                 }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    ModelState.AddModelError("", $"Lỗi kết nối API: {response.ReasonPhrase} - {errorContent}");
-                    return View();
-                }
+                ModelState.AddModelError("", $"Login thất bại: {apiResult.Result} - {apiResult.Message}");
+                return View();
             }
             catch (Exception ex)
             {
@@ -146,26 +132,7 @@ namespace WebApp.Areas.Public.Controllers
 
         // --- DTOs ---
 
-        public class CustomerRegisterDto
-        {
-            public string FullName { get; set; }
-            public string Password { get; set; }
-            public string Email { get; set; }
-            public string Phone { get; set; }
-            public string Address { get; set; }
-        }
-
-        public class CustomerLoginDto
-        {
-            public string Username { get; set; }
-            public string Password { get; set; }
-            public string Result { get; set; }
-            [JsonPropertyName("roles")]
-            public string roles { get; set; }
-            public string token { get; set; }
-            public string? message { get; set; }
-            public string? sessionId { get; set; }
-        }
+        
         
 
     }

@@ -6,70 +6,7 @@
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-<<<<<<< Updated upstream
-      "DocumentGroups": [
-        {
-          "DockedWidth": 608,
-          "SelectedChildIndex": 1,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Booking.cshtml",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Views\\Appointment\\Booking.cshtml",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Views\\Appointment\\Booking.cshtml",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Views\\Appointment\\Booking.cshtml",
-              "RelativeToolTip": "WebApp\\Areas\\Public\\Views\\Appointment\\Booking.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAEAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-10-27T10:57:11.595Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Index.cshtml",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Views\\Appointment\\Index.cshtml",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Views\\Appointment\\Index.cshtml",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Views\\Appointment\\Index.cshtml",
-              "RelativeToolTip": "WebApp\\Areas\\Public\\Views\\Appointment\\Index.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACcAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-10-27T10:49:53.43Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AppointmentController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "RelativeToolTip": "WebApp\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "ViewState": "AgIAAE4AAAAAAAAAAAAuwHUAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-27T10:48:28.321Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "AppointmentController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "RelativeToolTip": "WebAPI\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "ViewState": "AgIAACoAAAAAAAAAAAAywC4AAAAWAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-27T10:46:42.043Z",
-              "EditorCaption": ""
-            }
-          ]
-        }
-      ]
-=======
       "DocumentGroups": []
->>>>>>> Stashed changes
     }
   ]
 }

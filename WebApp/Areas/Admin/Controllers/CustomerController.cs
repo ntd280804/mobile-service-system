@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
+using WebApp.Models;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -19,14 +20,7 @@ namespace WebApp.Areas.Admin.Controllers
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
             _OracleClientHelper = _oracleClientHelper;
         }
-        public class CustomerDto
-        {
-            public string FullName { get; set; }
-            public string Status { get; set; }
-            public string Email { get; set; }
-            public string Phone { get; set; }
-            public string Roles { get; set; }
-        }
+        
         // --- Index: lấy danh sách nhân viên ---
         [HttpGet]
         public async Task<IActionResult> Index()
@@ -79,7 +73,7 @@ namespace WebApp.Areas.Admin.Controllers
                 var response = await _httpClient.PostAsJsonAsync("api/Admin/Customer/unlock", new { Phone = Phone });
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<UnlockResponse>();
+                    var result = await response.Content.ReadFromJsonAsync<CustomerUnlockResponse>();
                     TempData["Message"] = $"Unlock tài khoản '{Phone}': {result.Result}";
                 }
                 else
@@ -127,10 +121,6 @@ namespace WebApp.Areas.Admin.Controllers
 
             return RedirectToAction("Index");
         }
-        public class UnlockResponse
-        {
-            public string Phone { get; set; }
-            public string Result { get; set; }
-        }
+        
     }
 }
