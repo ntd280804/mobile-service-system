@@ -1,0 +1,45 @@
+@model WebApp.Models.PartDto
+
+<h2>Chi tiết linh kiện #@Model.PartId</h2>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Tên linh kiện</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">Hãng sản xuất</dt>
+            <dd class="col-sm-9">@Model.Manufacturer</dd>
+
+            <dt class="col-sm-3">Serial</dt>
+            <dd class="col-sm-9">@Model.Serial</dd>
+
+            <dt class="col-sm-3">QR</dt>
+            <dd class="col-sm-9">
+                @if (Model.QRImage != null && Model.QRImage.Length > 0)
+                {
+                    var base64 = Convert.ToBase64String(Model.QRImage);
+                    var imgSrc = $"data:image/png;base64,{base64}";
+                    <img src="@imgSrc" alt="QR Code" style="width:120px; height:120px;" />
+                }
+            </dd>
+
+            <dt class="col-sm-3">Trạng thái</dt>
+            <dd class="col-sm-9">@Model.Status</dd>
+
+            <dt class="col-sm-3">Stockin Item ID</dt>
+            <dd class="col-sm-9">@Model.StockinItemId</dd>
+
+            <dt class="col-sm-3">Order ID</dt>
+            <dd class="col-sm-9">@(Model.OrderId?.ToString() ?? "-")</dd>
+
+            <dt class="col-sm-3">Giá</dt>
+            <dd class="col-sm-9">@(Model.Price?.ToString() ?? "-")</dd>
+        </dl>
+
+        <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+    </div>
+    
+</div>
+
+
