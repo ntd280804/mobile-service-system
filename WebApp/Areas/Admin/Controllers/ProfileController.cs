@@ -2,7 +2,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using WebApp.Helpers;
-using WebApp.Models;
+using WebApp.Models.Permission;
 
 namespace WebApp.Areas.Admin.Controllers
 {

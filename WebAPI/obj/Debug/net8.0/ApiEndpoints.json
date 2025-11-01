@@ -305,6 +305,16 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "GetCustomerPhones",
+    "RelativePath": "api/Admin/Order/customer-phones",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
     "Method": "GetOrderDetails",
     "RelativePath": "api/Admin/Order/details/{orderId}",
     "HttpMethod": "GET",
@@ -317,6 +327,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "GetHandlerUsernames",
+    "RelativePath": "api/Admin/Order/handler-usernames",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -343,6 +363,16 @@
         "IsRequired": true
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartController",
+    "Method": "GetPartsInStock",
+    "RelativePath": "api/Admin/Part/in-stock",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {
@@ -385,6 +415,22 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartrequestController",
+    "Method": "CreatePartRequest",
+    "RelativePath": "api/Admin/Partrequest/post",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Models.Part.CreatePartRequestDto",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -677,6 +723,22 @@
         "Name": "dto",
         "Type": "WebAPI.Models.Auth.CustomerRegisterDto",
         "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.OrderController",
+    "Method": "GetByPhone",
+    "RelativePath": "api/Public/Order/get-by-phone",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "phone",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

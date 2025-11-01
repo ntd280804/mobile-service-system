@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using WebApp.Helpers;
-using WebApp.Models;
+using WebApp.Models.Part;
 
 namespace WebApp.Areas.Admin.Controllers
 {

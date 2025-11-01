@@ -1,0 +1,50 @@
+@model WebApp.Models.Order.OrderDto
+
+@{
+    ViewData["Title"] = "Chi tiết đơn hàng";
+}
+
+<h2>Chi tiết đơn hàng #@Model.OrderId</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Mã đơn hàng</dt>
+            <dd class="col-sm-9">#@Model.OrderId</dd>
+
+            <dt class="col-sm-3">Loại đơn</dt>
+            <dd class="col-sm-9">@Model.OrderType</dd>
+
+            <dt class="col-sm-3">Ngày tiếp nhận</dt>
+            <dd class="col-sm-9">@Model.ReceivedDate.ToString("dd/MM/yyyy HH:mm")</dd>
+
+            <dt class="col-sm-3">Trạng thái</dt>
+            <dd class="col-sm-9">
+                <span class="badge @(Model.Status == "Hoàn thành" ? "bg-success" : Model.Status == "Đã tiếp nhận" ? "bg-info" : "bg-warning")">
+                    @Model.Status
+                </span>
+            </dd>
+
+            <dt class="col-sm-3">Nhân viên tiếp nhận</dt>
+            <dd class="col-sm-9">@Model.ReceiverEmpName</dd>
+
+            <dt class="col-sm-3">Nhân viên xử lý</dt>
+            <dd class="col-sm-9">@Model.HandlerEmpName</dd>
+
+            <dt class="col-sm-3">Mô tả</dt>
+            <dd class="col-sm-9">@(string.IsNullOrEmpty(Model.Description) ? "-" : Model.Description)</dd>
+        </dl>
+
+        <div class="mt-3">
+            <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+        </div>
+    </div>
+</div>
+

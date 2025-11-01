@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
 using WebApp.Services;
-using WebApp.Models;
+using WebApp.Models.Auth;
 
 namespace WebApp.Areas.Admin.Controllers
 {

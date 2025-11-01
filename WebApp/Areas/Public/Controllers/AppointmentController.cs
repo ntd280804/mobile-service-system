@@ -6,7 +6,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
-using WebApp.Models;
+using WebApp.Models.Appointment;
 
 namespace WebApp.Areas.Public.Controllers
 {

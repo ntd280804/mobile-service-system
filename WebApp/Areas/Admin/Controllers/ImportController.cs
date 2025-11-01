@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using WebApp.Helpers;
-using WebApp.Models;
+using WebApp.Models.Part;
 namespace WebApp.Areas.Admin.Controllers
 {
     [Area("Admin")]

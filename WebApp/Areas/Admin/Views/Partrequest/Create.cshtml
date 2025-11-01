@@ -1,1 +1,182 @@
-﻿
+﻿@model WebApp.Models.Part.CreatePartRequestDto
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Tạo yêu cầu linh kiện";
+    var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
+    if (string.IsNullOrEmpty(Model.EmpUsername))
+    {
+        Model.EmpUsername = username ?? "";
+    }
+    if (Model.RequestDate == default)
+    {
+        Model.RequestDate = DateTime.Now;
+    }
+    if (string.IsNullOrEmpty(Model.Status))
+    {
+        Model.Status = "PENDING";
+    }
+    if (Model.Items == null)
+    {
+        Model.Items = new List<WebApp.Models.Part.PartRequestItemDto> { new WebApp.Models.Part.PartRequestItemDto() };
+    }
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">📦 Tạo yêu cầu linh kiện</h2>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <form asp-action="Create" method="post">
+        <input type="hidden" asp-for="EmpUsername" />
+        <input type="hidden" asp-for="Status" />
+        <input type="hidden" asp-for="RequestDate" />
+
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <strong>📝 Thông tin yêu cầu</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-3">
+                            <label>Order ID</label>
+                            <input type="text" value="@Model.OrderId" class="form-control" readonly />
+                            <input type="hidden" asp-for="OrderId" />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Nhân viên</label>
+                            <input type="text" value="@Model.EmpUsername" class="form-control" readonly />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Ngày yêu cầu</label>
+                            <input type="text" value="@Model.RequestDate.ToString("yyyy-MM-dd HH:mm")" class="form-control" readonly />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label>Trạng thái</label>
+                            <input type="text" value="@Model.Status" class="form-control" readonly />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <strong>📋 Danh sách linh kiện</strong>
+                <button type="button" id="add-item" class="btn btn-sm btn-light">
+                    <i class="bi bi-plus-circle"></i> Thêm linh kiện
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="items-container">
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        <div class="item-row card mb-3">
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-md-10">
+                                        <label class="form-label small">Linh kiện</label>
+                                        <select name="Items[@i].PartId" class="form-control form-control-sm" asp-items="ViewBag.Parts">
+                                            <option value="">-- Chọn linh kiện --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-danger btn-sm remove-item w-100">Xóa</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (!Model.Items.Any())
+                {
+                    <div class="text-center text-muted py-3">
+                        Chưa có linh kiện nào. Vui lòng thêm linh kiện.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="text-end mb-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-circle"></i> Tạo yêu cầu
+            </button>
+            <a asp-action="Index" class="btn btn-secondary btn-lg ms-2">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Store parts data for dynamic generation
+        const partsData = @Html.Raw(Json.Serialize(ViewBag.Parts as List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>));
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const container = document.getElementById("items-container");
+            const addButton = document.getElementById("add-item");
+
+            // Thêm 1 item
+            addButton.addEventListener("click", function () {
+                addItem();
+            });
+
+            // Xóa item
+            container.addEventListener("click", function (e) {
+                if (e.target.classList.contains("remove-item")) {
+                    e.target.closest(".item-row").remove();
+                    reindexItems();
+                }
+            });
+
+            // Hàm thêm 1 item
+            function addItem() {
+                const index = container.children.length;
+                let optionsHtml = '<option value="">-- Chọn linh kiện --</option>';
+                if (partsData) {
+                    partsData.forEach(function(part) {
+                        optionsHtml += `<option value="${part.value}">${part.text}</option>`;
+                    });
+                }
+                
+                const itemHtml = `
+                    <div class="item-row card mb-3">
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-md-10">
+                                    <label class="form-label small">Linh kiện</label>
+                                    <select name="Items[${index}].PartId" class="form-control form-control-sm">
+                                        ${optionsHtml}
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger btn-sm remove-item w-100">Xóa</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                container.insertAdjacentHTML('beforeend', itemHtml);
+                const emptyMsg = container.querySelector('.text-center.text-muted');
+                if (emptyMsg) emptyMsg.style.display = 'none';
+            }
+
+            // Cập nhật lại index sau khi xóa
+            function reindexItems() {
+                const rows = container.querySelectorAll(".item-row");
+                rows.forEach((row, idx) => {
+                    row.querySelectorAll("select").forEach(select => {
+                        const field = select.name.split('.').pop();
+                        select.name = `Items[${idx}].${field}`;
+                    });
+                });
+            }
+        });
+    </script>
+}
+

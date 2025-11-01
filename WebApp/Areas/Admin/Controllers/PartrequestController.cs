@@ -4,7 +4,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using WebApp.Helpers;
-using WebApp.Models;
+using WebApp.Models.Part;
+using WebApp.Models.Order;
 namespace WebApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -153,6 +154,105 @@ namespace WebApp.Areas.Admin.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        // GET: /Admin/Partrequest/Create/{id}
+        [HttpGet]
+        public async Task<IActionResult> Create(decimal id)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            var username = HttpContext.Session.GetString("Username");
+            var model = new CreatePartRequestDto
+            {
+                OrderId = id,
+                EmpUsername = username ?? "",
+                Status = "PENDING",
+                RequestDate = DateTime.Now
+            };
+
+            try
+            {
+                // Load parts for dropdown (only IN_STOCK parts)
+                var partsResponse = await _httpClient.GetAsync("api/admin/part/in-stock");
+                if (partsResponse.IsSuccessStatusCode)
+                {
+                    var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
+                    ViewBag.Parts = parts.Select(p => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem 
+                    { 
+                        Value = p.PartId.ToString(), 
+                        Text = $"{p.Name} ({p.Serial})" 
+                    }).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Parts = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            }
+
+            return View(model);
+        }
+
+        // POST: /Admin/Partrequest/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(CreatePartRequestDto model)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            if (model.Items == null || !model.Items.Any())
+            {
+                TempData["Error"] = "Vui lòng chọn ít nhất 1 linh kiện";
+                // Reload dropdowns
+                await LoadDropdowns();
+                return View(model);
+            }
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/admin/partrequest/post", model);
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["Success"] = "Tạo yêu cầu linh kiện thành công";
+                    return RedirectToAction(nameof(Index));
+                }
+                else
+                {
+                    var msg = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Tạo yêu cầu thất bại: {msg}";
+                    await LoadDropdowns();
+                    return View(model);
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                await LoadDropdowns();
+                return View(model);
+            }
+        }
+
+        private async Task LoadDropdowns()
+        {
+            try
+            {
+                var partsResponse = await _httpClient.GetAsync("api/admin/part/in-stock");
+                if (partsResponse.IsSuccessStatusCode)
+                {
+                    var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
+                    ViewBag.Parts = parts.Select(p => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem 
+                    { 
+                        Value = p.PartId.ToString(), 
+                        Text = $"{p.Name} ({p.Serial})" 
+                    }).ToList();
+                }
+            }
+            catch
+            {
+                ViewBag.Parts = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            }
         }
     }
 }

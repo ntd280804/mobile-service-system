@@ -1,4 +1,4 @@
-﻿@model WebApp.Models.ImportStockDto
+﻿@model WebApp.Models.Part.ImportStockDto
 @inject IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "Import Stock";
@@ -9,81 +9,134 @@
     }
 }
 
-<h2>@ViewData["Title"]</h2>
+<div class="container mt-4">
+    <h2 class="mb-4">📦 Import Stock</h2>
 
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
 
-
-<form asp-action="Create" method="post">
-    <div>
+    <form asp-action="Create" method="post">
         <input type="hidden" asp-for="EmpUsername" />
-    </div>
-    <div>
-        <label asp-for="Note"></label>
-        <input asp-for="Note" />
-    </div>
 
-    <!-- Private Key -->
-    <div>
-        <label>Private Key </label><br />
-        <input type="file" id="private-key-file" accept=".txt" />
-        <input type="hidden" id="PrivateKey" name="PrivateKey" />
-
-    </div>
-
-
-    <!-- Danh sách Items -->
-    <div>
-        <label>Items</label>
-        <div id="items-container">
-            @for (int i = 0; i < Model.Items.Count; i++)
-            {
-                <div class="item-row mb-2">
-                    <label>Part Name</label>
-                    <input name="Items[@i].PartName" value="@Model.Items[i].PartName" />
-                    <label>Manufacturer</label>
-                    <input name="Items[@i].Manufacturer" value="@Model.Items[i].Manufacturer" />
-                    <label>Serial</label>
-                    <input name="Items[@i].Serial" value="@Model.Items[i].Serial" />
-                    <label>Price</label>
-                    <input name="Items[@i].Price" value="@Model.Items[i].Price" type="number" step="0.01" min="0" />
-                    <button type="button" class="btn btn-danger btn-sm remove-item">–</button>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <strong>📝 Thông tin Import</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-3">
+                            <label asp-for="Note">Ghi chú</label>
+                            <input asp-for="Note" class="form-control" placeholder="Nhập ghi chú (nếu có)" />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="private-key-file">Private Key</label>
+                            <input type="file" id="private-key-file" class="form-control" accept=".txt" />
+                            <input type="hidden" id="PrivateKey" name="PrivateKey" />
+                            <small class="form-text text-muted">Chọn file .txt chứa private key</small>
+                        </div>
+                    </div>
                 </div>
-            }
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header bg-secondary text-white">
+                        <strong>⚡ Tạo nhiều Item tự động</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group mb-2">
+                            <label for="auto-partname">Part Name</label>
+                            <input type="text" id="auto-partname" class="form-control" placeholder="VD: Cảm biến độ ẩm" />
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="auto-manufacturer">Manufacturer</label>
+                            <input type="text" id="auto-manufacturer" class="form-control" placeholder="VD: Arduino" />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label for="auto-prefix">Serial Prefix</label>
+                                    <input type="text" id="auto-prefix" class="form-control" placeholder="VD: A-" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label for="auto-qty">Số lượng</label>
+                                    <input type="number" id="auto-qty" class="form-control" min="1" value="1" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="auto-price">Giá mỗi cái</label>
+                            <input type="number" id="auto-price" class="form-control" step="0.01" min="0" />
+                        </div>
+                        <button type="button" id="generate-items" class="btn btn-secondary">Tạo danh sách</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="mt-2">
-            <button type="button" id="add-item" class="btn btn-success">+ Thêm Item</button>
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <strong>📋 Danh sách Items</strong>
+                <button type="button" id="add-item" class="btn btn-sm btn-light">
+                    <i class="bi bi-plus-circle"></i> Thêm Item
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="items-container">
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        <div class="item-row card mb-3">
+                            <div class="card-body">
+                                <div class="row g-2">
+                                    <div class="col-md-3">
+                                        <label class="form-label small">Part Name</label>
+                                        <input name="Items[@i].PartName" value="@Model.Items[i].PartName" class="form-control form-control-sm" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small">Manufacturer</label>
+                                        <input name="Items[@i].Manufacturer" value="@Model.Items[i].Manufacturer" class="form-control form-control-sm" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Serial</label>
+                                        <input name="Items[@i].Serial" value="@Model.Items[i].Serial" class="form-control form-control-sm" />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small">Price</label>
+                                        <input name="Items[@i].Price" value="@Model.Items[i].Price" type="number" step="0.01" min="0" class="form-control form-control-sm" />
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-danger btn-sm remove-item w-100">Xóa</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (!Model.Items.Any())
+                {
+                    <div class="text-center text-muted py-3">
+                        Chưa có item nào. Vui lòng thêm item hoặc sử dụng tính năng tạo tự động.
+                    </div>
+                }
+            </div>
         </div>
 
-        <hr />
-
-        <!-- Sinh hàng loạt -->
-        <h5>Sinh nhiều item tự động</h5>
-        <div class="mb-3">
-            <label>Part Name</label>
-            <input type="text" id="auto-partname" class="form-control" placeholder="VD: Cảm biến độ ẩm" />
-            <label>Manufacturer</label>
-            <input type="text" id="auto-manufacturer" class="form-control" placeholder="VD: Arduino" />
-            <label>Serial Prefix</label>
-            <input type="text" id="auto-prefix" class="form-control" placeholder="VD: A-" />
-            <label>Giá mỗi cái</label>
-            <input type="number" id="auto-price" class="form-control" step="0.01" min="0" />
-            <label>Số lượng</label>
-            <input type="number" id="auto-qty" class="form-control" min="1" value="1" />
-            <button type="button" id="generate-items" class="btn btn-secondary mt-2">Tạo danh sách</button>
+        <div class="text-end mb-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-circle"></i> Tạo Import
+            </button>
         </div>
-    </div>
-
-    <button type="submit" class="btn btn-primary mt-3">Create</button>
-</form>
+    </form>
+</div>
 
 @section Scripts {
     <script>
@@ -129,18 +182,35 @@
             function addItem(partName = "", manufacturer = "", serial = "", price = "") {
                 const index = container.children.length;
                 const itemHtml = `
-                    <div class="item-row mb-2">
-                        <label>Part Name</label>
-                        <input name="Items[${index}].PartName" value="${partName}" />
-                        <label>Manufacturer</label>
-                        <input name="Items[${index}].Manufacturer" value="${manufacturer}" />
-                        <label>Serial</label>
-                        <input name="Items[${index}].Serial" value="${serial}" />
-                        <label>Price</label>
-                        <input name="Items[${index}].Price" value="${price}" type="number" step="0.01" min="0" />
-                        <button type="button" class="btn btn-danger btn-sm remove-item">–</button>
+                    <div class="item-row card mb-3">
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <label class="form-label small">Part Name</label>
+                                    <input name="Items[${index}].PartName" value="${partName}" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small">Manufacturer</label>
+                                    <input name="Items[${index}].Manufacturer" value="${manufacturer}" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Serial</label>
+                                    <input name="Items[${index}].Serial" value="${serial}" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">Price</label>
+                                    <input name="Items[${index}].Price" value="${price}" type="number" step="0.01" min="0" class="form-control form-control-sm" />
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger btn-sm remove-item w-100">Xóa</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>`;
                 container.insertAdjacentHTML('beforeend', itemHtml);
+                // Ẩn thông báo "Chưa có item" nếu có
+                const emptyMsg = container.querySelector('.text-center.text-muted');
+                if (emptyMsg) emptyMsg.style.display = 'none';
             }
 
             // Cập nhật lại index sau khi xóa

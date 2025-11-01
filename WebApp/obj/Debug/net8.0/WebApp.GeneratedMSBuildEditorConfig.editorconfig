@@ -148,6 +148,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXEhvbWVcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/Order/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXE9yZGVyXERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/Order/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXE9yZGVyXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/SecurityDemo/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXFNlY3VyaXR5RGVtb1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

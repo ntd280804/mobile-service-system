@@ -1,182 +1,206 @@
-﻿@model WebApp.Models.UserRoleViewModel
+﻿@model WebApp.Models.Permission.UserRoleViewModel
 @{
     ViewData["Title"] = "Danh sách quyền";
 }
 
-<h4 class="mb-3">@ViewData["Title"]</h4>
+<div class="container mt-4">
+    <h2 class="mb-4">🔐 Quản lý Phân quyền</h2>
 
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">
-        @TempData["Error"]
-    </div>
-}
-
-
-<div class="row g-3">
-    <!-- Danh sách User -->
-    <div class="col-md-4">
-        <h6>Danh sách User</h6>
-        <ul id="user-list" class="scroll-list entity-list">
-            @if (Model.Users?.Any() == true)
-            {
-                foreach (var u in Model.Users)
-                {
-                    <li class="list-group-item item" data-type="user" data-value="@u.Username">
-                        <i class="bi bi-person"></i> @u.Username
-                    </li>
-                }
-            }
-            else
-            {
-                <li class="list-group-item text-muted">Không có user</li>
-            }
-        </ul>
-    </div>
-
-    <!-- Danh sách Role -->
-    <div class="col-md-4">
-        <h6>Danh sách Role</h6>
-        <ul id="role-list" class="scroll-list entity-list">
-            @if (Model.Roles?.Any() == true)
-            {
-                foreach (var r in Model.Roles)
-                {
-                    <li class="list-group-item item" data-type="role" data-value="@r.Role">
-                        <i class="bi bi-shield-lock"></i> @r.Role
-                    </li>
-                }
-            }
-            else
-            {
-                <li class="list-group-item text-muted">Không có role</li>
-            }
-        </ul>
-    </div>
-
-    <!-- Danh sách Role của User -->
-    <div class="col-md-4">
-        <h6>Role của User</h6>
-        <ul id="user-role-list" class="scroll-list entity-list">
-            <li class="list-group-item text-muted">Chọn user để xem role</li>
-        </ul>
-    </div>
-</div>
-
-
-<!-- Form tạo Role -->
-<div class="mt-4">
-    <h6 class="mb-2">Tạo Role mới</h6>
-    <form asp-area="Admin" asp-controller="Role" asp-action="CreateRole" method="post" class="row g-2">
-        <div class="col-auto">
-            <input type="text" class="form-control form-control-sm" name="roleName" placeholder="Nhập tên role" required />
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-sm btn-success">
-                <i class="bi bi-plus-circle"></i> Thêm Role
-            </button>
-        </div>
-    </form>
-
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
     @if (TempData["CreateRoleMessage"] != null)
     {
-        <div class="mt-2 small">@TempData["CreateRoleMessage"]</div>
+        <div class="alert alert-info">@TempData["CreateRoleMessage"]</div>
     }
-</div>
-<div class="mt-4">
-    <h6 class="mb-2">Xóa Role</h6>
-    <form asp-area="Admin" asp-controller="Role" asp-action="DeleteRole" method="post" class="row g-2">
-        <div class="col-auto">
-            <select name="roleName" class="form-select form-select-sm" required>
-                <option value="">--Chọn Role--</option>
-                @foreach (var u in Model.Roles)
-                {
-                    <option value="@u.Role">@u.Role</option>
-                }
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-sm btn-success">
-                <i class="bi bi-plus-circle"></i> Xóa Role
-            </button>
-        </div>
-    </form>
-
     @if (TempData["DeleteRoleMessage"] != null)
     {
-        <div class="mt-2 small">@TempData["DeleteRoleMessage"]</div>
+        <div class="alert alert-warning">@TempData["DeleteRoleMessage"]</div>
     }
-</div>
-
-<!-- Form gán role -->
-<div class="mt-4">
-    <h6 class="mb-2">Gán Role cho User</h6>
-    <form asp-area="Admin" asp-controller="Role" asp-action="AssignRole" method="post" class="row g-2">
-        <div class="col-auto">
-            <select name="userName" class="form-select form-select-sm" required>
-                <option value="">--Chọn User--</option>
-                @foreach (var u in Model.Users)
-                {
-                    <option value="@u.Username">@u.Username</option>
-                }
-            </select>
-        </div>
-        <div class="col-auto">
-            <select name="roleName" class="form-select form-select-sm" required>
-                <option value="">--Chọn Role--</option>
-                @foreach (var r in Model.Roles)
-                {
-                    <option value="@r.Role">@r.Role</option>
-                }
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-sm btn-primary">
-                <i class="bi bi-person-plus"></i> Gán Role
-            </button>
-        </div>
-    </form>
-
     @if (TempData["AssignRoleMessage"] != null)
     {
-        <div class="mt-2 small">@TempData["AssignRoleMessage"]</div>
+        <div class="alert alert-success">@TempData["AssignRoleMessage"]</div>
     }
-</div>
-
-<div class="mt-4">
-    <h6 class="mb-2">Thu hồi Role từ User</h6>
-    <form asp-area="Admin" asp-controller="Role" asp-action="RevokeRole" method="post" class="row g-2">
-        <div class="col-auto">
-            <select id="revoke-username" name="userName" class="form-select form-select-sm" required>
-
-                <option value="">--Chọn User--</option>
-                @foreach (var u in Model.Users)
-                {
-                    <option value="@u.Username">@u.Username</option>
-                }
-            </select>
-        </div>
-        <div class="col-auto">
-            <select id="revoke-role" name="roleName" class="form-select form-select-sm" required>
-
-                <option value="">--Chọn Role--</option>
-                @foreach (var r in Model.Roles)
-                {
-                    <option value="@r.Role">@r.Role</option>
-                }
-            </select>
-        </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-sm btn-danger">
-                <i class="bi bi-person-dash"></i> Thu hồi Role
-            </button>
-        </div>
-    </form>
-
     @if (TempData["RevokeRoleMessage"] != null)
     {
-        <div class="mt-2 small">@TempData["RevokeRoleMessage"]</div>
+        <div class="alert alert-danger">@TempData["RevokeRoleMessage"]</div>
     }
+
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <strong>👥 Danh sách User</strong>
+                </div>
+                <div class="card-body p-0">
+                    <ul id="user-list" class="scroll-list entity-list mb-0">
+                        @if (Model.Users?.Any() == true)
+                        {
+                            foreach (var u in Model.Users)
+                            {
+                                <li class="list-group-item item" data-type="user" data-value="@u.Username">
+                                    <i class="bi bi-person"></i> @u.Username
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="list-group-item text-muted">Không có user</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <strong>🛡️ Danh sách Role</strong>
+                </div>
+                <div class="card-body p-0">
+                    <ul id="role-list" class="scroll-list entity-list mb-0">
+                        @if (Model.Roles?.Any() == true)
+                        {
+                            foreach (var r in Model.Roles)
+                            {
+                                <li class="list-group-item item" data-type="role" data-value="@r.Role">
+                                    <i class="bi bi-shield-lock"></i> @r.Role
+                                </li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="list-group-item text-muted">Không có role</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <strong>📋 Role của User</strong>
+                </div>
+                <div class="card-body p-0">
+                    <ul id="user-role-list" class="scroll-list entity-list mb-0">
+                        <li class="list-group-item text-muted">Chọn user để xem role</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <strong>➕ Tạo Role mới</strong>
+                </div>
+                <div class="card-body">
+                    <form asp-area="Admin" asp-controller="Role" asp-action="CreateRole" method="post">
+                        <div class="form-group mb-3">
+                            <label for="roleName">Tên Role</label>
+                            <input type="text" class="form-control" name="roleName" placeholder="Nhập tên role" required />
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-plus-circle"></i> Thêm Role
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow mt-4">
+                <div class="card-header bg-danger text-white">
+                    <strong>🗑️ Xóa Role</strong>
+                </div>
+                <div class="card-body">
+                    <form asp-area="Admin" asp-controller="Role" asp-action="DeleteRole" method="post">
+                        <div class="form-group mb-3">
+                            <label for="roleName">Chọn Role</label>
+                            <select name="roleName" class="form-control" required>
+                                <option value="">-- Chọn Role --</option>
+                                @foreach (var u in Model.Roles)
+                                {
+                                    <option value="@u.Role">@u.Role</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-danger">Xóa Role</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <strong>🔐 Gán Role cho User</strong>
+                </div>
+                <div class="card-body">
+                    <form asp-area="Admin" asp-controller="Role" asp-action="AssignRole" method="post">
+                        <div class="form-group mb-3">
+                            <label for="userName">Chọn User</label>
+                            <select name="userName" class="form-control" required>
+                                <option value="">-- Chọn User --</option>
+                                @foreach (var u in Model.Users)
+                                {
+                                    <option value="@u.Username">@u.Username</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="roleName">Chọn Role</label>
+                            <select name="roleName" class="form-control" required>
+                                <option value="">-- Chọn Role --</option>
+                                @foreach (var r in Model.Roles)
+                                {
+                                    <option value="@r.Role">@r.Role</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Gán Role
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow mt-4">
+                <div class="card-header bg-warning text-white">
+                    <strong>⚠️ Thu hồi Role từ User</strong>
+                </div>
+                <div class="card-body">
+                    <form asp-area="Admin" asp-controller="Role" asp-action="RevokeRole" method="post">
+                        <div class="form-group mb-3">
+                            <label for="revoke-username">Chọn User</label>
+                            <select id="revoke-username" name="userName" class="form-control" required>
+                                <option value="">-- Chọn User --</option>
+                                @foreach (var u in Model.Users)
+                                {
+                                    <option value="@u.Username">@u.Username</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="revoke-role">Chọn Role</label>
+                            <select id="revoke-role" name="roleName" class="form-control" required>
+                                <option value="">-- Chọn Role --</option>
+                                @foreach (var r in Model.Roles)
+                                {
+                                    <option value="@r.Role">@r.Role</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-person-dash"></i> Thu hồi Role
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 

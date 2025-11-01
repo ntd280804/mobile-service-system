@@ -228,5 +228,81 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
+        [HttpGet("customer-phones")]
+        [Authorize]
+        public IActionResult GetCustomerPhones()
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.GET_ALL_CUSTOMERS", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                var cursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(cursor);
+
+                using var reader = cmd.ExecuteReader();
+                var phones = new List<string>();
+
+                while (reader.Read())
+                {
+                    var phone = reader.GetString(0); // Phone is at index 0
+                    phones.Add(phone);
+                }
+
+                return Ok(phones);
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách số điện thoại khách hàng", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("handler-usernames")]
+        [Authorize]
+        public IActionResult GetHandlerUsernames()
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.GET_ALL_EMPLOYEES", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                var cursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(cursor);
+
+                using var reader = cmd.ExecuteReader();
+                var usernames = new List<string>();
+
+                while (reader.Read())
+                {
+                    var username = reader.GetString(2); // Username is at index 2
+                    usernames.Add(username);
+                }
+
+                return Ok(usernames);
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách username nhân viên", detail = ex.Message });
+            }
+        }
+
     }
 }

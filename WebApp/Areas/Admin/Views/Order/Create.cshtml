@@ -1,4 +1,4 @@
-﻿@model WebApp.Models.CreateOrderRequest
+﻿@model WebApp.Models.Order.CreateOrderRequest
 @inject IHttpContextAccessor HttpContextAccessor
 @{
     var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
@@ -23,7 +23,7 @@
 <form asp-action="Create" method="post">
     <div class="form-group">
         <label>Customer Phone</label>
-        <select asp-for="CustomerPhone" class="form-control" id="CustomerPhoneSelect">
+        <select asp-for="CustomerPhone" class="form-control" id="CustomerPhoneSelect" asp-items="ViewBag.CustomerPhones">
             <option value="">-- Chọn khách hàng --</option>
         </select>
         <span asp-validation-for="CustomerPhone" class="text-danger"></span>
@@ -31,7 +31,7 @@
 
     <div class="form-group">
         <label>Handler Username</label>
-        <select asp-for="HandlerEmpName" class="form-control" id="HandlerEmpSelect">
+        <select asp-for="HandlerEmpName" class="form-control" id="HandlerEmpSelect" asp-items="ViewBag.HandlerUsernames">
             <option value="">-- Chọn nhân viên xử lý --</option>
         </select>
         <span asp-validation-for="HandlerEmpName" class="text-danger"></span>
