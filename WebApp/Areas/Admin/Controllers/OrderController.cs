@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
+using WebApp.Models.Order;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -53,6 +54,45 @@ namespace WebApp.Areas.Admin.Controllers
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
                 return View(new List<OrderDto>());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/admin/order/details/{id}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
+                        HttpContext.Session.Clear();
+                        return RedirectToAction("Login", "Employee", new { area = "Admin" });
+                    }
+
+                    var errorMsg = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Không tìm thấy đơn hàng hoặc lỗi API: {response.ReasonPhrase} - {errorMsg}";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var order = await response.Content.ReadFromJsonAsync<OrderDto>();
+                if (order == null)
+                {
+                    TempData["Error"] = "Không tìm thấy dữ liệu đơn hàng.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(order);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                return RedirectToAction(nameof(Index));
             }
         }
         [HttpGet]
@@ -125,8 +165,11 @@ namespace WebApp.Areas.Admin.Controllers
         }
         // GET: Form tạo đơn
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
             var username = HttpContext.Session.GetString("Username");
 
             var model = new CreateOrderRequest
@@ -134,6 +177,31 @@ namespace WebApp.Areas.Admin.Controllers
                 ReceiverEmpName = username,
                 Status = "Đã tiếp nhận",
             };
+
+            try
+            {
+                // Load customer phones for dropdown
+                var phonesResponse = await _httpClient.GetAsync("api/admin/order/customer-phones");
+                if (phonesResponse.IsSuccessStatusCode)
+                {
+                    var phones = await phonesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
+                    ViewBag.CustomerPhones = phones.Select(p => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = p, Text = p }).ToList();
+                }
+
+                // Load handler usernames for dropdown
+                var usernamesResponse = await _httpClient.GetAsync("api/admin/order/handler-usernames");
+                if (usernamesResponse.IsSuccessStatusCode)
+                {
+                    var usernames = await usernamesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
+                    ViewBag.HandlerUsernames = usernames.Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = u, Text = u }).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                // If loading fails, continue with empty dropdowns
+                ViewBag.CustomerPhones = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+                ViewBag.HandlerUsernames = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            }
 
             return View(model);
         }
@@ -144,11 +212,34 @@ namespace WebApp.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateOrderRequest model)
         {
-            if (!ModelState.IsValid)
-                return View(model);
-
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+
+            // Reload dropdowns for any return to view
+            try
+            {
+                var phonesResponse = await _httpClient.GetAsync("api/admin/order/customer-phones");
+                if (phonesResponse.IsSuccessStatusCode)
+                {
+                    var phones = await phonesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
+                    ViewBag.CustomerPhones = phones.Select(p => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = p, Text = p }).ToList();
+                }
+
+                var usernamesResponse = await _httpClient.GetAsync("api/admin/order/handler-usernames");
+                if (usernamesResponse.IsSuccessStatusCode)
+                {
+                    var usernames = await usernamesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
+                    ViewBag.HandlerUsernames = usernames.Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = u, Text = u }).ToList();
+                }
+            }
+            catch
+            {
+                ViewBag.CustomerPhones = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+                ViewBag.HandlerUsernames = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+            }
+
+            if (!ModelState.IsValid)
+                return View(model);
 
             try
             {
@@ -183,25 +274,6 @@ namespace WebApp.Areas.Admin.Controllers
                 return View(model);
             }
         }
-        public class OrderDto
-        {
-            public decimal OrderId { get; set; }
-            public string CustomerPhone { get; set; } = string.Empty;
-            public string ReceiverEmpName { get; set; } = string.Empty;
-            public string HandlerEmpName { get; set; } = string.Empty;
-            public string OrderType { get; set; } = string.Empty;
-            public DateTime ReceivedDate { get; set; }
-            public string Status { get; set; } = string.Empty;
-            public string Description { get; set; } = string.Empty;
-        }
-        public class CreateOrderRequest
-        {
-            public string CustomerPhone { get; set; } = string.Empty;
-            public string ReceiverEmpName { get; set; } = string.Empty;
-            public string HandlerEmpName { get; set; } = string.Empty;
-            public string OrderType { get; set; } = string.Empty;
-            public string Status { get; set; } = string.Empty;
-            public string Description { get; set; } = string.Empty;
-        }
+        
     }
 }

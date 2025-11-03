@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using WebApp.Helpers;
+using WebApp.Models.Permission;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -16,44 +17,12 @@ namespace WebApp.Areas.Admin.Controllers
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
             _OracleClientHelper = _oracleclienthelper;
         }
-        public class UserDto
-        {
-            public string Username { get; set; }
-            public string Profile { get; set; }
-        }
-
-        public class ProfileDto
-        {
-            public string ProfileName { get; set; }
-            public string FailedLogin { get; set; }
-            public string LifeTime { get; set; }
-            public string GraceTime { get; set; }
-            public string LockTime { get; set; }
-        }
-
-        public class AssignProfileRequest
-        {
-            public string Username { get; set; }
-            public string ProfileName { get; set; }
-        }
-
-        public class UserProfileViewModel
-        {
-            public List<UserDto> Users { get; set; } = new();
-            public List<ProfileDto> Profiles { get; set; } = new();
-        }
+        
 
         // =============================
         // Tạo Profile
         // =============================
-        public class CreateProfileRequest
-        {
-            public string ProfileName { get; set; } = string.Empty;
-            public string FailedLogin { get; set; } = "UNLIMITED";
-            public string LifeTime { get; set; } = "UNLIMITED";
-            public string GraceTime { get; set; } = "UNLIMITED";
-            public string LockTime { get; set; } = "UNLIMITED";
-        }
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateProfile(CreateProfileRequest request)
@@ -198,7 +167,7 @@ namespace WebApp.Areas.Admin.Controllers
                 var responseUser = await _httpClient.GetAsync("api/Admin/Profile/users");
                 if (responseUser.IsSuccessStatusCode)
                 {
-                    model.Users = await responseUser.Content.ReadFromJsonAsync<List<UserDto>>() ?? new List<UserDto>();
+                    model.Users = await responseUser.Content.ReadFromJsonAsync<List<ProfileUserDto>>() ?? new List<ProfileUserDto>();
                 }
                 else
                 {

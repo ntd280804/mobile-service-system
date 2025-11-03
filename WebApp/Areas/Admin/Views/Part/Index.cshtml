@@ -1,4 +1,4 @@
-﻿@model List<WebApp.Areas.Admin.Controllers.PartController.PartDto>
+﻿@model List<WebApp.Models.Part.PartDto>
 
 @{
     ViewData["Title"] = "Danh sách linh kiện";
@@ -54,7 +54,7 @@
                            asp-area="Admin"
                            asp-controller="Part"
                            asp-action="Details"
-                           asp-route-id="@item.PartId">Xem chi tiết</a>
+                           asp-route-serial="@item.Serial">Xem chi tiết</a>
                     </td>
 
                 </tr>

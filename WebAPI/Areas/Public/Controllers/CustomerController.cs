@@ -7,6 +7,11 @@ using System.Data;
 using WebAPI.Helpers;
 
 using WebAPI.Services;
+using WebAPI.Models.Auth;
+using WebAPI.Models;
+using System.Security.Cryptography;
+using System.Text;
+using System.IO;
 namespace WebAPI.Areas.Public.Controllers
 {
     [Area("Public")]
@@ -31,16 +36,37 @@ namespace WebAPI.Areas.Public.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] CustomerLoginDto dto)
+        public ActionResult<ApiResponse<CustomerLoginResult>> Login([FromBody] CustomerLoginDto dto)
         {
             if (dto == null)
-                return BadRequest(new { message = "Invalid data" });
+                return BadRequest(ApiResponse<CustomerLoginResult>.Fail("Invalid data"));
 
             try
             {
                 string platform = dto.Platform;
                 string sessionId = Guid.NewGuid().ToString();
-                var conn = _connManager.CreateConnection(dto.Username, dto.Password, platform, sessionId);
+                var conn = _connManager.CreateDefaultConnection();
+                string hashedPwd;
+                using (var cmd1 = new OracleCommand("APP.HASH_PASSWORD_20CHARS", conn))
+                {
+                    cmd1.CommandType = CommandType.StoredProcedure; // function cũng dùng StoredProcedure
+
+                    // Tham số RETURN
+                    var returnParam = new OracleParameter("returnVal", OracleDbType.Varchar2, 50)
+                    {
+                        Direction = ParameterDirection.ReturnValue
+                    };
+                    cmd1.Parameters.Add(returnParam);
+
+                    // Tham số input
+                    cmd1.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
+
+                    cmd1.ExecuteNonQuery();
+
+                    hashedPwd = returnParam.Value?.ToString();
+
+                }
+                conn = _connManager.CreateConnection(dto.Username, hashedPwd, platform, sessionId);
 
                 using var cmd = new OracleCommand("APP.LOGIN_CUSTOMER", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -63,10 +89,17 @@ namespace WebAPI.Areas.Public.Controllers
                 var roles = "CUSTOMER";
 
                 if (result != "SUCCESS")
-                    return Unauthorized(new { result, message = "Sai số điện thoại hoặc mật khẩu." });
+                    return Unauthorized(ApiResponse<CustomerLoginResult>.Fail("Sai số điện thoại hoặc mật khẩu."));
 
                 var token = _jwtHelper.GenerateToken(username, roles, sessionId);
-                return Ok(new { username, roles, result, sessionId, token });
+                return Ok(ApiResponse<CustomerLoginResult>.Ok(new CustomerLoginResult
+                {
+                    Username = username,
+                    Roles = roles,
+                    Result = result,
+                    SessionId = sessionId,
+                    Token = token
+                }));
             }
             catch (OracleException ex)
             {
@@ -80,7 +113,44 @@ namespace WebAPI.Areas.Public.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { result = "FAILED", message = ex.Message });
+                return StatusCode(500, ApiResponse<CustomerLoginResult>.Fail(ex.Message));
+            }
+        }
+
+
+        [HttpPost("login-secure")]
+        public ActionResult<ApiResponse<CustomerLoginResult>> LoginSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        {
+            if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
+                return BadRequest(ApiResponse<CustomerLoginResult>.Fail("Invalid encrypted payload"));
+
+            try
+            {
+                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
+                byte[] aesKey = new byte[32];
+                byte[] iv = new byte[16];
+                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
+                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
+
+                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
+                using (Aes aes = Aes.Create())
+                {
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
+                    using (var ms = new MemoryStream(cipherBytes))
+                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                    using (var reader = new StreamReader(cs, Encoding.UTF8))
+                    {
+                        string plaintext = reader.ReadToEnd();
+                        var dto = System.Text.Json.JsonSerializer.Deserialize<CustomerLoginDto>(plaintext);
+                        if (dto == null)
+                            return BadRequest(ApiResponse<CustomerLoginResult>.Fail("Cannot parse payload"));
+                        return Login(dto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<CustomerLoginResult>.Fail(ex.Message));
             }
         }
 
@@ -132,20 +202,5 @@ namespace WebAPI.Areas.Public.Controllers
         }
 
         // DTO
-
-        public class CustomerLoginDto
-        {
-            public string Username { get; set; }
-            public string Password { get; set; }
-            public string Platform { get; set; }
-        }
-        public class CustomerRegisterDto
-        {
-            public string FullName { get; set; }
-            public string Password { get; set; }
-            public string Email { get; set; }
-            public string Phone { get; set; }
-            public string Address { get; set; }
-        }
     }
 }

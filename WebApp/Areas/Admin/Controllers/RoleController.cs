@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
+using WebApp.Models.Permission;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -19,25 +20,7 @@ namespace WebApp.Areas.Admin.Controllers
             _OracleClientHelper = _oracle;
         }
 
-        // DTOs
-        public class UserDto
-        {
-            public string Username { get; set; }
-        }
-
-        public class RoleDto
-        {
-            [JsonPropertyName("role")]
-            public string Role { get; set; }
-            [JsonPropertyName("grantedRole")]
-            public string GrantedRole { get; set; } // for roles-of-user
-        }
-
-        public class UserRoleViewModel
-        {
-            public List<UserDto> Users { get; set; } = new();
-            public List<RoleDto> Roles { get; set; } = new();
-        }
+        // DTOs moved to WebApp.Models
 
         // GET: /Admin/Role
         [HttpGet]
@@ -55,7 +38,7 @@ namespace WebApp.Areas.Admin.Controllers
                 var responseUser = await _httpClient.GetAsync("api/Admin/Role/users");
                 if (responseUser.IsSuccessStatusCode)
                 {
-                    model.Users = await responseUser.Content.ReadFromJsonAsync<List<UserDto>>() ?? new List<UserDto>();
+                    model.Users = await responseUser.Content.ReadFromJsonAsync<List<RoleUserDto>>() ?? new List<RoleUserDto>();
                 }
                 else
                 {

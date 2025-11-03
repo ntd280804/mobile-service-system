@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using WebApp.Helpers;
+using WebApp.Models.Part;
 namespace WebApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -18,40 +19,7 @@ namespace WebApp.Areas.Admin.Controllers
             _OracleClientHelper = _oracleClientHelper;
         }
 
-        // DTOs
-        public class ImportItemDto
-        {
-            public string PartName { get; set; }
-            public string Manufacturer { get; set; }
-            public string Serial { get; set; }
-            public long Price { get; set; }
-        }
-
-        public class ImportStockDto
-        {
-            public string EmpUsername { get; set; }
-            public string Note { get; set; }
-            public string PrivateKey { get; set; }
-            public List<ImportItemDto> Items { get; set; } = new();
-        }
-
-        public class ImportViewModel
-        {
-            public int StockInId { get; set; }
-            public string EmpUsername { get; set; }
-            public DateTime InDate { get; set; }
-            public string Note { get; set; }
-            
-        }
-
-        public class ImportDetailViewModel
-        {
-            public int StockInId { get; set; }
-            public string EmpUsername { get; set; }
-            public DateTime InDate { get; set; }
-            public string Note { get; set; }
-            public List<ImportItemDto> Items { get; set; } = new();
-        }
+        // DTOs moved to WebApp.Models
 
         // GET: /Admin/Import
         [HttpGet]
@@ -203,11 +171,34 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
 
-        // DTO để nhận kết quả verify
-        public class VerifySignResult
+        // GET: /Admin/Import/Invoice/5
+        [HttpGet]
+        public async Task<IActionResult> Invoice(int id)
         {
-            public int StockInId { get; set; }
-            public bool IsValid { get; set; }
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/admin/import/invoice/{id}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMsg = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Tải hóa đơn thất bại: {response.ReasonPhrase} - {errorMsg}";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var stream = await response.Content.ReadAsStreamAsync();
+                var fileName = $"ImportInvoice_{id}.pdf";
+                return File(stream, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
         }
+
+        
     }
 }

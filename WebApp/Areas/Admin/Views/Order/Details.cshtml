@@ -1,0 +1,34 @@
+@model WebApp.Models.Order.OrderDto
+
+<h2>Chi tiết đơn hàng #@Model.OrderId</h2>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Số điện thoại KH</dt>
+            <dd class="col-sm-9">@Model.CustomerPhone</dd>
+
+            <dt class="col-sm-3">Nhân viên tiếp nhận</dt>
+            <dd class="col-sm-9">@Model.ReceiverEmpName</dd>
+
+            <dt class="col-sm-3">Nhân viên xử lý</dt>
+            <dd class="col-sm-9">@Model.HandlerEmpName</dd>
+
+            <dt class="col-sm-3">Loại đơn</dt>
+            <dd class="col-sm-9">@Model.OrderType</dd>
+
+            <dt class="col-sm-3">Ngày tiếp nhận</dt>
+            <dd class="col-sm-9">@Model.ReceivedDate</dd>
+
+            <dt class="col-sm-3">Trạng thái</dt>
+            <dd class="col-sm-9">@Model.Status</dd>
+
+            <dt class="col-sm-3">Mô tả</dt>
+            <dd class="col-sm-9">@Model.Description</dd>
+        </dl>
+
+        <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+    </div>
+</div>
+
+

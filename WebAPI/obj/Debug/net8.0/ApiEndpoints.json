@@ -107,7 +107,43 @@
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.EmployeeLoginResult, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
+    "Method": "LoginSecure",
+    "RelativePath": "api/Admin/Employee/login-secure",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "payload",
+        "Type": "WebAPI.Models.EncryptedPayload",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.EmployeeLoginResult, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
@@ -179,6 +215,22 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
+    "Method": "GetImportInvoicePdf",
+    "RelativePath": "api/admin/Import/invoice/{stockinId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "stockinId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
     "Method": "ImportStockStepByStepWithTransaction",
     "RelativePath": "api/admin/Import/post",
     "HttpMethod": "POST",
@@ -229,7 +281,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Areas.Admin.Controllers.OrderController\u002BCreateOrderRequest",
+        "Type": "WebAPI.Models.Order.CreateOrderRequest",
         "IsRequired": true
       }
     ],
@@ -252,6 +304,42 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "GetCustomerPhones",
+    "RelativePath": "api/Admin/Order/customer-phones",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "GetOrderDetails",
+    "RelativePath": "api/Admin/Order/details/{orderId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "orderId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "GetHandlerUsernames",
+    "RelativePath": "api/Admin/Order/handler-usernames",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.PartController",
     "Method": "GetAll",
     "RelativePath": "api/Admin/Part",
@@ -262,6 +350,64 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartController",
+    "Method": "GetPartDetails",
+    "RelativePath": "api/Admin/Part/details/{serial}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "serial",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartController",
+    "Method": "GetPartsInStock",
+    "RelativePath": "api/Admin/Part/in-stock",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartrequestController",
+    "Method": "AcceptPartRequest",
+    "RelativePath": "api/Admin/Partrequest/accept/{requestId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartrequestController",
+    "Method": "DenyPartRequest",
+    "RelativePath": "api/Admin/Partrequest/deny/{requestId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.PartrequestController",
     "Method": "GetAllImports",
     "RelativePath": "api/Admin/Partrequest/getallpartrequest",
@@ -269,6 +415,22 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartrequestController",
+    "Method": "CreatePartRequest",
+    "RelativePath": "api/Admin/Partrequest/post",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Models.Part.CreatePartRequestDto",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -365,7 +527,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Areas.Admin.Controllers.RoleController\u002BAssignRoleRequest",
+        "Type": "WebAPI.Models.Permission.AssignRoleRequest",
         "IsRequired": true
       }
     ],
@@ -413,7 +575,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Areas.Admin.Controllers.RoleController\u002BRevokeRoleRequest",
+        "Type": "WebAPI.Models.Permission.RevokeRoleRequest",
         "IsRequired": true
       }
     ],
@@ -465,7 +627,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Public.Controllers.AppointmentController\u002BCreateAppointmentDto",
+        "Type": "WebAPI.Models.Appointment.CreateAppointmentDto",
         "IsRequired": true
       }
     ],
@@ -497,11 +659,47 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Public.Controllers.CustomerController\u002BCustomerLoginDto",
+        "Type": "WebAPI.Models.Auth.CustomerLoginDto",
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.CustomerLoginResult, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
+    "Method": "LoginSecure",
+    "RelativePath": "api/Public/Customer/login-secure",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "payload",
+        "Type": "WebAPI.Models.EncryptedPayload",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.CustomerLoginResult, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
@@ -523,10 +721,124 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Public.Controllers.CustomerController\u002BCustomerRegisterDto",
+        "Type": "WebAPI.Models.Auth.CustomerRegisterDto",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.OrderController",
+    "Method": "GetByPhone",
+    "RelativePath": "api/Public/Order/get-by-phone",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "phone",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.SecurityController",
+    "Method": "DecryptEcho",
+    "RelativePath": "api/Public/Security/decrypt-echo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "payload",
+        "Type": "WebAPI.Areas.Public.Controllers.SecurityController\u002BEncryptedPayload",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.SecurityController",
+    "Method": "EncryptForClient",
+    "RelativePath": "api/Public/Security/encrypt-for-client",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "WebAPI.Areas.Public.Controllers.SecurityController\u002BEncryptForClientRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Areas.Public.Controllers.SecurityController\u002BEncryptForClientResponse, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.SecurityController",
+    "Method": "RegisterClientKey",
+    "RelativePath": "api/Public/Security/register-client-key",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "WebAPI.Areas.Public.Controllers.SecurityController\u002BRegisterClientKeyRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.SecurityController",
+    "Method": "GetServerPublicKey",
+    "RelativePath": "api/Public/Security/server-public-key",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   }
 ]

@@ -4,6 +4,8 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
+using WebApp.Services;
+using WebApp.Models.Auth;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -12,12 +14,14 @@ namespace WebApp.Areas.Admin.Controllers
         
     {
         private readonly HttpClient _httpClient;
+        private readonly SecurityClient _securityClient;
         private readonly OracleClientHelper _OracleClientHelper;
 
-        public EmployeeController(IHttpClientFactory httpClientFactory, OracleClientHelper _oracleClientHelper)
+        public EmployeeController(IHttpClientFactory httpClientFactory, OracleClientHelper _oracleClientHelper, SecurityClient securityClient)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
             _OracleClientHelper = _oracleClientHelper;
+            _securityClient = securityClient;
         }
 
         // --- Index: lấy danh sách nhân viên ---
@@ -83,41 +87,22 @@ namespace WebApp.Areas.Admin.Controllers
                     Platform = platform
                 };
 
-                var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/login", loginData);
+                await _securityClient.InitializeAsync(HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!, "admin-web");
+                var apiResult = await _securityClient.PostEncryptedAsync<object, LoginResultEnvelope>("api/Admin/Employee/login-secure", loginData);
 
-                if (response.IsSuccessStatusCode)
+                if (apiResult.Result == "SUCCESS")
                 {
-                    var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-                    if (result == null)
-                    {
-                        ModelState.AddModelError("", "API trả về dữ liệu null.");
-                        return View();
-                    }
+                    HttpContext.Session.SetString("JwtToken", apiResult.Token ?? "");
+                    HttpContext.Session.SetString("Username", apiResult.Username ?? "");
+                    HttpContext.Session.SetString("Role", apiResult.Roles ?? "");
+                    HttpContext.Session.SetString("Platform", platform);
+                    HttpContext.Session.SetString("SessionId", apiResult.SessionId ?? "");
 
-                    if (result.result == "SUCCESS")
-                    {
-                        // Lưu session
-                        HttpContext.Session.SetString("JwtToken", result.token ?? "");
-                        HttpContext.Session.SetString("Username", result.Username ?? "");
-                        HttpContext.Session.SetString("Role", result.roles ?? "");
-                        HttpContext.Session.SetString("Platform", platform); // lưu platform
-                        HttpContext.Session.SetString("SessionId", result.sessionId ?? ""); // nếu API trả về sessionId
-
-                        TempData["Message"] = $"Login thành công! ({result.roles})";
-                        return RedirectToAction("Index", "Home", new { area = "Admin" });
-                    }
-                    else
-                    {
-                        ModelState.AddModelError("", $"Login thất bại: {result.result}");
-                        return View();
-                    }
+                    TempData["Message"] = $"Login thành công! ({apiResult.Roles})";
+                    return RedirectToAction("Index", "Home", new { area = "Admin" });
                 }
-                else
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync();
-                    ModelState.AddModelError("", $"Lỗi đăng nhập: {errorContent}");
-                    return View();
-                }
+                ModelState.AddModelError("", $"Login thất bại: {apiResult.Result} - {apiResult.Message}");
+                return View();
             }
             catch (Exception ex)
             {
@@ -209,7 +194,7 @@ namespace WebApp.Areas.Admin.Controllers
                 var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/unlock", new { Username = username });
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<UnlockResponse>();
+                    var result = await response.Content.ReadFromJsonAsync<EmployeeUnlockResponse>();
                     TempData["Message"] = $"Unlock tài khoản '{username}': {result.Result}";
                 }
                 else
@@ -259,44 +244,6 @@ namespace WebApp.Areas.Admin.Controllers
         }
 
         // --- DTOs ---
-        public class EmployeeDto
-        {
-            public decimal EmpId { get; set; }
-            public string FullName { get; set; }
-            public string Status { get; set; }
-            public string Username { get; set; }
-            public string Email { get; set; }
-            public string Phone { get; set; }
-            public string Roles { get; set; }
-        }
-
-        public class EmployeeRegisterDto
-        {
-            public string FullName { get; set; }
-            public string Username { get; set; }
-            public string Password { get; set; }
-            public string Email { get; set; }
-            public string Phone { get; set; }
-        }
-
-        public class LoginResponse
-        {
-            [JsonPropertyName("username")]
-            public string Username { get; set; }
-            [JsonPropertyName("roles")]
-            public string roles { get; set; }
-            [JsonPropertyName("result")]
-            public string result { get; set; }
-            [JsonPropertyName("token")]
-            public string token { get; set; }
-            public string? message { get; set; }
-            public string? sessionId { get; set; }
-        }
-
-        public class UnlockResponse
-        {
-            public string Username { get; set; }
-            public string Result { get; set; }
-        }
+        
     }
 }

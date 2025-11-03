@@ -1,0 +1,69 @@
+@model List<WebApp.Models.Order.OrderDto>
+
+@{
+    ViewData["Title"] = "Danh sách đơn hàng của tôi";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+<table class="table table-bordered table-striped mt-3">
+    <thead class="table-dark">
+        <tr>
+            <th>Mã đơn</th>
+            <th>Loại đơn</th>
+            <th>Ngày tiếp nhận</th>
+            <th>Trạng thái</th>
+            <th>Nhân viên tiếp nhận</th>
+            <th>Nhân viên xử lý</th>
+            <th>Hành động</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var order in Model)
+            {
+                <tr>
+                    <td>#@order.OrderId</td>
+                    <td>@order.OrderType</td>
+                    <td>@order.ReceivedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <span class="badge @(order.Status == "Hoàn thành" ? "bg-success" : order.Status == "Đã tiếp nhận" ? "bg-info" : "bg-warning")">
+                            @order.Status
+                        </span>
+                    </td>
+                    <td>@order.ReceiverEmpName</td>
+                    <td>@order.HandlerEmpName</td>
+                    <td>
+                        <a class="btn btn-sm btn-info"
+                           asp-area="Public"
+                           asp-controller="Order"
+                           asp-action="Details"
+                           asp-route-id="@order.OrderId">Xem chi tiết</a>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="7" class="text-center">Bạn chưa có đơn hàng nào.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

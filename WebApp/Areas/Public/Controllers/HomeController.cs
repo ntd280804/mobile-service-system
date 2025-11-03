@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using WebApp.Areas.Public.Models;
+using WebApp.Models;
 namespace WebApp.Areas.Public.Controllers
 {
     [Area("Public")]

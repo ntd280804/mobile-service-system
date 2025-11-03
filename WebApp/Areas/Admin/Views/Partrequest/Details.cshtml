@@ -1,4 +1,40 @@
-﻿@page
-@model WebApp.Areas.Admin.Views.Partrequest.DetailsModel
-@{
-}
+﻿@model WebApp.Models.Part.PartRequestViewModel
+
+<h2>Chi tiết yêu cầu linh kiện #@Model.REQUEST_ID</h2>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">ORDER_ID</dt>
+            <dd class="col-sm-9">@Model.ORDER_ID</dd>
+
+            <dt class="col-sm-3">EMPLOYEE USERNAME</dt>
+            <dd class="col-sm-9">@Model.EmpUsername</dd>
+
+            <dt class="col-sm-3">REQUEST_DATE</dt>
+            <dd class="col-sm-9">@Model.REQUEST_DATE.ToString("yyyy-MM-dd HH:mm")</dd>
+
+            <dt class="col-sm-3">STATUS</dt>
+            <dd class="col-sm-9">@Model.STATUS</dd>
+        </dl>
+
+        <div class="mt-3">
+            @if (@Model.STATUS == "PENDING")
+            {
+                <a class="btn btn-success"
+                asp-area="Admin"
+                asp-controller="Partrequest"
+                asp-action="Accept"
+                asp-route-id="@Model.REQUEST_ID">Duyệt yêu cầu</a>
+
+                <a class="btn btn-danger ms-2"
+                asp-area="Admin"
+                asp-controller="Partrequest"
+                asp-action="Deny"
+                asp-route-id="@Model.REQUEST_ID">Từ chối</a>
+            }
+
+            <a class="btn btn-secondary ms-2" asp-action="Index">Quay lại</a>
+        </div>
+    </div>
+</div>

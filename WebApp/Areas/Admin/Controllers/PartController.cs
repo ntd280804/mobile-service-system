@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using WebApp.Helpers;
+using WebApp.Models.Part;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -23,22 +24,7 @@ namespace WebApp.Areas.Admin.Controllers
 
         // ĐÃ SỬA: Chuyển Field sang Property (có { get; set; }) và sử dụng kiểu Nullable (?) cho OrderId và Price.
         // Price được đổi từ long sang decimal? để khớp với kiểu trả về từ API (decimal).
-        public class PartDto
-        {
-            public decimal PartId { get; set; }
-            public string Name { get; set; }
-            public string Manufacturer { get; set; }
-            public string Serial { get; set; }
-            public byte[] QRImage { get; set; }
-            public string Status { get; set; }
-            public decimal StockinItemId { get; set; }
-
-            // Xử lý giá trị NULL: Dùng decimal? thay vì decimal
-            public decimal? OrderId { get; set; }
-
-            // Xử lý giá trị NULL: Dùng decimal? thay vì long/decimal
-            public decimal? Price { get; set; }
-        }
+        
 
         // --- Index: lấy danh sách nhân viên ---
         [HttpGet]
@@ -75,6 +61,45 @@ namespace WebApp.Areas.Admin.Controllers
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
                 return View(new List<PartDto>());
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Details(string serial)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/admin/part/details/{serial}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
+                        HttpContext.Session.Clear();
+                        return RedirectToAction("Login", "Employee", new { area = "Admin" });
+                    }
+
+                    var errorMsg = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Không tìm thấy linh kiện hoặc lỗi API: {response.ReasonPhrase} - {errorMsg}";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var part = await response.Content.ReadFromJsonAsync<PartDto>();
+                if (part == null)
+                {
+                    TempData["Error"] = "Không tìm thấy dữ liệu linh kiện.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                return View(part);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                return RedirectToAction(nameof(Index));
             }
         }
     }

@@ -7,6 +7,8 @@ using System.Data;
 using WebAPI.Helpers;
 
 using WebAPI.Services;
+using WebAPI.Models.Appointment;
+
 namespace WebAPI.Areas.Public.Controllers
 {
     [Area("Public")]
@@ -30,20 +32,6 @@ namespace WebAPI.Areas.Public.Controllers
             _oracleSessionHelper = oracleSessionHelper;
         }
 
-        public class CreateAppointmentDto
-        {
-            public string CustomerPhone { get; set; }
-            public DateTime AppointmentDate { get; set; }
-            public string Description { get; set; }
-        }
-        public class AppointmentDto
-        {
-            public int AppointmentId { get; set; }
-            public string CustomerPhone { get; set; }
-            public DateTime AppointmentDate { get; set; }
-            public string Status { get; set; }
-            public string Description { get; set; }
-        }
         [HttpGet("get-by-phone")]
         [Authorize]
         public IActionResult GetByPhone([FromQuery] string phone)

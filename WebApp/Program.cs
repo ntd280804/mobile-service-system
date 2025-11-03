@@ -33,6 +33,15 @@ builder.WebHost.ConfigureKestrel(options =>
     });
 });
 builder.Services.AddSingleton<OracleClientHelper>();
+builder.Services.AddHttpClient<WebApp.Services.SecurityClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["WebApi:BaseUrl"]);
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).ConfigurePrimaryHttpMessageHandler(() =>
+    new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    });
 
 // --- Nếu muốn HttpContext trong Helper/Service ---
 builder.Services.AddHttpContextAccessor();
