@@ -47,7 +47,7 @@ namespace WebAPI.Areas.Public.Controllers
                 string sessionId = Guid.NewGuid().ToString();
                 var conn = _connManager.CreateDefaultConnection();
                 string hashedPwd;
-                using (var cmd1 = new OracleCommand("APP.HASH_PASSWORD_20CHARS", conn))
+                using (var cmd1 = new OracleCommand("HASH_PASSWORD_20CHARS", conn))
                 {
                     cmd1.CommandType = CommandType.StoredProcedure; // function cũng dùng StoredProcedure
 
@@ -86,7 +86,7 @@ namespace WebAPI.Areas.Public.Controllers
 
                 var result = outResultParam.Value?.ToString();
                 var username = outPhoneParam.Value?.ToString();
-                var roles = "CUSTOMER";
+                var roles = "ROLE_KHACHHANG";
 
                 if (result != "SUCCESS")
                     return Unauthorized(ApiResponse<CustomerLoginResult>.Fail("Sai số điện thoại hoặc mật khẩu."));

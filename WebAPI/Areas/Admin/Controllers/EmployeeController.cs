@@ -148,7 +148,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 string sessionId = Guid.NewGuid().ToString();
                 var conn = _connManager.CreateDefaultConnection();
                 string hashedPwd;
-                using (var cmd1 = new OracleCommand("APP.HASH_PASSWORD_20CHARS", conn))
+                using (var cmd1 = new OracleCommand("HASH_PASSWORD_20CHARS", conn))
                 {
                     cmd1.CommandType = CommandType.StoredProcedure; // function cũng dùng StoredProcedure
 

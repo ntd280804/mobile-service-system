@@ -126,7 +126,7 @@
         </li>
 
         <!-- QUẢN LÝ NHÂN VIÊN -->
-        @if (roles.Contains("ADMIN"))
+        @if (roles.Contains("ROLE_ADMIN"))
         {
             <li>
                 <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseEmployee" role="button" aria-expanded="false" aria-controls="collapseEmployee">
@@ -137,7 +137,7 @@
                 </ul>
             </li>
         }
-        @if (roles.Contains("ADMIN"))
+        @if (roles.Contains("ROLE_ADMIN"))
         {
             <li>
                 <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseRoleProfile" role="button" aria-expanded="false" aria-controls="collapseEmployee">
@@ -151,7 +151,7 @@
         }
         <!-- QUẢN LÝ KHÁCH HÀNG -->
         <li>
-            @if (roles.Contains("ADMIN"))
+            @if (roles.Contains("ROLE_ADMIN"))
         {
             <li>
                 <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseCustomer" role="button" aria-expanded="false" aria-controls="collapseCustomer">
@@ -166,7 +166,7 @@
         </li>
 
         <!-- QUẢN LÝ NHẬP XUẤT KHO -->
-        @if (roles.Contains("THUKO") || roles.Contains("ADMIN"))
+        @if (roles.Contains("ROLE_THUKO") || roles.Contains("ROLE_ADMIN"))
         {
             <li>
                 <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseStock" role="button" aria-expanded="false" aria-controls="collapseStock">

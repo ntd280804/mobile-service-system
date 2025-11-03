@@ -1,0 +1,30 @@
+-- Test scripts for VPD on ORDERS
+-- Run in a session after setting APP_CTX via APP_CTX_PKG
+
+-- Admin: xem tất cả
+EXEC APP_CTX_PKG.set_role('ROLE_ADMIN');
+SELECT COUNT(*) AS CNT_ADMIN FROM ORDERS;
+
+-- Tieptan: xem tất cả
+EXEC APP_CTX_PKG.set_role('ROLE_TIEPTAN');
+SELECT COUNT(*) AS CNT_TIEPTAN FROM ORDERS;
+
+-- Kithuatvien EMP_ID = 101 -> chỉ order HANDLER_EMP = 101
+EXEC APP_CTX_PKG.set_role('ROLE_KITHUATVIEN');
+EXEC APP_CTX_PKG.set_emp(101);
+SELECT ORDER_ID, HANDLER_EMP FROM ORDERS ORDER BY ORDER_ID;
+
+-- Kithuatvien EMP_ID = 102 -> chỉ order HANDLER_EMP = 102
+EXEC APP_CTX_PKG.set_emp(102);
+SELECT ORDER_ID, HANDLER_EMP FROM ORDERS ORDER BY ORDER_ID;
+
+-- KhachHang PHONE = '0911' -> chỉ order của 0911
+EXEC APP_CTX_PKG.set_role('ROLE_KHACHHANG');
+EXEC APP_CTX_PKG.set_customer('0911');
+SELECT ORDER_ID, CUSTOMER_PHONE FROM ORDERS ORDER BY ORDER_ID;
+
+-- Thukho: không xem được
+EXEC APP_CTX_PKG.set_role('ROLE_THUKHO');
+SELECT COUNT(*) AS CNT_THUKHO FROM ORDERS;
+
+
