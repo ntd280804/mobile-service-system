@@ -34,7 +34,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() => _isLoading = true);
     try {
-      final res = await _api.login(phone, password);
+      // Use secure encrypted login
+      final res = await _api.loginSecure(phone, password);
       final roles = (res['roles'] ?? '').toString().toLowerCase();
       if (!roles.contains('customer')) {
         _showSnack('Chỉ dành cho khách hàng');

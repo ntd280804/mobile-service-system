@@ -5,6 +5,8 @@ class ApiConfig {
 
   // Public endpoints
   static const String login = '/api/Public/Customer/login';
+  static const String loginSecure = '/api/Public/Customer/login-secure';
+  static const String publicKey = '/api/Public/Customer/public-key';
   static const String register = '/api/Public/Customer/register';
   static const String logout = '/api/Public/Customer/logout';
   static const String getOrders = '/api/Public/Customer/orders';

@@ -38,7 +38,16 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         // =====================
-        // 🟢 GET ALL EMPLOYEES
+        // � GET PUBLIC KEY
+        // =====================
+        [HttpGet("public-key")]
+        public ActionResult<string> GetPublicKey([FromServices] RsaKeyService rsaKeyService)
+        {
+            return Ok(rsaKeyService.GetServerPublicKeyBase64());
+        }
+
+        // =====================
+        // �🟢 GET ALL EMPLOYEES
         // =====================
         [HttpGet]
         [Authorize]

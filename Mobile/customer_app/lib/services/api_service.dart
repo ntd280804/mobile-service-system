@@ -3,9 +3,11 @@ import 'dart:io'; // ✅ Import để bypass SSL
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart'; // ✅ Import adapter
+import 'dart:convert';
 
 import '../config/api_config.dart';
 import 'storage_service.dart';
+import 'encryption_service.dart';
 
 class ApiService {
   ApiService._internal() {
@@ -95,6 +97,66 @@ class ApiService {
       throw msg;
     } catch (_) {
       throw 'Không thể kết nối máy chủ';
+    }
+  }
+
+  Future<Map<String, dynamic>> loginSecure(String phone, String password) async {
+    await _ensureInterceptors();
+    try {
+      // 1. Get server public key
+      final keyResp = await _dio.get(ApiConfig.publicKey);
+      final publicKeyBase64 = keyResp.data as String;
+
+      // 2. Prepare login data as JSON
+      final loginData = json.encode({
+        'username': phone,
+        'password': password,
+        'platform': 'MOBILE',
+      });
+
+      // 3. Encrypt login data
+      final encrypted = EncryptionService.hybridEncrypt(loginData, publicKeyBase64);
+
+      // 4. Send encrypted payload
+      final resp = await _dio.post(
+        ApiConfig.loginSecure,
+        data: {
+          'encryptedKeyBlockBase64': encrypted['encryptedKeyBlock'],
+          'cipherDataBase64': encrypted['cipherData'],
+        },
+      );
+
+      // 5. Process response (same as normal login)
+      final responseData = resp.data;
+      final data = responseData is Map && responseData.containsKey('data')
+          ? responseData['data'] as Map<String, dynamic>
+          : responseData as Map<String, dynamic>;
+
+      final token = data['token'] ?? data['Token'] ?? '';
+      final roles = data['roles'] ?? data['Roles'] ?? '';
+      final sessionId = data['sessionId'] ?? data['SessionId'] ?? '';
+      final username = data['username'] ?? data['Username'] ?? phone;
+
+      if (token is String && token.isNotEmpty) {
+        await _storage.saveToken(token);
+      }
+      if (sessionId is String && sessionId.isNotEmpty) {
+        await _storage.saveSessionId(sessionId);
+      }
+      await _storage.saveUsername(username);
+
+      return {
+        'token': token,
+        'roles': roles,
+        'sessionId': sessionId,
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['detail'] ?? 'Đăng nhập thất bại')
+          : 'Đăng nhập thất bại';
+      throw msg;
+    } catch (e) {
+      throw 'Lỗi mã hóa hoặc kết nối: $e';
     }
   }
 

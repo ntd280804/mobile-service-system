@@ -35,6 +35,12 @@ namespace WebAPI.Areas.Public.Controllers
             _oracleSessionHelper = oracleSessionHelper;
         }
 
+        [HttpGet("public-key")]
+        public ActionResult<string> GetPublicKey([FromServices] RsaKeyService rsaKeyService)
+        {
+            return Ok(rsaKeyService.GetServerPublicKeyBase64());
+        }
+
         [HttpPost("login")]
         public ActionResult<ApiResponse<CustomerLoginResult>> Login([FromBody] CustomerLoginDto dto)
         {
