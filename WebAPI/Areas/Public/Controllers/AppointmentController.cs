@@ -32,22 +32,17 @@ namespace WebAPI.Areas.Public.Controllers
             _oracleSessionHelper = oracleSessionHelper;
         }
 
-        [HttpGet("get-by-phone")]
+        [HttpGet("all")]
         [Authorize]
-        public IActionResult GetByPhone([FromQuery] string phone)
+        public IActionResult GetAll()
         {
-            if (string.IsNullOrEmpty(phone))
-                return BadRequest(new { message = "Số điện thoại không được để trống" });
-
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
 
             try
             {
-                using var cmd = new OracleCommand("APP.GET_APPOINTMENTS_BY_PHONE", conn);
+                using var cmd = new OracleCommand("APP.GET_ALL_APPOINTMENTS", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
-
-                cmd.Parameters.Add("p_customer_phone", OracleDbType.Varchar2).Value = phone;
 
                 var cursorParam = new OracleParameter("p_cursor", OracleDbType.RefCursor)
                 { Direction = ParameterDirection.Output };

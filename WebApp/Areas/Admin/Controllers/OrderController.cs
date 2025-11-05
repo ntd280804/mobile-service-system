@@ -275,5 +275,44 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
         
+        // POST: Hoàn tất đơn hàng (gọi API complete)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Complete(int orderId)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                var empUsername = HttpContext.Session.GetString("Username");
+                var payload = new { OrderId = orderId, EmpUsername = empUsername };
+                var response = await _httpClient.PostAsJsonAsync("api/Admin/Order/complete", payload);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["Success"] = "Hoàn tất đơn hàng thành công.";
+                    return RedirectToAction(nameof(Details), new { id = orderId });
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
+                    HttpContext.Session.Clear();
+                    return RedirectToAction("Login", "Employee", new { area = "Admin" });
+                }
+                else
+                {
+                    var err = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = "Không thể hoàn tất đơn hàng: " + response.ReasonPhrase + " - " + err;
+                    return RedirectToAction(nameof(Details), new { id = orderId });
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                return RedirectToAction(nameof(Details), new { id = orderId });
+            }
+        }
+        
     }
 }

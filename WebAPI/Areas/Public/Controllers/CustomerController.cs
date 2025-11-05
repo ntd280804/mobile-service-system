@@ -70,6 +70,7 @@ namespace WebAPI.Areas.Public.Controllers
 
                 using var cmd = new OracleCommand("APP.LOGIN_CUSTOMER", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
+                cmd.BindByName = true; // ensure parameters match by name (ODP.NET default is positional)
 
                 cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Username;
                 cmd.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
@@ -92,6 +93,18 @@ namespace WebAPI.Areas.Public.Controllers
                     return Unauthorized(ApiResponse<CustomerLoginResult>.Fail("Sai số điện thoại hoặc mật khẩu."));
 
                 var token = _jwtHelper.GenerateToken(username, roles, sessionId);
+
+                // Set VPD context in this Oracle session for customer
+                using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
+                {
+                    setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = roles;
+                    setRoleCmd.ExecuteNonQuery();
+                }
+                using (var setCusCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_customer(:p_phone); END;", conn))
+                {
+                    setCusCmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = username;
+                    setCusCmd.ExecuteNonQuery();
+                }
                 return Ok(ApiResponse<CustomerLoginResult>.Ok(new CustomerLoginResult
                 {
                     Username = username,

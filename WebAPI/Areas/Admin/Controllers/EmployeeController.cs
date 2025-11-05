@@ -4,15 +4,16 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
+using Oracle.ManagedDataAccess.Types;
 using System.Data;
-using System.Text;
-using WebAPI.Helpers;
-using WebAPI.Services;
-using WebAPI.Models;
-using WebAPI.Models.Auth;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using System.IO;
+using System.Text;
+using WebAPI.Helpers;
+using WebAPI.Models;
+using WebAPI.Models.Auth;
+using WebAPI.Services;
 
 namespace WebAPI.Areas.Admin.Controllers
 {
@@ -59,16 +60,16 @@ namespace WebAPI.Areas.Admin.Controllers
 
                 while (reader.Read())
                 {
-                    list.Add(new
-                    {
-                        EmpId = reader.GetDecimal(0),
-                        FullName = reader.GetString(1),
-                        Username = reader.GetString(2),
-                        Email = reader.GetString(3),
-                        Phone = reader.GetString(4),
-                        Status = reader.GetString(5),
-                        Roles = reader.IsDBNull(6) ? "" : reader.GetString(6) // Cột Roles
-                    });
+					list.Add(new
+					{
+						EmpId = reader.GetDecimal(0),
+						FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+						Username = reader.IsDBNull(2) ? null : reader.GetString(2),
+						Email = reader.IsDBNull(3) ? null : reader.GetString(3),
+						Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
+						Status = reader.IsDBNull(5) ? null : reader.GetString(5),
+						Roles = reader.IsDBNull(6) ? "" : reader.GetString(6) // Cột Roles
+					});
                 }
 
                 return Ok(list);
@@ -107,18 +108,18 @@ namespace WebAPI.Areas.Admin.Controllers
 
                 using var reader = cmd.ExecuteReader();
 
-                if (reader.Read())
-                {
-                    return Ok(new
-                    {
-                        EmpId = reader.GetDecimal(0),
-                        FullName = reader.GetString(1),
-                        Username = reader.GetString(2),
-                        Email = reader.GetString(3),
-                        Phone = reader.GetString(4),
-                        Status = reader.GetString(5)
-                    });
-                }
+				if (reader.Read())
+				{
+					return Ok(new
+					{
+						EmpId = reader.GetDecimal(0),
+						FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+						Username = reader.IsDBNull(2) ? null : reader.GetString(2),
+						Email = reader.IsDBNull(3) ? null : reader.GetString(3),
+						Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
+						Status = reader.IsDBNull(5) ? null : reader.GetString(5)
+					});
+				}
 
                 return NotFound();
             }
@@ -201,6 +202,50 @@ namespace WebAPI.Areas.Admin.Controllers
 
                 // Tạo JWT token
                 var token = _jwtHelper.GenerateToken(username, roles, sessionId);
+
+                // Set VPD context in this Oracle session
+                string primaryRole = null;
+                if (!string.IsNullOrWhiteSpace(roles))
+                {
+                    var roleList = roles.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(r => r.ToUpperInvariant())
+                                        .ToList();
+                    if (roleList.Contains("ROLE_ADMIN")) primaryRole = "ROLE_ADMIN";
+                    else if (roleList.Contains("ROLE_TIEPTAN")) primaryRole = "ROLE_TIEPTAN";
+                    else if (roleList.Contains("ROLE_KITHUATVIEN")) primaryRole = "ROLE_KITHUATVIEN";
+                    else if (roleList.Contains("ROLE_THUKHO")) primaryRole = "ROLE_THUKHO";
+                }
+
+                if (!string.IsNullOrEmpty(primaryRole))
+                {
+                    using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
+                    {
+                        setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = primaryRole;
+                        setRoleCmd.ExecuteNonQuery();
+                    }
+
+                    if (primaryRole == "ROLE_KITHUATVIEN")
+                    {
+                        // fetch EMP_ID and set into context
+                        decimal empId;
+                        using (var getIdCmd = new OracleCommand("APP.GET_EMPLOYEE_ID_BY_USERNAME", conn))
+                        {
+                            getIdCmd.CommandType = CommandType.StoredProcedure;
+                            getIdCmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = username;
+                            var outEmp = new OracleParameter("p_emp_id", OracleDbType.Decimal)
+                            { Direction = ParameterDirection.Output };
+                            getIdCmd.Parameters.Add(outEmp);
+                            getIdCmd.ExecuteNonQuery();
+                            empId = ((OracleDecimal)outEmp.Value).Value;
+                        }
+
+                        using (var setEmpCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_emp(:p_emp_id); END;", conn))
+                        {
+                            setEmpCmd.Parameters.Add("p_emp_id", OracleDbType.Decimal).Value = empId;
+                            setEmpCmd.ExecuteNonQuery();
+                        }
+                    }
+                }
 
                 return Ok(ApiResponse<EmployeeLoginResult>.Ok(new EmployeeLoginResult
                 {

@@ -39,11 +39,8 @@ namespace WebAPI.Areas.Public.Controllers
 
             try
             {
-                using var cmd = new OracleCommand("APP.GET_ORDERS_BY_PHONE", conn);
+                using var cmd = new OracleCommand("APP.GET_ALL_ORDERS", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
-
-                cmd.Parameters.Add("p_customer_phone", OracleDbType.Varchar2).Value = phone;
-
                 var cursorParam = new OracleParameter("cur_out", OracleDbType.RefCursor)
                 { Direction = ParameterDirection.Output };
                 cmd.Parameters.Add(cursorParam);

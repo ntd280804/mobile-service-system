@@ -78,16 +78,9 @@ namespace WebApp.Areas.Public.Controllers
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect, false))
                 return redirect;
 
-            var username = HttpContext.Session.GetString("CUsername"); // lấy số điện thoại user hiện tại
-            if (string.IsNullOrEmpty(username))
-            {
-                TempData["Error"] = "Không tìm thấy số điện thoại trong session";
-                return View(new List<AppointmentViewModel>());
-            }
-
             try
             {
-                var response = await _httpClient.GetAsync($"api/Public/Appointment/get-by-phone?phone={username}");
+                var response = await _httpClient.GetAsync("api/Admin/Appointment/all");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();

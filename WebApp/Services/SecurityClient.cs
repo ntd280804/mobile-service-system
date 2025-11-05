@@ -49,7 +49,11 @@ namespace WebApp.Services
                     clientId = _clientId,
                     clientPublicKeyBase64 = publicKeyBase64
                 });
-                reg.EnsureSuccessStatusCode();
+                if (!reg.IsSuccessStatusCode)
+                {
+                    var content = await reg.Content.ReadAsStringAsync();
+                    throw new InvalidOperationException($"Register client key failed: {(int)reg.StatusCode} {reg.ReasonPhrase} - {content}");
+                }
             }
         }
 
@@ -67,8 +71,12 @@ namespace WebApp.Services
                 cipherDataBase64 = encrypted.CipherData
             });
 
-            response.EnsureSuccessStatusCode();
             var api = await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+            if (!response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException(api?.Error ?? content ?? $"HTTP {(int)response.StatusCode} {response.ReasonPhrase}");
+            }
             if (api == null || !api.Success || api.Data == null)
                 throw new InvalidOperationException(api?.Error ?? "Invalid response");
             return api.Data;
@@ -84,8 +92,12 @@ namespace WebApp.Services
                 clientId = _clientId,
                 plaintext = message
             });
-            res.EnsureSuccessStatusCode();
             var api = await res.Content.ReadFromJsonAsync<ApiResponse<Envelope>>();
+            if (!res.IsSuccessStatusCode)
+            {
+                var content = await res.Content.ReadAsStringAsync();
+                throw new InvalidOperationException(api?.Error ?? content ?? $"HTTP {(int)res.StatusCode} {res.ReasonPhrase}");
+            }
             if (api == null || !api.Success || api.Data == null)
                 throw new InvalidOperationException("Empty response envelope");
 
@@ -106,8 +118,12 @@ namespace WebApp.Services
                 encryptedKeyBlockBase64 = encrypted.EncryptedKeyBlock,
                 cipherDataBase64 = encrypted.CipherData
             });
-            res.EnsureSuccessStatusCode();
             var api = await res.Content.ReadFromJsonAsync<ApiResponse<TRes>>();
+            if (!res.IsSuccessStatusCode)
+            {
+                var content = await res.Content.ReadAsStringAsync();
+                throw new InvalidOperationException(api?.Error ?? content ?? $"HTTP {(int)res.StatusCode} {res.ReasonPhrase}");
+            }
             if (api == null || !api.Success || api.Data == null)
                 throw new InvalidOperationException(api?.Error ?? "Invalid response");
             return api.Data;

@@ -55,10 +55,10 @@ namespace WebAPI.Areas.Admin.Controllers
                 {
                     list.Add(new
                     {
-                        Phone = reader.GetString(0),
-                        FullName = reader.GetString(1),
-                        Email = reader.GetString(2),
-                        Status = reader.GetString(3),
+						Phone = reader.IsDBNull(0) ? null : reader.GetString(0),
+						FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+						Email = reader.IsDBNull(2) ? null : reader.GetString(2),
+						Status = reader.IsDBNull(3) ? null : reader.GetString(3),
                         Roles = reader.IsDBNull(4) ? "" : reader.GetString(4) // Cột Roles
                     });
                 }

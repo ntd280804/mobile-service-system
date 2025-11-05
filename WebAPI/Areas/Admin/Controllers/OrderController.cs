@@ -7,7 +7,6 @@ using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Services;
 using WebAPI.Models.Order;
-
 namespace WebAPI.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -304,5 +303,73 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
+        [HttpPost("complete")]
+        [Authorize]
+        public IActionResult CompleteOrder([FromBody] CompleteOrderRequest request)
+        {
+            if (request == null || request.OrderId <= 0)
+                return BadRequest(new { message = "Thiếu dữ liệu hợp lệ" });
+
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var transaction = conn.BeginTransaction();
+
+                // 1) Lấy emp_id từ username (nếu có truyền)
+                int? empId = null;
+                string signatureBase64 = "DUMMY_SIGNATURE_FOR_DEMO_PURPOSES";
+                if (!string.IsNullOrWhiteSpace(request.EmpUsername))
+                {
+                    using var cmdGetEmp = new OracleCommand("APP.GET_EMPLOYEE_ID_BY_USERNAME", conn);
+                    cmdGetEmp.CommandType = CommandType.StoredProcedure;
+                    cmdGetEmp.Parameters.Add("p_username", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.EmpUsername;
+                    var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
+                    cmdGetEmp.Parameters.Add(pEmpId);
+                    cmdGetEmp.ExecuteNonQuery();
+                    if (pEmpId.Value != DBNull.Value && pEmpId.Value != null)
+                        empId = ((Oracle.ManagedDataAccess.Types.OracleDecimal)pEmpId.Value).ToInt32();
+                }
+
+                // 2) Tạo phiếu xuất kho (placeholder: chờ thủ tục DB)
+                //    Làm tương tự như CREATE_STOCKIN, nhưng cho STOCKOUT.
+                //    Khi có thủ tục, thêm lệnh gọi tại đây và lấy ra stockOutId.
+                int? stockOutId = null;
+
+                // 3) Tạo hóa đơn (placeholder)
+                int? invoiceId = null;
+
+                // 4) Cập nhật trạng thái đơn hàng sang COMPLETED (nếu có thủ tục)
+                //    Ví dụ: APP.MARK_ORDER_COMPLETED(p_order_id)
+
+                transaction.Commit();
+
+                return Ok(new
+                {
+                    message = "Hoàn tất đơn hàng (placeholder). Vui lòng nối DB thủ tục xuất kho và hóa đơn.",
+                    OrderId = request.OrderId,
+                    StockOutId = stockOutId,
+                    InvoiceId = invoiceId
+                });
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi hoàn tất đơn hàng", detail = ex.Message });
+            }
+        }
+
+    }
+
+    public class CompleteOrderRequest
+    {
+        public int OrderId { get; set; }
+        public string EmpUsername { get; set; }
     }
 }

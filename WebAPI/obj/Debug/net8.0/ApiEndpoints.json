@@ -305,6 +305,22 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "CompleteOrder",
+    "RelativePath": "api/Admin/Order/complete",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "WebAPI.Areas.Admin.Controllers.CompleteOrderRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
     "Method": "GetCustomerPhones",
     "RelativePath": "api/Admin/Order/customer-phones",
     "HttpMethod": "GET",
@@ -619,6 +635,16 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.AppointmentController",
+    "Method": "GetAll",
+    "RelativePath": "api/Public/Appointment/all",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.AppointmentController",
     "Method": "Create",
     "RelativePath": "api/Public/Appointment/create",
     "HttpMethod": "POST",
@@ -629,22 +655,6 @@
         "Name": "dto",
         "Type": "WebAPI.Models.Appointment.CreateAppointmentDto",
         "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Public.Controllers.AppointmentController",
-    "Method": "GetByPhone",
-    "RelativePath": "api/Public/Appointment/get-by-phone",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "phone",
-        "Type": "System.String",
-        "IsRequired": false
       }
     ],
     "ReturnTypes": []

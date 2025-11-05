@@ -1,0 +1,21 @@
+-- VPD predicate function for STOCK tables (STOCK_IN, STOCK_IN_ITEM, STOCK_OUT, STOCK_OUT_ITEM)
+-- Run as schema owner (e.g., APP)
+
+CREATE OR REPLACE FUNCTION STOCK_VPD_PREDICATE(
+  p_schema IN VARCHAR2,
+  p_object IN VARCHAR2
+) RETURN VARCHAR2
+AS
+  v_role  VARCHAR2(100) := SYS_CONTEXT('APP_CTX','ROLE_NAME');
+BEGIN
+  -- ADMIN, THUKHO: xem full
+  IF v_role IN ('ROLE_ADMIN', 'ROLE_THUKHO') THEN
+    RETURN '1=1';
+  END IF;
+
+  -- TIEPTAN, KITHUATVIEN, KHACHHANG: không được xem
+  RETURN '1=0';
+END STOCK_VPD_PREDICATE;
+/
+
+
