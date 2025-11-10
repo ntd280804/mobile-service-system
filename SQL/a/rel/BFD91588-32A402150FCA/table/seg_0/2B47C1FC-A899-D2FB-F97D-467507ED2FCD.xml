@@ -1,0 +1,87 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="2B47C1FC-A899-D2FB-F97D-467507ED2FCD" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="PART_REQUEST_ITEM">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>PART_REQUEST_ITEM</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>6FDB98BB-6B6C-BD63-5890-04568F7399FA</importedID>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="REQUEST_ITEM_ID" id="216A18B7-9F08-A3CC-1098-9B95DE4AF345">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>PART_REQUEST_ITEM</sourceObjSchema>
+<sourceObjName>REQUEST_ITEM_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>2707170E-60D2-D1CE-4EF8-9800E39EB7C9</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="REQUEST_ID" id="F2D52AD2-F2D3-710E-C4E7-75A077ED2314">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>PART_REQUEST_ITEM</sourceObjSchema>
+<sourceObjName>REQUEST_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>D218E3D2-BA5C-5D53-6991-BF084F39F7CA</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="C2901E28-5336-0EF6-DA4A-83BAEC0C18C6" referredColumn="8C6EE3E0-88DE-FE97-760D-187489FFB3BF"/>
+</associations>
+</Column>
+<Column name="PART_ID" id="46037DD5-B26D-3640-6DDA-43DEBAE68EC8">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>PART_REQUEST_ITEM</sourceObjSchema>
+<sourceObjName>PART_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>5962D4AB-FBFA-47A0-0B0C-863D1D2C9687</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="140CBF46-41A6-344B-AFB3-576F7D62EB6E" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="PART_REQUEST_ITEM_PK">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>SYS_C009751</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>23773A78-0F5B-5206-38D8-9171CB612951</importedID>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="216A18B7-9F08-A3CC-1098-9B95DE4AF345"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="BFCE96CF-236A-5685-8C7F-819589E37B3C" name="FK_PARTREQUESTITEM_REQUEST">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="F2D52AD2-F2D3-710E-C4E7-75A077ED2314"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

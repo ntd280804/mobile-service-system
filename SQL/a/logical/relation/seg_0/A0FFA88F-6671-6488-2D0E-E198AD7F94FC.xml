@@ -1,0 +1,20 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="FK_INVOICE_CUSTOMER" directorySegmentName="seg_0" id="A0FFA88F-6671-6488-2D0E-E198AD7F94FC">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>92496E96-0A8D-BF9B-3D4A-65D6FF2CB1B0</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<sourcePk>762A1AE1-E662-C7F0-BE91-6B0E13EF7FEF</sourcePk>
+<identifying>false</identifying>
+<optionalSource>true</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>32C6EB12-43A4-9B2A-A421-6C815E2C9E93</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>9EC631A8-C1FB-F89D-35D6-9BCE3D2466D0</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>

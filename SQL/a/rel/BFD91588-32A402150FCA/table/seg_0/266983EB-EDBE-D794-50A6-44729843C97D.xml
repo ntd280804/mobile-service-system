@@ -1,0 +1,122 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="266983EB-EDBE-D794-50A6-44729843C97D" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="CUSTOMER_APPOINTMENT">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>CUSTOMER_APPOINTMENT</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>443013B5-8AAA-C5A3-F5E6-15E134D66558</importedID>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="APPOINTMENT_ID" id="45C3C149-CBAC-8F3D-27C3-74DE3FC57F3F">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>CUSTOMER_APPOINTMENT</sourceObjSchema>
+<sourceObjName>APPOINTMENT_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>AA3727D3-1ACF-7559-9E1C-48FF4018B91E</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="CUSTOMER_PHONE" id="33012C53-53C2-FB60-BF7C-0E8CB0C52C05">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>CUSTOMER_APPOINTMENT</sourceObjSchema>
+<sourceObjName>CUSTOMER_PHONE</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>C054D9D4-4110-0219-4BD4-AEE3AAE06C3F</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>20 BYTE</dataTypeSize>
+<ownDataTypeParameters>20 BYTE,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="CB754AEE-B04B-C8DC-5EC2-6F0EB2B8F426" referredColumn="A6B34A24-ED3D-5489-643C-D24C7B30044B"/>
+</associations>
+</Column>
+<Column name="APPOINTMENT_DATE" id="18158BF4-7D0E-D74F-89A3-F83C7B307472">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>CUSTOMER_APPOINTMENT</sourceObjSchema>
+<sourceObjName>APPOINTMENT_DATE</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>5E696344-EBA0-7C2D-8D73-4895F53919C2</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT007</logicalDatatype>
+<dataTypeSize>7</dataTypeSize>
+<ownDataTypeParameters>7,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="STATUS" id="4C7D6F5D-3090-CE15-B72E-833F392CA249">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>CUSTOMER_APPOINTMENT</sourceObjSchema>
+<sourceObjName>STATUS</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>56A4D592-6B29-6B9D-DD0C-D82A9BB23ADE</importedID>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>20 BYTE</dataTypeSize>
+<defaultValue>&apos;SCHEDULED&apos;</defaultValue>
+<ownDataTypeParameters>20 BYTE,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="DESCRIPTION" id="60D0AF71-2055-BB54-B362-03F36C94BEBA">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>CUSTOMER_APPOINTMENT</sourceObjSchema>
+<sourceObjName>DESCRIPTION</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>49C25519-43BD-4478-69DF-F44B89ECCC1F</importedID>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>500 BYTE</dataTypeSize>
+<ownDataTypeParameters>500 BYTE,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="41B933F5-94A3-928E-C069-DDF51C7ACD25" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="CUSTOMER_APPOINTMENT_PK">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>SYS_C009767</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>7F247AD0-AD90-42E2-7C4E-043DBFD43407</importedID>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="45C3C149-CBAC-8F3D-27C3-74DE3FC57F3F"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="4D223807-BE41-F7A8-DC95-CF4EC1741D6A" name="FK_APPOINTMENT_CUSTOMER">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="33012C53-53C2-FB60-BF7C-0E8CB0C52C05"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

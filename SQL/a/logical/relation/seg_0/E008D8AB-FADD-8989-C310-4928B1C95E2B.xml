@@ -1,0 +1,20 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="FK_INVOICEITEM_STOCKOUTITEM" directorySegmentName="seg_0" id="E008D8AB-FADD-8989-C310-4928B1C95E2B">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>FDBCE33B-C131-807F-7FAD-00315B8059F7</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<sourcePk>1418F73B-76D4-1E7C-FDD7-934865CC38D2</sourcePk>
+<identifying>false</identifying>
+<optionalSource>true</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>7D54CBE5-543B-328E-86E7-18291F527B7A</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>199A62E3-87F0-832C-F86B-C5271059BEE1</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>

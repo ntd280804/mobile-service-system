@@ -1,0 +1,120 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="CB9C72D3-2F14-75F1-6457-5D017C2928C7" name="EMPLOYEE SHIFT">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>3DDBEF5C-ED30-6549-0B11-58DB93F6EFC2</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="SHIFT ID" id="33CE5F76-84E8-6DB7-1D63-DBB4A0591F01">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>DE33B58D-10FA-D741-0884-1311AF9A17A9</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="EMP ID" id="AC077406-C31D-3E70-3C52-B17AB38C51CA">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>932885A7-6B74-FA39-425B-A3A923E6E440</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<referedAttribute>1F4135F7-286A-9704-89AF-A439E241E338</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="SHIFT DATE" id="B2CA1AE9-2F25-A643-8A8C-966C925C87FF">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>43A94D2D-6369-7A22-9A47-5669F600AA03</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT007</logicalDatatype>
+<dataTypeSize>7</dataTypeSize>
+<ownDataTypeParameters>7,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="START TIME" id="BF8FB4D1-4A3A-98A5-0462-EDAEDFC97E85">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>4EBB1127-47A6-E054-B5D6-5DEC05CCC79F</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<dataTypePrecision>6</dataTypePrecision>
+<ownDataTypeParameters>,6,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="END TIME" id="AA586185-550D-4F09-F0CA-84B250F4CDD5">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>813FC7C5-42D5-196C-6131-254E53B36240</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<dataTypePrecision>6</dataTypePrecision>
+<ownDataTypeParameters>,6,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="STATUS" id="5EDFAFA1-1B7F-5D7F-A4BA-DEC2A9B5D3CB">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>978E96DC-0C9B-CCD3-A1D0-3ACB4A65D180</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>20 BYTE</dataTypeSize>
+<defaultValue>&apos;SCHEDULED&apos;</defaultValue>
+<ownDataTypeParameters>20 BYTE,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="5B1BA3D3-A672-4CC0-A515-9FDB9C319084" name="EMPLOYEE SHIFT PK">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>FE57BE0F-77C6-E43E-8B3E-5890B64975FC</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>33CE5F76-84E8-6DB7-1D63-DBB4A0591F01</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

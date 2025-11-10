@@ -1,0 +1,140 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="9EC631A8-C1FB-F89D-35D6-9BCE3D2466D0" name="INVOICE">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>2E5F07EE-01F7-E083-C94D-AFD3D04753C4</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="INVOICE ID" id="8BAA86DF-EA20-513F-6D4C-23D1F8838CA6">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>8EC76A81-6DE1-7BE0-339E-834C094F63BD</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="STOCKOUT ID" id="C65AE0AD-DD5F-B695-75FF-0B0E8ADDD396">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>16BDBDC5-0168-4B17-54E3-55B7723DEA80</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<referedAttribute>F6088124-74A7-AC67-3E24-4717A1EEE47F</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="CUSTOMER PHONE" id="2244A5FC-92CB-3AD8-F9AB-2E0552286B71">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>A0FFA88F-6671-6488-2D0E-E198AD7F94FC</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<referedAttribute>8750C135-E625-9750-5E95-83290AFDF863</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>20 BYTE</dataTypeSize>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="EMP ID" id="961AB06A-25EA-87E7-D3C8-52CFD86ADC55">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>D02F2A45-A7C2-6E76-2AFD-3848E159A078</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<referedAttribute>1F4135F7-286A-9704-89AF-A439E241E338</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="INVOICE DATE" id="EAF30407-F72C-111F-A370-AB0A3B0EFE1C">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>BBF77F77-71B7-B416-AA7A-10BEE4913852</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT007</logicalDatatype>
+<dataTypeSize>7</dataTypeSize>
+<defaultValue>SYSDATE</defaultValue>
+<ownDataTypeParameters>7,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="TOTAL AMOUNT" id="9532315C-3DA8-2081-2E0F-64ABF9661372">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>49760E03-0D49-6211-184F-B10664151B8F</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<dataTypePrecision>20</dataTypePrecision>
+<dataTypeScale>2</dataTypeScale>
+<defaultValue>0</defaultValue>
+<ownDataTypeParameters>,20,2</ownDataTypeParameters>
+</Attribute>
+<Attribute name="STATUS" id="0DACF670-D12C-771D-DD41-D46BE6F868D5">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>E9D5D39F-024F-45AC-1234-6AF289DBE687</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>20 BYTE</dataTypeSize>
+<defaultValue>&apos;PENDING&apos;</defaultValue>
+<ownDataTypeParameters>20 BYTE,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="DF614C9F-7414-D931-1C3D-EAC8D231A6A8" name="INVOICE PK">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>4D70455A-9C92-E6E1-4923-5AB3BA312ABE</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>8BAA86DF-EA20-513F-6D4C-23D1F8838CA6</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

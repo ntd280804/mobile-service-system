@@ -1,0 +1,62 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<TableProxyOraclev12c class="oracle.dbtools.crest.model.design.storage.oracle.v20c.TableProxyOraclev20c" name="STOCK_IN" directorySegmentName="seg_0" id="1417E8DE-9C11-915E-BA99-96689898A7DB">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<logging>YES</logging>
+<partitionedRowMovement>DISABLE</partitionedRowMovement>
+<segment>AED07FED-26D5-B8AD-D8BE-3A9F48D27C1A</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<temporaryChanged>false</temporaryChanged>
+<accessDriverType>oracle_loader</accessDriverType>
+<rejectLimit></rejectLimit>
+<inMemory>NO</inMemory>
+<columnProxies itemClass="oracle.dbtools.crest.model.design.storage.oracle.v12c.ColumnProxyOraclev12c">
+<ColumnProxy name="EMP_ID" id="2261C93E-7C5C-CEE0-A9E5-AD63E9965809">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="SIGNATURE" id="24CE0564-DB2C-0DA4-7448-4B541EF3FE37">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="STOCKIN_ID" id="562A2961-BE83-7545-DCF8-9929253B33B2">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="NOTE" id="A966E67C-8B4E-0724-91D9-E3CD3FDD616C">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="IN_DATE" id="ADF400F6-A435-DF18-A800-CCB6B87641DE">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+</columnProxies>
+<foreignKeys>
+<ForeignKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.FKProxyOraclev10g" name="FK_STOCKIN_EMPLOYEE" id="B3397E9D-B4F3-A1BC-C5E1-E43CE56533EC">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ForeignKey>
+</foreignKeys>
+<primaryKeys>
+<PrimaryKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.PKProxyOraclev10g" name="STOCK_IN_PK" id="2F726A74-C09F-5416-3636-98A097D913EA">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<segment>BABC91F4-3F7E-F861-B1FA-B4776AABAB96</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<indexSegment>BABC91F4-3F7E-F861-B1FA-B4776AABAB96</indexSegment>
+<indexSort>SORTED</indexSort>
+<usingIndex>BY INDEX NAME</usingIndex>
+</PrimaryKey>
+</primaryKeys>
+</TableProxyOraclev12c>

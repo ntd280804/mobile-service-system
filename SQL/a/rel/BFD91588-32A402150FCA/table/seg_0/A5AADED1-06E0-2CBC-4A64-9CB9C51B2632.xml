@@ -1,0 +1,147 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="A5AADED1-06E0-2CBC-4A64-9CB9C51B2632" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="STOCK_OUT">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>STOCK_OUT</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>4A124C21-E4EE-981F-339E-FB77DC01EE4F</importedID>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="STOCKOUT_ID" id="948CE0A0-A7CF-0773-D045-4046324CE018">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>STOCK_OUT</sourceObjSchema>
+<sourceObjName>STOCKOUT_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>02335217-9917-2BA6-BB33-D98B88C7BF78</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="ORDER_ID" id="DFC77BE3-538A-4AEA-6906-9697ABD96FAA">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>STOCK_OUT</sourceObjSchema>
+<sourceObjName>ORDER_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>D2417315-5BF1-79CD-A032-38F844CD4788</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="112D8FB6-618B-1DF7-FD5A-17C4AA35CA45" referredColumn="80129C93-937D-681D-2CD8-300E60990FAE"/>
+</associations>
+</Column>
+<Column name="EMP_ID" id="2A2F5B03-D208-64F4-1C42-9C941B7E08A1">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>STOCK_OUT</sourceObjSchema>
+<sourceObjName>EMP_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>46CB4A46-1D2A-A00A-EFFA-61B3832E12B0</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="80CB7ABA-6D3F-90BE-DEC8-31609A363AAC" referredColumn="0EFFA41F-26D4-CBA1-6AA9-7B4F57EB0F84"/>
+</associations>
+</Column>
+<Column name="OUT_DATE" id="27D0564E-AA77-80EC-E6A0-B14E8B2ADA69">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>STOCK_OUT</sourceObjSchema>
+<sourceObjName>OUT_DATE</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>89258E00-9C17-C795-0358-8F33DE186150</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT007</logicalDatatype>
+<dataTypeSize>7</dataTypeSize>
+<ownDataTypeParameters>7,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="NOTE" id="EFEF2594-EA72-ED4F-3AD2-372EB5E4DDB8">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>STOCK_OUT</sourceObjSchema>
+<sourceObjName>NOTE</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>7830B077-4155-68BC-F931-247865242F72</importedID>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>200 BYTE</dataTypeSize>
+<ownDataTypeParameters>200 BYTE,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="SIGNATURE" id="80A09BC5-8CDC-5E47-B02D-C33F6C54B6AD">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>STOCK_OUT</sourceObjSchema>
+<sourceObjName>SIGNATURE</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>AB77E8BA-ABD0-0C5B-C88F-DA5D7BF8FC02</importedID>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>4000 BYTE</dataTypeSize>
+<ownDataTypeParameters>4000 BYTE,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="9E48146D-4BCE-7828-17D0-95689B0A4D31" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="STOCK_OUT_PK">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>SYS_C009734</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>0DCAD3ED-AB88-30F5-D2AA-ACC946FC284E</importedID>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="948CE0A0-A7CF-0773-D045-4046324CE018"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="FD2BAE3F-08C4-7021-37EC-AF206759E372" name="FK_STOCKOUT_EMPLOYEE">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="2A2F5B03-D208-64F4-1C42-9C941B7E08A1"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="2C6AC7F4-6FA3-EBA0-E9FB-12E7AC262691" name="FK_STOCKOUT_ORDER">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="DFC77BE3-538A-4AEA-6906-9697ABD96FAA"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

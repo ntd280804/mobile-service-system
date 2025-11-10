@@ -1,0 +1,122 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<TableProxyOraclev12c class="oracle.dbtools.crest.model.design.storage.oracle.v20c.TableProxyOraclev20c" name="EMPLOYEE" directorySegmentName="seg_0" id="62DC2330-EDB3-C2D3-4C40-5147BF4CB144">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<logging>YES</logging>
+<partitionedRowMovement>DISABLE</partitionedRowMovement>
+<segment>22E12999-B88D-8F9D-EEC6-CF5B7789AB15</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<temporaryChanged>false</temporaryChanged>
+<accessDriverType>oracle_loader</accessDriverType>
+<rejectLimit></rejectLimit>
+<inMemory>NO</inMemory>
+<columnProxies itemClass="oracle.dbtools.crest.model.design.storage.oracle.v12c.ColumnProxyOraclev12c">
+<ColumnProxy name="PASSWORD_HASH" id="03269E3C-540C-DB8E-1FAD-F7179E5567EB">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="EMP_ID" id="0EFFA41F-26D4-CBA1-6AA9-7B4F57EB0F84">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<autoIncrementDDL>IDENTITY_CLAUSE</autoIncrementDDL>
+</ColumnProxy>
+<ColumnProxy name="FULL_NAME" id="1F538568-4935-994B-1B78-B3673E26E689">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="USERNAME" id="5B9B5279-4F42-C072-F742-15DBFDD91650">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="CREATED_AT" id="6BCD36F4-D651-E813-9935-1FE69FAF9044">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<defaultValue>SYSTIMESTAMP</defaultValue>
+</ColumnProxy>
+<ColumnProxy name="PHONE" id="6D0AFF8E-28DF-F93C-2CC5-B5B4B0267262">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="PUBLIC_KEY" id="7F34A987-6EF8-361E-3C69-69FFDCABDA8B">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="EMAIL" id="EDC137C0-0EF8-C632-87D8-0BEE3C74D034">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+</columnProxies>
+<lobStorages>
+<LobStorage class="oracle.dbtools.crest.model.design.storage.oracle.v11g.LobStorageOraclev11g" name="SYS_LOB0000077793C00005$$" id="72DE5B22-CFCF-B255-C542-A72E2187E6A1">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<cache>NOCACHE</cache>
+<chunk>8192</chunk>
+<column>PUBLIC_KEY</column>
+<compression>NO</compression>
+<duplication>KEEP_DUPLICATES</duplication>
+<logging>YES</logging>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<lobStorageType>SECUREFILE</lobStorageType>
+</LobStorage>
+</lobStorages>
+<primaryKeys>
+<PrimaryKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.PKProxyOraclev10g" name="EMPLOYEE_PK" id="49A3DE07-1817-08EE-C830-31BFC96FB9A1">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<segment>40970400-B05F-F533-3644-9B03355E59C4</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<indexSegment>40970400-B05F-F533-3644-9B03355E59C4</indexSegment>
+<indexSort>SORTED</indexSort>
+<usingIndex>BY INDEX NAME</usingIndex>
+</PrimaryKey>
+</primaryKeys>
+<uniqueKeys>
+<UniqueKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.UniqueOraclev10g" name="EMPLOYEE_EMAIL_UN" id="7782A150-A157-C808-BE50-D3A8DB9CA39B">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<segment>40970400-B05F-F533-3644-9B03355E59C4</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<indexSegment>40970400-B05F-F533-3644-9B03355E59C4</indexSegment>
+<indexSort>SORTED</indexSort>
+<usingIndex>BY INDEX NAME</usingIndex>
+</UniqueKey>
+<UniqueKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.UniqueOraclev10g" name="EMPLOYEE_PHONE_UN" id="9B1336FE-246B-E8BE-92D7-9D3385D4F861">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<segment>40970400-B05F-F533-3644-9B03355E59C4</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<indexSegment>40970400-B05F-F533-3644-9B03355E59C4</indexSegment>
+<indexSort>SORTED</indexSort>
+<usingIndex>BY INDEX NAME</usingIndex>
+</UniqueKey>
+<UniqueKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.UniqueOraclev10g" name="EMPLOYEE_USERNAME_UN" id="F76768CF-C071-E86B-DFA4-8A97EC240891">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<segment>40970400-B05F-F533-3644-9B03355E59C4</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<indexSegment>40970400-B05F-F533-3644-9B03355E59C4</indexSegment>
+<indexSort>SORTED</indexSort>
+<usingIndex>BY INDEX NAME</usingIndex>
+</UniqueKey>
+</uniqueKeys>
+</TableProxyOraclev12c>

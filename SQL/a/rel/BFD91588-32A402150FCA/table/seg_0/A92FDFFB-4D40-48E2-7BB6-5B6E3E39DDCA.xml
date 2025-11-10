@@ -1,0 +1,130 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="A92FDFFB-4D40-48E2-7BB6-5B6E3E39DDCA" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="INVOICE_ITEM">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>INVOICE_ITEM</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>57544FFB-4BEC-7412-5039-36EB8BACE128</importedID>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="INVOICE_ITEM_ID" id="51A066AC-F39B-CE08-4B52-DA13FF60798E">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>INVOICE_ITEM</sourceObjSchema>
+<sourceObjName>INVOICE_ITEM_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>68302B0E-6B2F-FEF2-03E6-059F1AB90F81</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="INVOICE_ID" id="DEF8F466-4631-C222-47FF-F645D8D63D93">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>INVOICE_ITEM</sourceObjSchema>
+<sourceObjName>INVOICE_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>7507C279-E030-9E17-9391-3263A0925D50</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="435A6FA4-F997-429D-D136-7E66611F5F72" referredColumn="8EC76A81-6DE1-7BE0-339E-834C094F63BD"/>
+</associations>
+</Column>
+<Column name="STOCKOUT_ITEM_ID" id="690B8C31-4383-2AFA-8541-27C7A0B8071D">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>INVOICE_ITEM</sourceObjSchema>
+<sourceObjName>STOCKOUT_ITEM_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>F309CC4B-C591-A1E1-E601-E55C764EBE34</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="FDBCE33B-C131-807F-7FAD-00315B8059F7" referredColumn="92948813-1B1C-21A5-7CDF-3B8702DA5385"/>
+</associations>
+</Column>
+<Column name="PART_ID" id="3A80AD79-A8AD-CE6C-6746-191A3E5CB4B1">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>INVOICE_ITEM</sourceObjSchema>
+<sourceObjName>PART_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>7B9D40B3-56CD-DAAB-9D44-73DB03307334</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="PRICE" id="30262355-D928-CE4B-B43F-53D0CCEF7C18">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>INVOICE_ITEM</sourceObjSchema>
+<sourceObjName>PRICE</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>E7897630-7A83-4556-9F7F-221717C6FC4F</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<dataTypePrecision>20</dataTypePrecision>
+<dataTypeScale>2</dataTypeScale>
+<ownDataTypeParameters>,20,2</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="B5ABF63A-22F0-97C3-4EB4-4BD55A1FA1BB" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="INVOICE_ITEM_PK">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>SYS_C009780</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>CDF6FB09-CBD1-7524-68CC-EBCDB7C2B08D</importedID>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="51A066AC-F39B-CE08-4B52-DA13FF60798E"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="8314681E-EDF4-7B53-8D10-8EEFCAC96FD9" name="FK_INVOICEITEM_INVOICE">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="DEF8F466-4631-C222-47FF-F645D8D63D93"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="04064B79-AED2-658F-F467-C8647E3E96A6" name="FK_INVOICEITEM_STOCKOUTITEM">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="690B8C31-4383-2AFA-8541-27C7A0B8071D"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

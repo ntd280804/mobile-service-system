@@ -1,0 +1,139 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="32C6EB12-43A4-9B2A-A421-6C815E2C9E93" name="CUSTOMER">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>59067129-2414-E66F-FFCD-BC8BA934CCC3</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="PHONE" id="8750C135-E625-9750-5E95-83290AFDF863">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>A6B34A24-ED3D-5489-643C-D24C7B30044B</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>20 BYTE</dataTypeSize>
+<ownDataTypeParameters>20 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="FULL NAME" id="0C0A38FB-23AE-9EC6-0B25-7C5372B40FF5">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>82EC37C3-9D61-43D6-FF73-61DD61A0343B</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>100 BYTE</dataTypeSize>
+<ownDataTypeParameters>100 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="PASSWORD HASH" id="154EBD8C-AB4C-EE2B-FF27-B01ECE6B0D15">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>1D7ABFF4-7F50-417E-F1ED-F6437D0B358F</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>256 BYTE</dataTypeSize>
+<ownDataTypeParameters>256 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="PUBLIC KEY" id="782D1D1F-0A7D-702B-6D80-E5B9377613DD">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>11678869-C7A7-4B21-AC80-872FE184180F</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT028</logicalDatatype>
+<dataTypeSize>4000</dataTypeSize>
+<ownDataTypeParameters>4000,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="CREATED AT" id="FDCA2E42-BDE9-89C6-4CF3-0A51C01869FC">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>06164476-C4CB-A02F-A25A-D3F677C2B7C9</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<dataTypePrecision>6</dataTypePrecision>
+<defaultValue>SYSTIMESTAMP</defaultValue>
+<ownDataTypeParameters>,6,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="EMAIL" id="AECB7A07-3E22-B071-6571-3B5BD44BED28">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>CC2F209C-E16C-29DE-3DAD-7493F58D5DB4</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>100 BYTE</dataTypeSize>
+<ownDataTypeParameters>100 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="ADDRESS" id="1C3A84C4-A07A-ACB8-9D61-B807D6E384F5">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>AAFA93FB-D00C-2622-329E-77A9A8BD36D4</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>200 BYTE</dataTypeSize>
+<ownDataTypeParameters>200 BYTE,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="762A1AE1-E662-C7F0-BE91-6B0E13EF7FEF" name="CUSTOMER PK">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>477B8003-BA0C-8804-8E63-F1CE2A9EB47A</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>8750C135-E625-9750-5E95-83290AFDF863</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

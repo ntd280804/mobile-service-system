@@ -1,0 +1,104 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="865BBA33-C62E-F77B-D759-C79696886D87" name="PART REQUEST">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>F24A12A8-52BC-E41C-4AD1-5DF0294F8DC3</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="REQUEST ID" id="084371F3-042C-D01B-ED8B-924C15C9E014">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>8C6EE3E0-88DE-FE97-760D-187489FFB3BF</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="ORDER ID" id="87C3FF21-8323-2237-560E-2935E41A40FB">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>D6DD20FC-51F0-375B-3B19-96637EDB9BAD</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<referedAttribute>CF1FA49D-C747-F529-9098-EB5A31DB2698</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="EMP ID" id="ACA65141-6C9E-669C-067D-1A156964599F">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>74BE31A5-7938-860A-D608-97DB4F3BC073</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<referedAttribute>1F4135F7-286A-9704-89AF-A439E241E338</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="REQUEST DATE" id="6715B08B-EEC4-ECED-3F2D-A3FCA08B72C8">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>0884F4E4-61CD-9E2F-F4AA-246AC93FD98C</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT007</logicalDatatype>
+<dataTypeSize>7</dataTypeSize>
+<ownDataTypeParameters>7,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="STATUS" id="F2EEE065-9FBC-DD4D-B408-69729AF205BB">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>FA9ECFD7-7A87-A4B3-F317-25FBAF21D296</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>50 BYTE</dataTypeSize>
+<ownDataTypeParameters>50 BYTE,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="4D597CC8-2784-B55B-77E1-783ABE91EB05" name="PART REQUEST PK">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>23912CD3-DCAB-078C-D772-E8DDCA6C20DC</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>084371F3-042C-D01B-ED8B-924C15C9E014</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

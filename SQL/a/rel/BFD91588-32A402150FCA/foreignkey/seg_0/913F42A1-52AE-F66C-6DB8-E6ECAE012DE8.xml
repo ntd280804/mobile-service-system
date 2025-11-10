@@ -1,0 +1,20 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="913F42A1-52AE-F66C-6DB8-E6ECAE012DE8" containerWithKeyObject="DD9048DD-F097-64E2-0ABB-764712F8659F" localFKIndex="AA1CDDA4-695E-43FA-BBB6-D6353453D3DD" name="FK_ORDER_CUSTOMER">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>FK_ORDER_CUSTOMER</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>3F1943CC-6522-DCF1-DFEA-4115C85688B9</importedID>
+<referredTableLongName>APP.CUSTOMER</referredTableLongName>
+<deleteRule>NO ACTION</deleteRule>
+<referredTableID>59067129-2414-E66F-FFCD-BC8BA934CCC3</referredTableID>
+<keyObject>477B8003-BA0C-8804-8E63-F1CE2A9EB47A</keyObject>
+<referredKeyID>477B8003-BA0C-8804-8E63-F1CE2A9EB47A</referredKeyID>
+<mandatory>true</mandatory>
+<refColNames>PHONE</refColNames>
+<transferable>true</transferable>
+<rely>false</rely>
+<columnDependencyConstraintGenerateInDDL>true</columnDependencyConstraintGenerateInDDL>
+</FKIndexAssociation>

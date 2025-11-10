@@ -1,0 +1,75 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="2D4E9121-978E-46D9-F571-D36CABC78417" name="PART REQUEST ITEM">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>2B47C1FC-A899-D2FB-F97D-467507ED2FCD</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="REQUEST ITEM ID" id="02F57DC3-B991-4BFC-B6AB-7DE469D74358">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>216A18B7-9F08-A3CC-1098-9B95DE4AF345</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="REQUEST ID" id="214D62B4-6363-65D4-DBDB-C1CE6A378024">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>4534C68B-A47D-8FBF-964E-661F39F77C22</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<referedAttribute>084371F3-042C-D01B-ED8B-924C15C9E014</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="PART ID" id="87DB0EF3-8F81-F08B-2AF1-6EDD437D0FF2">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>46037DD5-B26D-3640-6DDA-43DEBAE68EC8</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="484D24A4-EE3A-7FF7-F9D9-395DF9F3D7CB" name="PART REQUEST ITEM PK">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:05 UTC</createdTime>
+<generatorID>140CBF46-41A6-344B-AFB3-576F7D62EB6E</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>02F57DC3-B991-4BFC-B6AB-7DE469D74358</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

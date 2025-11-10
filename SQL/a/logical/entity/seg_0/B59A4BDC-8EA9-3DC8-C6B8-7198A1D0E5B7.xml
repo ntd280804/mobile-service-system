@@ -1,0 +1,133 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="B59A4BDC-8EA9-3DC8-C6B8-7198A1D0E5B7" name="STOCK IN ITEM">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>5822678A-05D1-4811-FCE0-32EA57FCBDDE</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="STOCKIN ITEM ID" id="328BEA8F-74A7-2F99-80AB-A73E6EDD2D5A">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>761448CD-F074-D2F8-516C-EDBF744A8FD2</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="STOCKIN ID" id="48D987AD-559A-8EBB-A74F-E8C6D52CE3FC">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>F721F6D1-6A7E-2FE8-90C4-57D727816203</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<referedAttribute>B4C0AB16-2E1A-8A5D-9EB0-80A61BC9B844</referedAttribute>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="PART NAME" id="EA25032A-DF49-FA8C-BBE2-CC65631C0F41">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>EBBC509E-CC42-FE68-957A-084FB607F304</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>100 BYTE</dataTypeSize>
+<ownDataTypeParameters>100 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="MANUFACTURER" id="721333E9-4FC5-ADDA-1D25-7E4FD0E9EB81">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>5D58D388-2A1A-378D-9252-67D17A1134E4</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>100 BYTE</dataTypeSize>
+<ownDataTypeParameters>100 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="SERIAL" id="6EC7CD08-597F-74A5-9296-9C888245030C">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>4A129E8B-DC1C-F990-FB48-C027524339FC</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>50 BYTE</dataTypeSize>
+<ownDataTypeParameters>50 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="PRICE" id="5B35BF1A-0416-F217-E45D-60186F4D93F4">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>BB6B4982-3A35-527E-AAD0-1986D34A3021</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<dataTypePrecision>20</dataTypePrecision>
+<dataTypeScale>2</dataTypeScale>
+<ownDataTypeParameters>,20,2</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="DF363624-279A-4001-3962-FF9D57B5ED6E" name="STOCK IN ITEM PK">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>384EF2BD-E2DB-95D3-3DEF-54567E3E0D73</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>328BEA8F-74A7-2F99-80AB-A73E6EDD2D5A</attributeRef>
+</usedAttributes>
+</identifier>
+<identifier id="777AAF5B-9F10-99BC-CE41-B27AF61C5E22" name="STOCK IN ITEM SERIAL UN">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 07:00:06 UTC</createdTime>
+<generatorID>FE6BBC4D-9416-7416-5636-5EE793B66C85</generatorID>
+<ownerDesignName>a</ownerDesignName>
+<engineerTo>
+<item key="BFD91588-9DC8-6ED6-BB23-32A402150FCA" value="true"/>
+</engineerTo>
+<usedAttributes>
+<attributeRef>6EC7CD08-597F-74A5-9296-9C888245030C</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

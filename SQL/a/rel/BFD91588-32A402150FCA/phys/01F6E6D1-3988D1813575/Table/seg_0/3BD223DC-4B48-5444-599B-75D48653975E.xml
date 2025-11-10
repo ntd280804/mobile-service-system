@@ -1,0 +1,95 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<TableProxyOraclev12c class="oracle.dbtools.crest.model.design.storage.oracle.v20c.TableProxyOraclev20c" name="PART" directorySegmentName="seg_0" id="3BD223DC-4B48-5444-599B-75D48653975E">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<logging>YES</logging>
+<partitionedRowMovement>DISABLE</partitionedRowMovement>
+<segment>AED07FED-26D5-B8AD-D8BE-3A9F48D27C1A</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<temporaryChanged>false</temporaryChanged>
+<accessDriverType>oracle_loader</accessDriverType>
+<rejectLimit></rejectLimit>
+<inMemory>NO</inMemory>
+<columnProxies itemClass="oracle.dbtools.crest.model.design.storage.oracle.v12c.ColumnProxyOraclev12c">
+<ColumnProxy name="STATUS" id="17B984C5-7457-63C5-B32D-AF4C396828A5">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="ORDER_ID" id="5464159D-7FAD-E942-DB87-161F255CBC3E">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="SERIAL" id="6A88571B-227A-9B4D-2F84-4F40456C4B83">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="STOCK_IN_ID" id="8152EB64-B1AA-4CFF-2D6C-141346E6E033">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="PART_ID" id="B4ABBEC6-366F-C953-2EA0-A208B5FA3089">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="MANUFACTURER" id="C9695E8D-0026-2095-05E9-3B1F4CCBDE3F">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="NAME" id="D2D64183-3FF5-4F1D-96C6-E570FE927367">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+<ColumnProxy name="PRICE" id="D4A10FD4-7BA1-7C99-A700-A49DEBBC2F3E">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ColumnProxy>
+</columnProxies>
+<foreignKeys>
+<ForeignKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.FKProxyOraclev10g" name="FK_PART_ORDER" id="7114AD9D-7A69-1ACA-83FA-18E478F30794">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ForeignKey>
+<ForeignKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.FKProxyOraclev10g" name="FK_PART_STOCKINITEM" id="B9E1FF30-A1EC-35B8-4CE9-08C52AECC178">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+</ForeignKey>
+</foreignKeys>
+<primaryKeys>
+<PrimaryKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.PKProxyOraclev10g" name="PART_PK" id="30222E30-A156-B07D-3AC5-8F8C153A93AA">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<segment>BABC91F4-3F7E-F861-B1FA-B4776AABAB96</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<indexSegment>BABC91F4-3F7E-F861-B1FA-B4776AABAB96</indexSegment>
+<indexSort>SORTED</indexSort>
+<usingIndex>BY INDEX NAME</usingIndex>
+</PrimaryKey>
+</primaryKeys>
+<uniqueKeys>
+<UniqueKey class="oracle.dbtools.crest.model.design.storage.oracle.v10g.UniqueOraclev10g" name="PART_SERIAL_UN" id="47F26F72-E698-A327-069D-263FA28B200A">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
+<segment>BABC91F4-3F7E-F861-B1FA-B4776AABAB96</segment>
+<tableSpace>15113CA4-C9A1-1445-A149-D2639E54C6F5</tableSpace>
+<indexSegment>BABC91F4-3F7E-F861-B1FA-B4776AABAB96</indexSegment>
+<indexSort>SORTED</indexSort>
+<usingIndex>BY INDEX NAME</usingIndex>
+</UniqueKey>
+</uniqueKeys>
+</TableProxyOraclev12c>

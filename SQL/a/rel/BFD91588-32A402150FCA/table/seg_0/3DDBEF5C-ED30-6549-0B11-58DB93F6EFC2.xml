@@ -1,0 +1,135 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="3DDBEF5C-ED30-6549-0B11-58DB93F6EFC2" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="EMPLOYEE_SHIFT">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>EMPLOYEE_SHIFT</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>9D4128DB-FB2F-2F08-5085-55AC0E2D0F42</importedID>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="SHIFT_ID" id="DE33B58D-10FA-D741-0884-1311AF9A17A9">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>EMPLOYEE_SHIFT</sourceObjSchema>
+<sourceObjName>SHIFT_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>79940535-291B-3A37-1B82-044E3CF5A8F8</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="EMP_ID" id="9310DE5A-84F1-BF85-FD3D-53DF424891D8">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>EMPLOYEE_SHIFT</sourceObjSchema>
+<sourceObjName>EMP_ID</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>B23913EE-1FE0-F92E-759B-A4FDCB88A8F4</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="ED559605-F5C5-CD23-1674-5ACE2B884402" referredColumn="0EFFA41F-26D4-CBA1-6AA9-7B4F57EB0F84"/>
+</associations>
+</Column>
+<Column name="SHIFT_DATE" id="43A94D2D-6369-7A22-9A47-5669F600AA03">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>EMPLOYEE_SHIFT</sourceObjSchema>
+<sourceObjName>SHIFT_DATE</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>1FD607EB-A49A-DCDA-8131-68EE3E227496</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT007</logicalDatatype>
+<dataTypeSize>7</dataTypeSize>
+<ownDataTypeParameters>7,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="START_TIME" id="4EBB1127-47A6-E054-B5D6-5DEC05CCC79F">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>EMPLOYEE_SHIFT</sourceObjSchema>
+<sourceObjName>START_TIME</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>E2C7532F-C34F-D740-D411-D180180572C9</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<dataTypePrecision>6</dataTypePrecision>
+<ownDataTypeParameters>,6,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="END_TIME" id="813FC7C5-42D5-196C-6131-254E53B36240">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>EMPLOYEE_SHIFT</sourceObjSchema>
+<sourceObjName>END_TIME</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>D7AD5D05-F495-FD20-DBA5-9BE5775474EC</importedID>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<dataTypePrecision>6</dataTypePrecision>
+<ownDataTypeParameters>,6,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="STATUS" id="978E96DC-0C9B-CCD3-A1D0-3ACB4A65D180">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>EMPLOYEE_SHIFT</sourceObjSchema>
+<sourceObjName>STATUS</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>A8A78A81-FCDF-1E79-35E2-BE31BB88E244</importedID>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>20 BYTE</dataTypeSize>
+<defaultValue>&apos;SCHEDULED&apos;</defaultValue>
+<ownDataTypeParameters>20 BYTE,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="FE57BE0F-77C6-E43E-8B3E-5890B64975FC" schemaObject="1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7" name="EMPLOYEE_SHIFT_PK">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>SYS_C009763</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>83CDAFBD-FA86-86CA-22F7-127DEA342EDA</importedID>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="DE33B58D-10FA-D741-0884-1311AF9A17A9"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="2AE6DEDF-7055-D25A-A9D6-1AC0EF8462E1" name="FK_SHIFT_EMPLOYEE">
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="9310DE5A-84F1-BF85-FD3D-53DF424891D8"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

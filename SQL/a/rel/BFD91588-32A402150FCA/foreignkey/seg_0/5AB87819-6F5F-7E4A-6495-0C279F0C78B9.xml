@@ -1,0 +1,20 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<FKIndexAssociation class="oracle.dbtools.crest.model.design.relational.FKIndexAssociation" directorySegmentName="seg_0" id="5AB87819-6F5F-7E4A-6495-0C279F0C78B9" containerWithKeyObject="2E5F07EE-01F7-E083-C94D-AFD3D04753C4" localFKIndex="1363EF43-6083-D5BD-1CCF-185F0CBB4243" name="FK_INVOICE_EMPLOYEE">
+<sourceConnName>OL8-app</sourceConnName>
+<sourceObjSchema>APP</sourceObjSchema>
+<sourceObjName>FK_INVOICE_EMPLOYEE</sourceObjName>
+<createdBy>ntdmi</createdBy>
+<createdTime>2025-11-10 06:55:52 UTC</createdTime>
+<ownerDesignName>a</ownerDesignName>
+<importedID>8D067A96-C374-65BE-0B29-EE16F6516F42</importedID>
+<referredTableLongName>APP.EMPLOYEE</referredTableLongName>
+<deleteRule>NO ACTION</deleteRule>
+<referredTableID>62DC2330-EDB3-C2D3-4C40-5147BF4CB144</referredTableID>
+<keyObject>49A3DE07-1817-08EE-C830-31BFC96FB9A1</keyObject>
+<referredKeyID>49A3DE07-1817-08EE-C830-31BFC96FB9A1</referredKeyID>
+<mandatory>true</mandatory>
+<refColNames>EMP_ID</refColNames>
+<transferable>true</transferable>
+<rely>false</rely>
+<columnDependencyConstraintGenerateInDDL>true</columnDependencyConstraintGenerateInDDL>
+</FKIndexAssociation>
