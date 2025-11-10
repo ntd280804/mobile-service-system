@@ -192,9 +192,6 @@ namespace WebAPI.Areas.Admin.Controllers
                         cmdItem.Parameters.Add("p_request_id", OracleDbType.Int32, ParameterDirection.Input).Value = requestId;
                         cmdItem.Parameters.Add("p_part_id", OracleDbType.Int32, ParameterDirection.Input).Value = item.PartId;
 
-                        var outRequestItemId = new OracleParameter("p_request_item_id", OracleDbType.Int32, ParameterDirection.Output);
-                        cmdItem.Parameters.Add(outRequestItemId);
-
                         cmdItem.ExecuteNonQuery();
                     }
                 }

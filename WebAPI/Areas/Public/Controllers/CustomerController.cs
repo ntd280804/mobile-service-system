@@ -3,9 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
-
 using WebAPI.Helpers;
-
+using WebAPI.Models.Security;
 using WebAPI.Services;
 using WebAPI.Models.Auth;
 using WebAPI.Models;
@@ -67,7 +66,16 @@ namespace WebAPI.Areas.Public.Controllers
 
                 }
                 conn = _connManager.CreateConnection(dto.Username, hashedPwd, platform, sessionId);
-
+                using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
+                {
+                    setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = "ROLE_KHACHHANG";
+                    setRoleCmd.ExecuteNonQuery();
+                }
+                using (var setCusCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_customer(:p_phone); END;", conn))
+                {
+                    setCusCmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Username;
+                    setCusCmd.ExecuteNonQuery();
+                }
                 using var cmd = new OracleCommand("APP.LOGIN_CUSTOMER", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.BindByName = true; // ensure parameters match by name (ODP.NET default is positional)
@@ -95,16 +103,7 @@ namespace WebAPI.Areas.Public.Controllers
                 var token = _jwtHelper.GenerateToken(username, roles, sessionId);
 
                 // Set VPD context in this Oracle session for customer
-                using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
-                {
-                    setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = roles;
-                    setRoleCmd.ExecuteNonQuery();
-                }
-                using (var setCusCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_customer(:p_phone); END;", conn))
-                {
-                    setCusCmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = username;
-                    setCusCmd.ExecuteNonQuery();
-                }
+                
                 return Ok(ApiResponse<CustomerLoginResult>.Ok(new CustomerLoginResult
                 {
                     Username = username,
@@ -212,6 +211,80 @@ namespace WebAPI.Areas.Public.Controllers
 
             return Ok(new { message = "Đăng xuất thành công." });
 
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public ActionResult<ApiResponse<string>> ChangePassword([FromBody] changePasswordDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.OldPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
+                return BadRequest(ApiResponse<string>.Fail("Thiếu mật khẩu cũ hoặc mật khẩu mới."));
+
+            var headerUsername = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
+            if (string.IsNullOrWhiteSpace(headerUsername))
+                return Unauthorized(ApiResponse<string>.Fail("Missing Oracle user header."));
+
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return Unauthorized(ApiResponse<string>.Fail("Unauthorized"));
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.CHANGE_CUSTOMER_PASSWORD", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.BindByName = true;
+                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2, ParameterDirection.Input).Value = headerUsername;
+                cmd.Parameters.Add("p_old_password", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.OldPassword;
+                cmd.Parameters.Add("p_new_password", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.NewPassword;
+                cmd.ExecuteNonQuery();
+                return Ok(ApiResponse<string>.Ok("Đổi mật khẩu thành công."));
+            }
+            catch (OracleException ex)
+            {
+                if (ex.Number == 20001)
+                    return BadRequest(ApiResponse<string>.Fail("Mật khẩu cũ không đúng."));
+                return StatusCode(500, ApiResponse<string>.Fail($"Oracle error {ex.Number}: {ex.Message}"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost("change-password-secure")]
+        [Authorize]
+        public ActionResult<ApiResponse<string>> ChangePasswordSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        {
+            if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
+                return BadRequest(ApiResponse<string>.Fail("Invalid encrypted payload"));
+
+            try
+            {
+                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
+                byte[] aesKey = new byte[32];
+                byte[] iv = new byte[16];
+                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
+                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
+
+                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
+                using (Aes aes = Aes.Create())
+                {
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
+                    using (var ms = new MemoryStream(cipherBytes))
+                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                    using (var reader = new StreamReader(cs, Encoding.UTF8))
+                    {
+                        string plaintext = reader.ReadToEnd();
+                        var dto = System.Text.Json.JsonSerializer.Deserialize<changePasswordDto>(plaintext);
+                        if (dto == null)
+                            return BadRequest(ApiResponse<string>.Fail("Cannot parse payload"));
+                        return ChangePassword(dto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.Fail(ex.Message));
+            }
         }
 
         // DTO

@@ -1,4 +1,6 @@
-﻿namespace WebAPI.Models
+using System;
+
+namespace WebAPI.Models.Security
 {
     public class EncryptedPayload
     {
@@ -6,3 +8,5 @@
         public string? CipherDataBase64 { get; set; }
     }
 }
+
+

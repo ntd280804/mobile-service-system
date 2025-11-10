@@ -30,6 +30,49 @@ namespace WebAPI.Areas.Admin.Controllers
             _oracleSessionHelper = oracleSessionHelper;
         }
 
+        [HttpGet("services")]
+        [Authorize]
+        public IActionResult GetServices()
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.GET_ALL_SERVICES", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                // Ref cursor output
+                var cursor = new OracleParameter("p_service_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(cursor);
+
+                using var reader = cmd.ExecuteReader();
+                var list = new List<ServiceDto>();
+                while (reader.Read())
+                {
+                    list.Add(new ServiceDto
+                    {
+                        ServiceId = reader.GetDecimal(0),
+                        Name = reader.GetString(1),
+                        Description = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                        Price = reader.GetDecimal(3)
+                    });
+                }
+                return Ok(list);
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách dịch vụ", detail = ex.Message });
+            }
+        }
+
+
         [HttpGet]
         [Authorize]
         public IActionResult GetAllOrders()
@@ -61,7 +104,7 @@ namespace WebAPI.Areas.Admin.Controllers
                         ReceivedDate = reader.GetDateTime(5),
                         Status = reader.GetString(6),
                         Description = reader.IsDBNull(7) ? "" : reader.GetString(7)
-                        
+
                     });
                 }
 
@@ -140,28 +183,72 @@ namespace WebAPI.Areas.Admin.Controllers
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
 
+            using var transaction = conn.BeginTransaction();
             try
             {
-                using var cmd = new OracleCommand("APP.CREATE_ORDER", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
+                // 1. Tạo đơn hàng và lấy ORDER_ID
+                int orderId;
+                using (var cmd = new OracleCommand("APP.CREATE_ORDER", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Transaction = transaction;
 
-                // Tham số input
-                cmd.Parameters.Add("p_customer_phone", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.CustomerPhone;
-                cmd.Parameters.Add("p_receiver_emp_name", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.ReceiverEmpName;
-                cmd.Parameters.Add("p_handler_emp_name", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.HandlerEmpName;
-                cmd.Parameters.Add("p_order_type", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.OrderType;
-                
-                cmd.Parameters.Add("p_status", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.Status;
-                cmd.Parameters.Add("p_description", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.Description ?? (object)DBNull.Value;
+                    // Tham số input
+                    cmd.Parameters.Add("p_customer_phone", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.CustomerPhone;
+                    cmd.Parameters.Add("p_receiver_emp_name", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.ReceiverEmpName;
+                    cmd.Parameters.Add("p_handler_emp_name", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.HandlerEmpName;
+                    cmd.Parameters.Add("p_order_type", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.OrderType;
+                    cmd.Parameters.Add("p_status", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.Status;
+                    cmd.Parameters.Add("p_description", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.Description ?? (object)DBNull.Value;
 
-                cmd.ExecuteNonQuery();
+                    // Tham số output
+                    var pOrderId = new OracleParameter("p_order_id", OracleDbType.Int32, ParameterDirection.Output);
+                    cmd.Parameters.Add(pOrderId);
 
-                return Ok(new { message = "Tạo đơn hàng thành công." });
+                    cmd.ExecuteNonQuery();
+                    orderId = Convert.ToInt32(pOrderId.Value.ToString());
+                }
+
+                // 2. Tạo các ORDER_SERVICE trong vòng lặp
+                if (request.ServiceItems != null && request.ServiceItems.Count > 0)
+                {
+                    foreach (var serviceItem in request.ServiceItems)
+                    {
+                        using (var cmdService = new OracleCommand("APP.CREATE_ORDER_SERVICE", conn))
+                        {
+                            cmdService.CommandType = CommandType.StoredProcedure;
+                            cmdService.Transaction = transaction;
+
+                            cmdService.Parameters.Add("p_order_id", OracleDbType.Int32, ParameterDirection.Input).Value = orderId;
+                            cmdService.Parameters.Add("p_service_id", OracleDbType.Int32, ParameterDirection.Input).Value = serviceItem.ServiceId;
+                            cmdService.Parameters.Add("p_quantity", OracleDbType.Int32, ParameterDirection.Input).Value = serviceItem.Quantity;
+                            cmdService.Parameters.Add("p_price", OracleDbType.Decimal, ParameterDirection.Input).Value = serviceItem.Price;
+
+                            var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
+                            cmdService.Parameters.Add(pResult);
+
+                            cmdService.ExecuteNonQuery();
+
+                            string result = pResult.Value?.ToString() ?? "";
+                            if (!string.IsNullOrEmpty(result) && result.StartsWith("Lỗi:"))
+                            {
+                                transaction.Rollback();
+                                return BadRequest(new { message = result });
+                            }
+                        }
+                    }
+                }
+
+                transaction.Commit();
+                return Ok(new { message = "Tạo đơn hàng thành công.", orderId = orderId });
             }
             catch (OracleException ex)
             {
+                transaction.Rollback();
                 if (ex.Number == 20001)
                     return BadRequest(new { message = ex.Message }); // username không tồn tại
+                if (ex.Number == 20002 || ex.Number == 20003)
+                    return BadRequest(new { message = ex.Message }); // lỗi từ CREATE_ORDER_SERVICE
                 if (ex.Number == 28)
                 {
                     _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
@@ -173,6 +260,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }
             catch (Exception ex)
             {
+                transaction.Rollback();
                 return StatusCode(500, new { message = "Lỗi khi tạo đơn hàng", detail = ex.Message });
             }
         }
@@ -224,6 +312,52 @@ namespace WebAPI.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi khi lấy chi tiết đơn hàng", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("details/{orderId}/services")]
+        [Authorize]
+        public IActionResult GetOrderServices(int orderId)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.GET_SERVICES_BY_ORDER_ID", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_order_id", OracleDbType.Int32, ParameterDirection.Input).Value = orderId;
+                var cursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(cursor);
+
+                using var reader = cmd.ExecuteReader();
+                var services = new List<OrderServiceDto>();
+
+                while (reader.Read())
+                {
+                    services.Add(new OrderServiceDto
+                    {
+
+                        ServiceId = reader.GetDecimal(0),
+                        ServiceName = reader.GetString(1),
+                        ServiceDescription = reader.IsDBNull(2) ? string.Empty : reader.GetString(3),
+                        Quantity = reader.GetDecimal(3),
+                        Price = reader.GetDecimal(4)
+                    });
+                }
+
+                return Ok(services);
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi lấy danh sách dịch vụ của đơn hàng", detail = ex.Message });
             }
         }
 
@@ -302,74 +436,30 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Lỗi khi lấy danh sách username nhân viên", detail = ex.Message });
             }
         }
-
-        [HttpPost("complete")]
-        [Authorize]
-        public IActionResult CompleteOrder([FromBody] CompleteOrderRequest request)
+        public class CompleteOrderRequest
         {
-            if (request == null || request.OrderId <= 0)
-                return BadRequest(new { message = "Thiếu dữ liệu hợp lệ" });
-
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
-            {
-                using var transaction = conn.BeginTransaction();
-
-                // 1) Lấy emp_id từ username (nếu có truyền)
-                int? empId = null;
-                string signatureBase64 = "DUMMY_SIGNATURE_FOR_DEMO_PURPOSES";
-                if (!string.IsNullOrWhiteSpace(request.EmpUsername))
-                {
-                    using var cmdGetEmp = new OracleCommand("APP.GET_EMPLOYEE_ID_BY_USERNAME", conn);
-                    cmdGetEmp.CommandType = CommandType.StoredProcedure;
-                    cmdGetEmp.Parameters.Add("p_username", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.EmpUsername;
-                    var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
-                    cmdGetEmp.Parameters.Add(pEmpId);
-                    cmdGetEmp.ExecuteNonQuery();
-                    if (pEmpId.Value != DBNull.Value && pEmpId.Value != null)
-                        empId = ((Oracle.ManagedDataAccess.Types.OracleDecimal)pEmpId.Value).ToInt32();
-                }
-
-                // 2) Tạo phiếu xuất kho (placeholder: chờ thủ tục DB)
-                //    Làm tương tự như CREATE_STOCKIN, nhưng cho STOCKOUT.
-                //    Khi có thủ tục, thêm lệnh gọi tại đây và lấy ra stockOutId.
-                int? stockOutId = null;
-
-                // 3) Tạo hóa đơn (placeholder)
-                int? invoiceId = null;
-
-                // 4) Cập nhật trạng thái đơn hàng sang COMPLETED (nếu có thủ tục)
-                //    Ví dụ: APP.MARK_ORDER_COMPLETED(p_order_id)
-
-                transaction.Commit();
-
-                return Ok(new
-                {
-                    message = "Hoàn tất đơn hàng (placeholder). Vui lòng nối DB thủ tục xuất kho và hóa đơn.",
-                    OrderId = request.OrderId,
-                    StockOutId = stockOutId,
-                    InvoiceId = invoiceId
-                });
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi hoàn tất đơn hàng", detail = ex.Message });
-            }
+            public int OrderId { get; set; }
+            public string EmpUsername { get; set; }
         }
 
-    }
+        public class ServiceDto
+        {
+            public decimal ServiceId { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+            public decimal Price { get; set; }
+            public decimal Quantity { get; set; }
+        }
 
-    public class CompleteOrderRequest
-    {
-        public int OrderId { get; set; }
-        public string EmpUsername { get; set; }
+        public class OrderServiceDto
+        {
+            public decimal OrderId { get; set; }
+            public decimal ServiceId { get; set; }
+            public string ServiceName { get; set; }
+            public string ServiceDescription { get; set; }
+            public decimal Quantity { get; set; }
+            public decimal Price { get; set; }
+            public string Status { get; set; }
+        }
     }
 }

@@ -7,5 +7,11 @@ namespace WebApp.Models.Part
         public string PrivateKey { get; set; }
         public List<ImportItemDto> Items { get; set; } = new();
     }
+    public class ExportStockDto
+    {
+        public string EmpUsername { get; set; }
+        public decimal orderid { get; set; }
+        public string PrivateKey { get; set; }
+    }
 }
 

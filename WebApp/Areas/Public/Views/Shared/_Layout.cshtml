@@ -58,6 +58,9 @@
                         else
                         {
                             <li class="nav-item">
+                                <a class="nav-link" asp-area="Public" asp-controller="Customer" asp-action="ChangePassword">Đổi mật khẩu</a>
+                            </li>
+                            <li class="nav-item">
                                 <form method="post" asp-area="Public" asp-controller="Customer" asp-action="Logout">
                                     <button type="submit" class="nav-link btn btn-link text-start">Logout (@username)</button>
                                 </form>

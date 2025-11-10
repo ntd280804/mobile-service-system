@@ -44,13 +44,79 @@
                     <td>
                         <a class="btn btn-sm btn-primary" href="@Url.Action("Details", "Order", new { id = order.OrderId })">Chi tiết</a>
                         <a class="btn btn-sm btn-primary" href="@Url.Action("Create", "PartRequest", new { id = order.OrderId })">Yêu cầu linh kiện</a>
-                        @if (order.Status != "COMPLETED")
+                        @if (order.Status != "Đã hoàn thành")
                         {
-                            <form method="post" asp-action="Complete" asp-controller="Order" class="d-inline">
-                                <input type="hidden" name="orderId" value="@order.OrderId" />
-                                <button type="submit" class="btn btn-sm btn-success">Hoàn thành</button>
-                            </form>
+                        <!-- Nút "Hoàn thành" để mở modal -->
+                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#completeOrderModal-@order.OrderId">
+                            Hoàn thành
+                        </button>
                         }
+
+                        <!-- Modal để xác nhận và chọn file private key -->
+                        <div class="modal fade" id="completeOrderModal-@order.OrderId" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form id="exportForm-@order.OrderId" method="post" asp-area="Admin" asp-controller="Export" asp-action="Create">
+
+                                        <div class="modal-body">
+                                            <p>Để hoàn thành đơn hàng, bạn cần cung cấp private key để ký vào phiếu xuất kho.</p>
+
+                                            <input type="hidden" name="orderId" value="@order.OrderId" />
+
+                                            <div class="mb-3">
+                                                <label for="privateKeyFile-@order.OrderId" class="form-label">Chọn file Private Key (.txt):</label>
+                                                <input class="form-control" type="file" id="privateKeyFile-@order.OrderId" required accept=".txt">
+                                            </div>
+
+                                            <input type="hidden" id="privateKeyContent-@order.OrderId" name="PrivateKey" required />
+
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                            <button type="button" class="btn btn-primary" onclick="processKeyAndSubmit(@order.OrderId)">Xác nhận &amp; Xuất kho</button>
+                                        </div>
+                                    </form>
+
+                                    <script>
+                                        function processKeyAndSubmit(orderId) {
+                                            const fileInput = document.getElementById(`privateKeyFile-${orderId}`);
+                                            const contentInput = document.getElementById(`privateKeyContent-${orderId}`); // input hidden
+                                            const form = document.getElementById(`exportForm-${orderId}`);
+
+                                            const file = fileInput.files[0];
+                                            if (!file) {
+                                                alert("Vui lòng chọn file Private Key.");
+                                                return;
+                                            }
+
+                                            const reader = new FileReader();
+
+                                            reader.onload = function(e) {
+                                                let privateKeyContent = e.target.result;
+
+                                                // 1. Loại bỏ các ký tự xuống dòng và khoảng trắng dư thừa
+                                                // Điều này giảm kích thước chuỗi và giúp server xử lý dễ hơn
+                                                privateKeyContent = privateKeyContent.trim().replace(/(\r\n|\n|\r)/gm, "");
+
+                                                // 2. RẤT QUAN TRỌNG: URL Encode nội dung key
+                                                // Ngăn chặn lỗi HTTP 400 (Bad Request) do các ký tự đặc biệt/chuỗi dài
+                                                contentInput.value = encodeURIComponent(privateKeyContent);
+
+                                                // 3. Submit form SAU KHI ĐỌC VÀ GÁN HOÀN TẤT
+                                                form.submit();
+                                            };
+
+                                            reader.onerror = function() {
+                                                alert("Lỗi khi đọc file.");
+                                            };
+
+                                            // Bắt đầu đọc file (sử dụng UTF-8 mặc định)
+                                            reader.readAsText(file);
+                                        }
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
                     </td>
                 </tr>
             }
@@ -63,3 +129,4 @@
         }
     </tbody>
 </table>
+

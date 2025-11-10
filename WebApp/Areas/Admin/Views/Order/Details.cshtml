@@ -1,8 +1,16 @@
 @model WebApp.Models.Order.OrderDto
+@using WebApp.Models.Order
+
+@{
+    var services = ViewBag.Services as List<OrderServiceDto> ?? new List<OrderServiceDto>();
+}
 
 <h2>Chi tiết đơn hàng #@Model.OrderId</h2>
 
-<div class="card">
+<div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">Thông tin đơn hàng</h5>
+    </div>
     <div class="card-body">
         <dl class="row">
             <dt class="col-sm-3">Số điện thoại KH</dt>
@@ -18,17 +26,78 @@
             <dd class="col-sm-9">@Model.OrderType</dd>
 
             <dt class="col-sm-3">Ngày tiếp nhận</dt>
-            <dd class="col-sm-9">@Model.ReceivedDate</dd>
+            <dd class="col-sm-9">@Model.ReceivedDate.ToString("dd/MM/yyyy HH:mm")</dd>
 
             <dt class="col-sm-3">Trạng thái</dt>
-            <dd class="col-sm-9">@Model.Status</dd>
+            <dd class="col-sm-9">
+                <span class="badge @(Model.Status == "Đã hoàn thành" || Model.Status == "Hoàn thành" ? "bg-success" : Model.Status == "Đã tiếp nhận" ? "bg-info" : "bg-warning")">
+                    @Model.Status
+                </span>
+            </dd>
 
             <dt class="col-sm-3">Mô tả</dt>
-            <dd class="col-sm-9">@Model.Description</dd>
+            <dd class="col-sm-9">@(string.IsNullOrEmpty(Model.Description) ? "-" : Model.Description)</dd>
         </dl>
-
-        <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
     </div>
 </div>
 
+@if (services.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">Danh sách dịch vụ</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mã dịch vụ</th>
+                            <th>Tên dịch vụ</th>
+                            <th>Mô tả</th>
+                            <th>Số lượng</th>
+                            <th>Đơn giá</th>
+                            <th>Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            decimal totalAmount = 0;
+                        }
+                        @foreach (var service in services)
+                        {
+                            var itemTotal = service.Price * service.Quantity;
+                            totalAmount += itemTotal;
+                            <tr>
+                                <td>@service.ServiceId</td>
+                                <td>@service.ServiceName</td>
+                                <td>@(string.IsNullOrEmpty(service.ServiceDescription) ? "-" : service.ServiceDescription)</td>
+                                <td>@service.Quantity</td>
+                                <td>@service.Price.ToString("N0") đ</td>
+                                <td>@itemTotal.ToString("N0") đ</td>
 
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-info">
+                            <th colspan="5" class="text-end">Tổng cộng:</th>
+                            <th>@totalAmount.ToString("N0") đ</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Đơn hàng này chưa có dịch vụ nào.
+    </div>
+}
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+</div>

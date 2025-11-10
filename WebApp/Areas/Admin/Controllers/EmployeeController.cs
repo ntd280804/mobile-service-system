@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
@@ -23,7 +26,70 @@ namespace WebApp.Areas.Admin.Controllers
             _OracleClientHelper = _oracleClientHelper;
             _securityClient = securityClient;
         }
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            var token = HttpContext.Session.GetString("JwtToken");
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["Error"] = "Vui lòng đăng nhập trước.";
+                return RedirectToAction("Login");
+            }
 
+            return View(new CustomerChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(CustomerChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                var keyResp = await _httpClient.GetFromJsonAsync<ApiResponse<string>>("api/public/security/server-public-key");
+                if (keyResp == null || !keyResp.Success || string.IsNullOrWhiteSpace(keyResp.Data))
+                {
+                    ModelState.AddModelError(string.Empty, "Không thể lấy khóa công khai của máy chủ.");
+                    return View(model);
+                }
+
+                var payload = new
+                {
+                    OldPassword = model.OldPassword,
+                    NewPassword = model.NewPassword
+                };
+
+                var json = JsonSerializer.Serialize(payload);
+                var encrypted = EncryptHelper.HybridEncrypt(json, keyResp.Data);
+
+                var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/change-password-secure", new
+                {
+                    encryptedKeyBlockBase64 = encrypted.EncryptedKeyBlock,
+                    cipherDataBase64 = encrypted.CipherData
+                });
+
+                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+                if (response.IsSuccessStatusCode && apiResult?.Success == true)
+                {
+                    TempData["Message"] = "Đổi mật khẩu thành công.";
+                    return RedirectToAction("Index", "Home", new { area = "Public" });
+                }
+
+                var errorMsg = apiResult?.Error ?? await response.Content.ReadAsStringAsync();
+                ModelState.AddModelError(string.Empty, $"Đổi mật khẩu thất bại: {errorMsg}");
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, "Lỗi kết nối API: " + ex.Message);
+                return View(model);
+            }
+        }
         // --- Index: lấy danh sách nhân viên ---
         [HttpGet]
         public async Task<IActionResult> Index()

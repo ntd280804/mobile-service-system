@@ -1,26 +1,28 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 using WebAPI.Helpers;
 
 using WebAPI.Services;
 using WebAPI.Models.Security;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace WebAPI.Areas.Admin.Controllers
 {
     [Route("api/admin/[controller]")]
     [ApiController]
-    public class ImportController : ControllerBase
+    public class ExportController : ControllerBase
     {
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
         private readonly OracleSessionHelper _oracleSessionHelper;
         private readonly InvoicePdfService _invoicePdfService;
 
-        public ImportController(OracleConnectionManager connManager, JwtHelper jwtHelper ,  OracleSessionHelper oracleSessionHelper, InvoicePdfService invoicePdfService)
+        public ExportController(OracleConnectionManager connManager, JwtHelper jwtHelper ,  OracleSessionHelper oracleSessionHelper, InvoicePdfService invoicePdfService)
         {
             _connManager = connManager;
             _jwtHelper = jwtHelper;
@@ -28,10 +30,10 @@ namespace WebAPI.Areas.Admin.Controllers
             _invoicePdfService = invoicePdfService;
         }
 
-        // GET: api/admin/import/getallimport
-        [HttpGet("getallimport")]
+        // GET: api/admin/export/getallexport
+        [HttpGet("getallexport")]
         [Authorize]
-        public IActionResult GetAllImports()
+        public IActionResult GetAllExports()
         {
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
@@ -39,7 +41,7 @@ namespace WebAPI.Areas.Admin.Controllers
             try
             {
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = "APP.GET_ALL_IMPORTS";
+                cmd.CommandText = "APP.GET_ALL_EXPORTS";
                 cmd.CommandType = CommandType.StoredProcedure;
 
                 var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
@@ -51,9 +53,9 @@ namespace WebAPI.Areas.Admin.Controllers
                 {
                     result.Add(new
                     {
-                        StockInId = reader["STOCKIN_ID"],
+                        StockOutId = reader["STOCKOUT_ID"],
                         EmpUsername = reader["EmpUsername"],
-                        OutDate = reader["IN_DATE"],
+                        OutDate = reader["OUT_DATE"],
                         Note = reader["NOTE"]
                     });
                 }
@@ -68,30 +70,30 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("invoice/{stockoutId}")]
         [Authorize]
-        public IActionResult GetImportInvoicePdf(int stockoutId)
+        public IActionResult GetExportInvoicePdf(int stockoutId)
         {
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
 
             try
             {
-                // 1) Load import header + items
-                var items = new List<ImportItemDto>();
+                // 1) Load export header + items
+                var items = new List<ExportItemDto>();
                 string? empUsername = null;
                 DateTime? inDate = null;
                 string note = null;
 
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "APP.GET_IMPORT_BY_ID";
+                    cmd.CommandText = "APP.GET_EXPORT_BY_ID";
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                    cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
                     var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
                     cmd.Parameters.Add(outputCursor);
 
                     using var reader = cmd.ExecuteReader();
                     if (!reader.HasRows)
-                        return NotFound(new { message = $"StockIn ID {stockoutId} not found" });
+                        return NotFound(new { message = $"StockOut ID {stockoutId} not found" });
 
                     while (reader.Read())
                     {
@@ -102,7 +104,7 @@ namespace WebAPI.Areas.Admin.Controllers
                             note = reader["Note"]?.ToString();
                         }
 
-                        items.Add(new ImportItemDto
+                        items.Add(new ExportItemDto
                         {
                             PartName = reader["PartName"]?.ToString(),
                             Manufacturer = reader["Manufacturer"]?.ToString(),
@@ -112,9 +114,9 @@ namespace WebAPI.Areas.Admin.Controllers
                     }
                 }
 
-                var dto = new ImportStockDto
+                var dto = new ExportStockDto
                 {
-                    StockInId = stockoutId,
+                    StockOutId = stockoutId,
                     EmpUsername = empUsername ?? string.Empty,
                     OutDate = inDate ?? DateTime.MinValue,
                     Note = note,
@@ -125,9 +127,9 @@ namespace WebAPI.Areas.Admin.Controllers
                 string signature;
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "APP.GET_STOCKIN_SIGNATURE";
+                    cmd.CommandText = "APP.GET_STOCKOUT_SIGNATURE";
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                    cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
                     var pSig = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
                     cmd.Parameters.Add(pSig);
                     cmd.ExecuteNonQuery();
@@ -139,9 +141,8 @@ namespace WebAPI.Areas.Admin.Controllers
                 }
 
                 // 3) Generate PDF without verify URL
-                var pdfBytes = _invoicePdfService.GenerateImportInvoicePdf(dto, signature ?? string.Empty, null, null);
-
-                return File(pdfBytes, "application/pdf", $"ImportInvoice_{stockoutId}.pdf");
+                var pdfBytes = _invoicePdfService.GenerateExportInvoicePdf(dto, signature ?? string.Empty, null, null);
+                return File(pdfBytes, "application/pdf", $"ExportInvoice_{stockoutId}.pdf");
             }
             catch (OracleException ex)
             {
@@ -156,7 +157,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("details/{stockoutId}")]
         [Authorize]
-        public IActionResult GetImportDetails(int stockoutId)
+        public IActionResult GetExportDetails(int stockoutId)
         {
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
@@ -165,14 +166,14 @@ namespace WebAPI.Areas.Admin.Controllers
             {
 
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = "APP.GET_IMPORT_BY_ID";
+                cmd.CommandText = "APP.GET_EXPORT_BY_ID";
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
                 var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
                 cmd.Parameters.Add(outputCursor);
 
-                var items = new List<ImportItemDto>();
+                var items = new List<ExportItemDto>();
                 string? empUsername = null;
                 DateTime? inDate = null;
                 string note = null;
@@ -180,7 +181,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 using var reader = cmd.ExecuteReader();
 
                 if (!reader.HasRows)
-                    return NotFound(new { message = $"StockIn ID {stockoutId} not found" });
+                    return NotFound(new { message = $"StockOut ID {stockoutId} not found" });
 
                 while (reader.Read())
                 {
@@ -193,7 +194,7 @@ namespace WebAPI.Areas.Admin.Controllers
                     }
 
                     // Chi tiết từng item
-                    items.Add(new ImportItemDto
+                    items.Add(new ExportItemDto
                     {
                         PartName = reader["PartName"]?.ToString(),
                         Manufacturer = reader["Manufacturer"]?.ToString(),
@@ -202,9 +203,9 @@ namespace WebAPI.Areas.Admin.Controllers
                     });
                 }
 
-                var result = new ImportStockDto
+                var result = new ExportStockDto
                 {
-                    StockInId = stockoutId,
+                    StockOutId = stockoutId,
                     EmpUsername = empUsername ?? "",
                     OutDate = inDate ?? DateTime.MinValue,
                     Note = note,
@@ -235,166 +236,118 @@ namespace WebAPI.Areas.Admin.Controllers
 
 
 
-        [HttpPost("post")]
+        [HttpPost("create")]
         [Authorize]
-        public IActionResult ImportStockStepByStepWithTransaction([FromBody] ImportStockDto dto)
+        public IActionResult CreateExportFromOrder([FromBody] CreateExportFromOrderDto request)
         {
-            if (dto.Items == null || dto.Items.Count == 0)
-                return BadRequest("No items to import");
-            if (string.IsNullOrEmpty(dto.PrivateKey))
+            if (request.OrderId <= 0)
+                return BadRequest("Missing OrderId");
+            if (string.IsNullOrEmpty(request.PrivateKey))
                 return BadRequest("Missing private key");
 
-            var privateKeyPem = dto.PrivateKey;
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
+
+            using var transaction = conn.BeginTransaction();
             try
             {
+                // First create stockout transaction with temporary empty signature
+                string signatureBase64 = "TEST";
 
-                // --- Bắt đầu transaction ---
-                using var transaction = conn.BeginTransaction();
-
-                int stockInId;
-                string signatureBase64 = "DUMMY_SIGNATURE_FOR_DEMO_PURPOSES";
-
+                // Normalize private key: strip PEM headers/footers and whitespace
+                string NormalizePrivateKey(string key)
+                {
+                    if (string.IsNullOrWhiteSpace(key)) return key;
+                    var k = key.Trim();
+                    // Best-effort decode if URL-encoded
+                    try { k = Uri.UnescapeDataString(k); } catch { }
+                    // Remove PEM headers/footers if present
+                    k = Regex.Replace(k, "-+BEGIN[^-]+-+", "", RegexOptions.IgnoreCase);
+                    k = Regex.Replace(k, "-+END[^-]+-+", "", RegexOptions.IgnoreCase);
+                    // Remove all whitespace (spaces, tabs, newlines)
+                    k = Regex.Replace(k, "\\s+", "");
+                    // Strip any characters not valid in base64 (including BOM/zero-width)
+                    k = Regex.Replace(k, "[^A-Za-z0-9+/=]", "");
+                    return k;
+                }
+                var normalizedPrivateKey = NormalizePrivateKey(request.PrivateKey);
+                var stockOutIdParam = new OracleParameter("p_stockout_id", OracleDbType.Int32, ParameterDirection.Output);
                 int empId;
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = "APP.GET_EMPLOYEE_ID_BY_USERNAME";
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    cmd.Parameters.Add("p_username", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.EmpUsername;
+                    cmd.Parameters.Add("p_username", OracleDbType.Varchar2, ParameterDirection.Input).Value = request.EmpUsername;
                     var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
                     cmd.Parameters.Add(pEmpId);
 
                     cmd.ExecuteNonQuery();
                     empId = Convert.ToInt32(pEmpId.Value.ToString());
                 }
-                // --- 2. CREATE_STOCKIN với signature ---
+                // Giả định bạn có một procedure làm tất cả các bước
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.Transaction = transaction;
-                    cmd.CommandText = "APP.CREATE_STOCKIN";
+                    cmd.CommandText = "APP.CREATE_STOCKOUT_TRANSACTION"; // Procedure này cần được tạo trong DB
                     cmd.CommandType = CommandType.StoredProcedure;
-
+                    cmd.Parameters.Add("p_order_id", OracleDbType.Int32, ParameterDirection.Input).Value = request.OrderId;
                     cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = empId;
-                    cmd.Parameters.Add("p_note", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.Note ?? "";
+                    string noteValue = "Xuất kho tự động cho Order ID " + request.OrderId.ToString();
+                    cmd.Parameters.Add("p_note", OracleDbType.Varchar2, ParameterDirection.Input).Value = noteValue ?? "";
                     cmd.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = signatureBase64;
-
-                    var outStockInId = new OracleParameter("p_stockin_id", OracleDbType.Int32, ParameterDirection.Output);
-                    cmd.Parameters.Add(outStockInId);
-
+                    
+                    cmd.Parameters.Add(stockOutIdParam);
                     cmd.ExecuteNonQuery();
-                    stockInId = Convert.ToInt32(outStockInId.Value.ToString());
                 }
 
-                // --- 3. Duyệt từng item ---
-                foreach (var item in dto.Items)
-                {
-                    string partName = item.PartName;
-                    string manufacturer = item.Manufacturer ?? "";
-                    string serial = item.Serial;
-                    int stockInItemId;
+                var stockOutId = Convert.ToInt32(stockOutIdParam.Value.ToString());
 
-                    using (var cmdItem = conn.CreateCommand())
-                    {
-                        cmdItem.Transaction = transaction;
-                        cmdItem.CommandText = "APP.CREATE_STOCKIN_ITEM";
-                        cmdItem.CommandType = CommandType.StoredProcedure;
-
-                        cmdItem.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                        cmdItem.Parameters.Add("p_part_name", OracleDbType.Varchar2, ParameterDirection.Input).Value = partName;
-                        cmdItem.Parameters.Add("p_manufacturer", OracleDbType.Varchar2, ParameterDirection.Input).Value = manufacturer;
-                        cmdItem.Parameters.Add("p_serial", OracleDbType.Varchar2, ParameterDirection.Input).Value = serial;
-                        cmdItem.Parameters.Add("p_price", OracleDbType.Decimal, ParameterDirection.Input).Value = item.Price; // <-- thêm price
-
-
-                        var outStockInItemId = new OracleParameter("p_stockin_item_id", OracleDbType.Int32, ParameterDirection.Output);
-                        cmdItem.Parameters.Add(outStockInItemId);
-
-                        cmdItem.ExecuteNonQuery();
-                        stockInItemId = Convert.ToInt32(outStockInItemId.Value.ToString());
-                    }
-
-                    using (var cmdPart = conn.CreateCommand())
-                    {
-                        cmdPart.Transaction = transaction;
-                        cmdPart.CommandText = "APP.CREATE_PART";
-                        cmdPart.CommandType = CommandType.StoredProcedure;
-                        cmdPart.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                        cmdPart.Parameters.Add("p_part_name", OracleDbType.Varchar2, ParameterDirection.Input).Value = partName;
-                        cmdPart.Parameters.Add("p_manufacturer", OracleDbType.Varchar2, ParameterDirection.Input).Value = manufacturer;
-                        cmdPart.Parameters.Add("p_serial", OracleDbType.Varchar2, ParameterDirection.Input).Value = serial;
-                        cmdPart.Parameters.Add("p_price", OracleDbType.Decimal, ParameterDirection.Input).Value = item.Price; // <-- thêm price
-
-
-                        cmdPart.ExecuteNonQuery();
-                    }
-                }
-                string signature;
+                // Generate signature based on created stockout and its items
+                string generatedSignature;
                 using (var cmdSign = conn.CreateCommand())
                 {
-                    cmdSign.Transaction = transaction;
-                    cmdSign.CommandText = "APP.SIGN_STOCKIN";
+                    cmdSign.CommandText = "APP.SIGN_STOCKOUT";
                     cmdSign.CommandType = CommandType.StoredProcedure;
-
-                    cmdSign.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                    cmdSign.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = privateKeyPem;
-
+                    cmdSign.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockOutId;
+                    cmdSign.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = normalizedPrivateKey;
                     var outSignature = new OracleParameter("p_signature", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
                     cmdSign.Parameters.Add(outSignature);
-
                     cmdSign.ExecuteNonQuery();
-                    signature = outSignature.Value.ToString();
+                    generatedSignature = outSignature.Value?.ToString() ?? "";
                 }
 
-                // --- 5. Update signature vào bảng STOCK_IN ---
-                using (var cmdUpdateSig = conn.CreateCommand())
+                // Update stockout signature
+                using (var cmdUpd = conn.CreateCommand())
                 {
-                    cmdUpdateSig.Transaction = transaction;
-                    cmdUpdateSig.CommandText = "APP.UPDATE_STOCKIN_SIGNATURE";
-                    cmdUpdateSig.CommandType = CommandType.StoredProcedure;
-
-                    cmdUpdateSig.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                    cmdUpdateSig.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = signature;
-
-                    cmdUpdateSig.ExecuteNonQuery();
+                    cmdUpd.CommandText = "APP.UPDATE_STOCKOUT_SIGNATURE";
+                    cmdUpd.CommandType = CommandType.StoredProcedure;
+                    cmdUpd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockOutId;
+                    cmdUpd.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = generatedSignature ?? "";
+                    cmdUpd.ExecuteNonQuery();
                 }
+
                 transaction.Commit();
-                return Ok(new { Message = "Import successful", StockInId = stockInId });
+                return Ok(new { Message = "Export created from order successfully.", StockOutId = stockOutId });
             }
             catch (OracleException ex)
             {
-                return BadRequest(new
-                {
-                    Message = "Oracle Error - Transaction rolled back",
-                    ErrorCode = ex.Number,
-                    Error = ex.Message,
-                    StackTrace = ex.StackTrace,
-                    Parameters = new
-                    {
-                        dto.EmpUsername,
-                        dto.Note,
-                        Items = dto.Items.Select(item => $"{item.PartName}|{item.Manufacturer}|{item.Serial}").ToArray()
-                    }
-                });
+                transaction.Rollback();
+                return StatusCode(500, new { Message = "Oracle Error - Transaction rolled back", ErrorCode = ex.Number, Error = ex.Message });
             }
             catch (Exception ex)
             {
-                return BadRequest(new
-                {
-                    Message = "General Error - Transaction rolled back",
-                    Error = ex.Message,
-                    StackTrace = ex.StackTrace
-                });
+                transaction.Rollback();
+                return StatusCode(500, new { Message = "General Error - Transaction rolled back", Error = ex.Message });
             }
         }
 
-        [HttpPost("post-secure")]
+        [HttpPost("create-secure")]
         [Authorize]
-        public IActionResult ImportStockSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        public IActionResult CreateExportFromOrderSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {
             if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
-                return BadRequest("Invalid encrypted payload");
+                return BadRequest(new { Message = "Invalid encrypted payload" });
 
             try
             {
@@ -413,9 +366,9 @@ namespace WebAPI.Areas.Admin.Controllers
                     using (var reader = new StreamReader(cs, Encoding.UTF8))
                     {
                         string plaintext = reader.ReadToEnd();
-                        var dto = System.Text.Json.JsonSerializer.Deserialize<ImportStockDto>(plaintext);
-                        if (dto == null) return BadRequest("Cannot parse payload");
-                        return ImportStockStepByStepWithTransaction(dto);
+                        var dto = System.Text.Json.JsonSerializer.Deserialize<CreateExportFromOrderDto>(plaintext);
+                        if (dto == null) return BadRequest(new { Message = "Cannot parse payload" });
+                        return CreateExportFromOrder(dto);
                     }
                 }
             }
@@ -438,17 +391,17 @@ namespace WebAPI.Areas.Admin.Controllers
                 int empId;
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "APP.GET_EMP_ID_FROM_STOCKIN";
+                    cmd.CommandText = "APP.GET_EMP_ID_FROM_STOCKOUT";
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                    cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
                     var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
                     cmd.Parameters.Add(pEmpId);
 
                     cmd.ExecuteNonQuery();
 
                     if (pEmpId.Value == DBNull.Value || pEmpId.Value == null)
-                        return NotFound(new { message = $"StockIn ID {stockoutId} không tồn tại" });
+                        return NotFound(new { message = $"StockOut ID {stockoutId} không tồn tại" });
 
                     empId = ((Oracle.ManagedDataAccess.Types.OracleDecimal)pEmpId.Value).ToInt32();
                 }
@@ -483,21 +436,21 @@ namespace WebAPI.Areas.Admin.Controllers
                 string signature;
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "APP.GET_STOCKIN_SIGNATURE";
+                    cmd.CommandText = "APP.GET_STOCKOUT_SIGNATURE";
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                    cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
                     var pSig = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
                     cmd.Parameters.Add(pSig);
 
                     cmd.ExecuteNonQuery();
 
                     if (pSig.Value == DBNull.Value || pSig.Value == null)
-                        return NotFound(new { message = $"Signature của StockIn ID {stockoutId} không tồn tại" });
+                        return NotFound(new { message = $"Signature của StockOut ID {stockoutId} không tồn tại" });
 
                     // Lấy signature từ CLOB
                     if (pSig.Value == DBNull.Value || pSig.Value == null)
-                        return NotFound(new { message = $"Signature của StockIn ID {stockoutId} không tồn tại" });
+                        return NotFound(new { message = $"Signature của StockOut ID {stockoutId} không tồn tại" });
 
                     var clobSig = (Oracle.ManagedDataAccess.Types.OracleClob)pSig.Value;
                     signature = clobSig.Value;  // Lấy toàn bộ text
@@ -508,10 +461,10 @@ namespace WebAPI.Areas.Admin.Controllers
                 int isValid;
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "APP.VERIFY_STOCKIN_SIGNATURE";
+                    cmd.CommandText = "APP.VERIFY_STOCKOUT_SIGNATURE";
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                    cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
                     cmd.Parameters.Add("p_public_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = publicKey;
                     cmd.Parameters.Add("p_signature", OracleDbType.Clob, ParameterDirection.Input).Value = signature;
 
@@ -541,7 +494,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
 
     // DTOs
-    public class ImportItemDto
+    public class ExportItemDto
     {
         public string PartName { get; set; }
         public string Manufacturer { get; set; }
@@ -549,13 +502,19 @@ namespace WebAPI.Areas.Admin.Controllers
         public long Price { get; set; } 
     }
 
-    public class ImportStockDto
+    public class ExportStockDto
     {
-        public int StockInId { get; set; }
+        public int StockOutId { get; set; }
         public string EmpUsername { get; set; }
         public string Note { get; set; }
         public DateTime OutDate { get; set; }
         public string PrivateKey { get; set; }
-        public List<ImportItemDto> Items { get; set; }
+        public List<ExportItemDto> Items { get; set; }
+    }
+    public class CreateExportFromOrderDto
+    {
+        public string EmpUsername { get; set;}
+        public int OrderId { get; set; }
+        public string PrivateKey { get; set; }
     }
 }

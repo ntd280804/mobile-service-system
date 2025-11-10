@@ -5,6 +5,8 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using WebApp.Helpers;
 using WebApp.Models.Order;
+using WebApp.Models.Service;
+using System.Text.Json;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -65,6 +67,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
+                // Lấy thông tin đơn hàng
                 var response = await _httpClient.GetAsync($"api/admin/order/details/{id}");
                 if (!response.IsSuccessStatusCode)
                 {
@@ -87,6 +90,15 @@ namespace WebApp.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Lấy danh sách dịch vụ của đơn hàng
+                var servicesResponse = await _httpClient.GetAsync($"api/admin/order/details/{id}/services");
+                List<OrderServiceDto> services = new List<OrderServiceDto>();
+                if (servicesResponse.IsSuccessStatusCode)
+                {
+                    services = await servicesResponse.Content.ReadFromJsonAsync<List<OrderServiceDto>>() ?? new List<OrderServiceDto>();
+                }
+
+                ViewBag.Services = services;
                 return View(order);
             }
             catch (Exception ex)
@@ -195,12 +207,25 @@ namespace WebApp.Areas.Admin.Controllers
                     var usernames = await usernamesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
                     ViewBag.HandlerUsernames = usernames.Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = u, Text = u }).ToList();
                 }
+
+                // Load services list for dynamic selection
+                var servicesResponse = await _httpClient.GetAsync("api/admin/order/services");
+                if (servicesResponse.IsSuccessStatusCode)
+                {
+                    var services = await servicesResponse.Content.ReadFromJsonAsync<List<ServiceDto>>() ?? new List<ServiceDto>();
+                    ViewBag.ServicesJson = JsonSerializer.Serialize(services);
+                }
+                else
+                {
+                    ViewBag.ServicesJson = "[]";
+                }
             }
             catch (Exception ex)
             {
                 // If loading fails, continue with empty dropdowns
                 ViewBag.CustomerPhones = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
                 ViewBag.HandlerUsernames = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+                ViewBag.ServicesJson = "[]";
             }
 
             return View(model);
@@ -231,11 +256,23 @@ namespace WebApp.Areas.Admin.Controllers
                     var usernames = await usernamesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
                     ViewBag.HandlerUsernames = usernames.Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = u, Text = u }).ToList();
                 }
+
+                var servicesResponse = await _httpClient.GetAsync("api/admin/order/services");
+                if (servicesResponse.IsSuccessStatusCode)
+                {
+                    var services = await servicesResponse.Content.ReadFromJsonAsync<List<ServiceDto>>() ?? new List<ServiceDto>();
+                    ViewBag.ServicesJson = JsonSerializer.Serialize(services);
+                }
+                else
+                {
+                    ViewBag.ServicesJson = "[]";
+                }
             }
             catch
             {
                 ViewBag.CustomerPhones = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
                 ViewBag.HandlerUsernames = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+                ViewBag.ServicesJson = "[]";
             }
 
             if (!ModelState.IsValid)
@@ -275,44 +312,7 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
         
-        // POST: Hoàn tất đơn hàng (gọi API complete)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Complete(int orderId)
-        {
-            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
-                return redirect;
-
-            try
-            {
-                var empUsername = HttpContext.Session.GetString("Username");
-                var payload = new { OrderId = orderId, EmpUsername = empUsername };
-                var response = await _httpClient.PostAsJsonAsync("api/Admin/Order/complete", payload);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    TempData["Success"] = "Hoàn tất đơn hàng thành công.";
-                    return RedirectToAction(nameof(Details), new { id = orderId });
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
-                    HttpContext.Session.Clear();
-                    return RedirectToAction("Login", "Employee", new { area = "Admin" });
-                }
-                else
-                {
-                    var err = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = "Không thể hoàn tất đơn hàng: " + response.ReasonPhrase + " - " + err;
-                    return RedirectToAction(nameof(Details), new { id = orderId });
-                }
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return RedirectToAction(nameof(Details), new { id = orderId });
-            }
-        }
         
+
     }
 }

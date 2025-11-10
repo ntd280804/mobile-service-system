@@ -14,7 +14,7 @@ using WebAPI.Helpers;
 using WebAPI.Models;
 using WebAPI.Models.Auth;
 using WebAPI.Services;
-
+using WebAPI.Models.Security;
 namespace WebAPI.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -86,7 +86,79 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Lỗi khi lấy danh sách nhân viên", detail = ex.Message });
             }
         }
+        [HttpPost("change-password")]
+        [Authorize]
+        public ActionResult<ApiResponse<string>> ChangePassword([FromBody] changePasswordDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.OldPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
+                return BadRequest(ApiResponse<string>.Fail("Thiếu mật khẩu cũ hoặc mật khẩu mới."));
 
+            var headerUsername = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
+            if (string.IsNullOrWhiteSpace(headerUsername))
+                return Unauthorized(ApiResponse<string>.Fail("Missing Oracle user header."));
+
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return Unauthorized(ApiResponse<string>.Fail("Unauthorized"));
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.CHANGE_EMPLOYEE_PASSWORD", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.BindByName = true;
+                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2, ParameterDirection.Input).Value = headerUsername;
+                cmd.Parameters.Add("p_old_password", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.OldPassword;
+                cmd.Parameters.Add("p_new_password", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.NewPassword;
+                cmd.ExecuteNonQuery();
+                return Ok(ApiResponse<string>.Ok("Đổi mật khẩu thành công."));
+            }
+            catch (OracleException ex)
+            {
+                if (ex.Number == 20001)
+                    return BadRequest(ApiResponse<string>.Fail("Mật khẩu cũ không đúng."));
+                return StatusCode(500, ApiResponse<string>.Fail($"Oracle error {ex.Number}: {ex.Message}"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost("change-password-secure")]
+        [Authorize]
+        public ActionResult<ApiResponse<string>> ChangePasswordSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        {
+            if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
+                return BadRequest(ApiResponse<string>.Fail("Invalid encrypted payload"));
+
+            try
+            {
+                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
+                byte[] aesKey = new byte[32];
+                byte[] iv = new byte[16];
+                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
+                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
+
+                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
+                using (Aes aes = Aes.Create())
+                {
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
+                    using (var ms = new MemoryStream(cipherBytes))
+                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                    using (var reader = new StreamReader(cs, Encoding.UTF8))
+                    {
+                        string plaintext = reader.ReadToEnd();
+                        var dto = System.Text.Json.JsonSerializer.Deserialize<changePasswordDto>(plaintext);
+                        if (dto == null)
+                            return BadRequest(ApiResponse<string>.Fail("Cannot parse payload"));
+                        return ChangePassword(dto);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.Fail(ex.Message));
+            }
+        }
         // =====================
         // 🟢 GET EMPLOYEE BY ID
         // =====================
@@ -173,7 +245,67 @@ namespace WebAPI.Areas.Admin.Controllers
                     throw new Exception("HASH_PASSWORD_20CHARS trả về null hoặc rỗng");
                 // Tạo connection Oracle riêng cho session này
                 conn = _connManager.CreateConnection(dto.Username, hashedPwd, platform, sessionId);
+                string roles1;
+                using (var cmd1 = new OracleCommand("APP.GET_EMPLOYEE_ROLES_BY_USERNAME", conn))
+                {
+                    cmd1.CommandType = CommandType.StoredProcedure; // function cũng dùng StoredProcedure
 
+                    // Tham số RETURN
+                    var returnParam = new OracleParameter("returnVal", OracleDbType.Varchar2, 50)
+                    {
+                        Direction = ParameterDirection.ReturnValue
+                    };
+                    cmd1.Parameters.Add(returnParam);
+
+                    // Tham số input
+                    cmd1.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
+                    cmd1.ExecuteNonQuery();
+
+                    roles1 = returnParam.Value?.ToString();
+
+                }// Set VPD context in this Oracle session
+                string primaryRole = null;
+                if (!string.IsNullOrWhiteSpace(roles1))
+                {
+                    var roleList = roles1.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                                        .Select(r => r.ToUpperInvariant())
+                                        .ToList();
+                    if (roleList.Contains("ROLE_ADMIN")) primaryRole = "ROLE_ADMIN";
+                    else if (roleList.Contains("ROLE_TIEPTAN")) primaryRole = "ROLE_TIEPTAN";
+                    else if (roleList.Contains("ROLE_KITHUATVIEN")) primaryRole = "ROLE_KITHUATVIEN";
+                    else if (roleList.Contains("ROLE_THUKHO")) primaryRole = "ROLE_THUKHO";
+                }
+
+                if (!string.IsNullOrEmpty(primaryRole))
+                {
+                    using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
+                    {
+                        setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = primaryRole;
+                        setRoleCmd.ExecuteNonQuery();
+                    }
+
+                    if (primaryRole == "ROLE_KITHUATVIEN")
+                    {
+                        // fetch EMP_ID and set into context
+                        decimal empId;
+                        using (var getIdCmd = new OracleCommand("APP.GET_EMPLOYEE_ID_BY_USERNAME", conn))
+                        {
+                            getIdCmd.CommandType = CommandType.StoredProcedure;
+                            getIdCmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
+                            var outEmp = new OracleParameter("p_emp_id", OracleDbType.Decimal)
+                            { Direction = ParameterDirection.Output };
+                            getIdCmd.Parameters.Add(outEmp);
+                            getIdCmd.ExecuteNonQuery();
+                            empId = ((OracleDecimal)outEmp.Value).Value;
+                        }
+
+                        using (var setEmpCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_emp(:p_emp_id); END;", conn))
+                        {
+                            setEmpCmd.Parameters.Add("p_emp_id", OracleDbType.Decimal).Value = empId;
+                            setEmpCmd.ExecuteNonQuery();
+                        }
+                    }
+                }
                 using var cmd = new OracleCommand("APP.LOGIN_EMPLOYEE", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
 
@@ -203,49 +335,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 // Tạo JWT token
                 var token = _jwtHelper.GenerateToken(username, roles, sessionId);
 
-                // Set VPD context in this Oracle session
-                string primaryRole = null;
-                if (!string.IsNullOrWhiteSpace(roles))
-                {
-                    var roleList = roles.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                                        .Select(r => r.ToUpperInvariant())
-                                        .ToList();
-                    if (roleList.Contains("ROLE_ADMIN")) primaryRole = "ROLE_ADMIN";
-                    else if (roleList.Contains("ROLE_TIEPTAN")) primaryRole = "ROLE_TIEPTAN";
-                    else if (roleList.Contains("ROLE_KITHUATVIEN")) primaryRole = "ROLE_KITHUATVIEN";
-                    else if (roleList.Contains("ROLE_THUKHO")) primaryRole = "ROLE_THUKHO";
-                }
-
-                if (!string.IsNullOrEmpty(primaryRole))
-                {
-                    using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
-                    {
-                        setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = primaryRole;
-                        setRoleCmd.ExecuteNonQuery();
-                    }
-
-                    if (primaryRole == "ROLE_KITHUATVIEN")
-                    {
-                        // fetch EMP_ID and set into context
-                        decimal empId;
-                        using (var getIdCmd = new OracleCommand("APP.GET_EMPLOYEE_ID_BY_USERNAME", conn))
-                        {
-                            getIdCmd.CommandType = CommandType.StoredProcedure;
-                            getIdCmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = username;
-                            var outEmp = new OracleParameter("p_emp_id", OracleDbType.Decimal)
-                            { Direction = ParameterDirection.Output };
-                            getIdCmd.Parameters.Add(outEmp);
-                            getIdCmd.ExecuteNonQuery();
-                            empId = ((OracleDecimal)outEmp.Value).Value;
-                        }
-
-                        using (var setEmpCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_emp(:p_emp_id); END;", conn))
-                        {
-                            setEmpCmd.Parameters.Add("p_emp_id", OracleDbType.Decimal).Value = empId;
-                            setEmpCmd.ExecuteNonQuery();
-                        }
-                    }
-                }
+                
 
                 return Ok(ApiResponse<EmployeeLoginResult>.Ok(new EmployeeLoginResult
                 {
@@ -444,28 +534,5 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-        // =====================
-        // DTO
-        // =====================
-        public class EmployeeLoginDto
-        {
-            public string Username { get; set; }
-            public string Password { get; set; }
-            public string Platform { get; set; } // "WEB" hoặc "MOBILE"
-        }
-
-        public class EmployeeRegisterDto
-        {
-            public string FullName { get; set; }
-            public string Username { get; set; }
-            public string Password { get; set; }
-            public string Email { get; set; }
-            public string Phone { get; set; }
-        }
-
-        public class UnlockEmployeeDto
-        {
-            public string Username { get; set; }
-        }
     }
 }

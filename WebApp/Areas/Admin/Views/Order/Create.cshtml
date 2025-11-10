@@ -62,9 +62,124 @@
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
 
+    <hr />
+    <h4>Dịch vụ</h4>
+    <div class="table-responsive">
+        <table class="table table-bordered" id="servicesTable">
+            <thead>
+                <tr>
+                    <th style="width:50%">Dịch vụ</th>
+                    <th style="width:15%">Đơn giá</th>
+                    <th style="width:15%">Số lượng</th>
+                    <th style="width:15%">Thành tiền</th>
+                    <th style="width:5%"></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5">
+                        <button type="button" class="btn btn-sm btn-secondary" id="addServiceRow">Thêm dòng</button>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div id="serviceItemsContainer"></div>
+
     <button type="submit" class="btn btn-primary mt-2">Tạo đơn</button>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const services = JSON.parse('@Html.Raw(ViewBag.ServicesJson ?? "[]")');
+            const tbody = document.querySelector("#servicesTable tbody");
+            const hiddenContainer = document.getElementById("serviceItemsContainer");
+
+            function formatCurrency(val) {
+                try { return Number(val).toLocaleString('vi-VN'); } catch { return val; }
+            }
+
+            function addHiddenInputs(index, serviceId, price, quantity) {
+                const base = `ServiceItems[${index}]`;
+                const wrapper = document.createElement("div");
+                wrapper.dataset.index = String(index);
+                wrapper.innerHTML = `
+                    <input type="hidden" name="${base}.ServiceId" value="${serviceId || 0}" />
+                    <input type="hidden" name="${base}.Price" value="${price || 0}" />
+                    <input type="hidden" name="${base}.Quantity" value="${quantity || 1}" />
+                `;
+                hiddenContainer.appendChild(wrapper);
+            }
+
+            function updateHidden(index, field, value) {
+                const sel = `input[name="ServiceItems[${index}].${field}"]`;
+                const el = hiddenContainer.querySelector(sel);
+                if (el) el.value = value;
+            }
+
+            function removeHidden(index) {
+                const box = hiddenContainer.querySelector(`div[data-index="${index}"]`);
+                if (box) hiddenContainer.removeChild(box);
+            }
+
+            function addRow() {
+                const index = tbody.children.length;
+
+                const tr = document.createElement("tr");
+                tr.dataset.index = String(index);
+                tr.innerHTML = `
+                    <td>
+                        <select class="form-control service-select">
+                            <option value="">-- Chọn dịch vụ --</option>
+                            ${services.map(s => `<option value="${s.ServiceId}" data-price="${s.Price}">${s.Name}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td class="price-cell">0</td>
+                    <td><input type="number" class="form-control qty-input" min="1" value="1" /></td>
+                    <td class="amount-cell">0</td>
+                    <td><button type="button" class="btn btn-sm btn-danger remove-row">&times;</button></td>
+                `;
+                tbody.appendChild(tr);
+
+                addHiddenInputs(index, 0, 0, 1);
+
+                const select = tr.querySelector(".service-select");
+                const qtyInput = tr.querySelector(".qty-input");
+                const priceCell = tr.querySelector(".price-cell");
+                const amountCell = tr.querySelector(".amount-cell");
+
+                function recalc() {
+                    const selected = select.options[select.selectedIndex];
+                    const price = Number(selected?.dataset?.price || 0);
+                    const qty = Number(qtyInput.value || 1);
+                    priceCell.textContent = formatCurrency(price);
+                    amountCell.textContent = formatCurrency(price * qty);
+
+                    updateHidden(index, "ServiceId", select.value || 0);
+                    updateHidden(index, "Price", price);
+                    updateHidden(index, "Quantity", qty);
+                }
+
+                select.addEventListener("change", recalc);
+                qtyInput.addEventListener("input", recalc);
+
+                tr.querySelector(".remove-row").addEventListener("click", function () {
+                    tbody.removeChild(tr);
+                    removeHidden(index);
+                });
+
+                recalc();
+            }
+
+            document.getElementById("addServiceRow").addEventListener("click", addRow);
+
+            // Initialize with one row
+            addRow();
+        })();
+    </script>
 }

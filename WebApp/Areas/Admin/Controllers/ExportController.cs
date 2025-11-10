@@ -8,12 +8,12 @@ using WebApp.Models.Part;
 namespace WebApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    public class ImportController : Controller
+    public class ExportController : Controller
     {
         private readonly HttpClient _httpClient;
         private readonly OracleClientHelper _OracleClientHelper;
 
-        public ImportController(IHttpClientFactory httpClientFactory, OracleClientHelper _oracleClientHelper)
+        public ExportController(IHttpClientFactory httpClientFactory, OracleClientHelper _oracleClientHelper)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
             _OracleClientHelper = _oracleClientHelper;
@@ -21,7 +21,7 @@ namespace WebApp.Areas.Admin.Controllers
 
         // DTOs moved to WebApp.Models
 
-        // GET: /Admin/Import
+        // GET: /Admin/Export
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -30,26 +30,26 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 
-                var response = await _httpClient.GetAsync("api/admin/import/getallimport");
+                var response = await _httpClient.GetAsync("api/admin/export/getallexport");
                 if (!response.IsSuccessStatusCode)
                 {
                     // Try to read error details from API response
                     var errorContent = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = $"Không thể tải danh sách import: {response.ReasonPhrase} - {errorContent}";
-                    return View(new List<ImportViewModel>());
+                    TempData["Error"] = $"Không thể tải danh sách export: {response.ReasonPhrase} - {errorContent}";
+                    return View(new List<ExportViewModel>());
                 }
 
-                var list = await response.Content.ReadFromJsonAsync<List<ImportViewModel>>() ?? new List<ImportViewModel>();
+                var list = await response.Content.ReadFromJsonAsync<List<ExportViewModel>>() ?? new List<ExportViewModel>();
                 return View(list);
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<ImportViewModel>());
+                return View(new List<ExportViewModel>());
             }
         }
 
-        // GET: /Admin/Import/Details/5
+        // GET: /Admin/Export/Details/5
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
@@ -58,16 +58,16 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                // Gọi WebAPI để lấy chi tiết import
-                var response = await _httpClient.GetAsync($"api/admin/import/details/{id}");
+                // Gọi WebAPI để lấy chi tiết export
+                var response = await _httpClient.GetAsync($"api/admin/export/details/{id}");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = $"Không tìm thấy import hoặc lỗi API: {response.ReasonPhrase} - {errorMsg}";
+                    TempData["Error"] = $"Không tìm thấy export hoặc lỗi API: {response.ReasonPhrase} - {errorMsg}";
                     return RedirectToAction(nameof(Index));
                 }
 
-                var detail = await response.Content.ReadFromJsonAsync<ImportDetailViewModel>();
+                var detail = await response.Content.ReadFromJsonAsync<ExportDetailViewModel>();
                 if (detail == null)
                 {
                     TempData["Error"] = "Không nhận được dữ liệu chi tiết từ API";
@@ -84,62 +84,84 @@ namespace WebApp.Areas.Admin.Controllers
         }
 
 
-        // GET: /Admin/Import/Create
-        [HttpGet]
-        public IActionResult Create()
-        {
-            return View(new ImportStockDto { Items = new List<ImportItemDto> { new ImportItemDto() } });
-        }
 
-        // POST: /Admin/Import/Create
+        // POST: /Admin/Export/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ImportStockDto model)
+        public async Task<IActionResult> Create(ExportStockDto model)
         {
-            if (model.Items == null || !model.Items.Any())
+            // Decode URL-encoded private key if present
+            if (!string.IsNullOrEmpty(model.PrivateKey))
             {
-                TempData["Error"] = "Vui lòng nhập ít nhất 1 item";
-                return View(model);
+                try { model.PrivateKey = Uri.UnescapeDataString(model.PrivateKey); } catch { }
+            }
+
+            if (string.IsNullOrEmpty(model.PrivateKey))
+            {
+                TempData["Error"] = "Vui lòng cung cấp private key để hoàn tất và xuất kho.";
+                return RedirectToAction("Index", "Order", new { area = "Admin" });
             }
 
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+
             try
             {
-                // Encrypt payload (includes PrivateKey)
+                // Get current admin username from session headers
+                if (!_OracleClientHelper.TryGetSession(out var token, out var username, out var platform, out var sessionId, isAdmin: true))
+                {
+                    return new RedirectToActionResult("Login", "Employee", new { area = "Admin" });
+                }
+
+                // Encrypt payload using server public key
                 var keyResp = await _httpClient.GetFromJsonAsync<WebApp.Services.ApiResponse<string>>("api/public/security/server-public-key");
                 if (keyResp == null || !keyResp.Success || string.IsNullOrWhiteSpace(keyResp.Data))
                 {
                     TempData["Error"] = "Không thể lấy khóa công khai của server.";
-                    return View(model);
+                    return RedirectToAction("Index", "Order", new { area = "Admin" });
                 }
-                var json = System.Text.Json.JsonSerializer.Serialize(model);
+
+                var plainDto = new
+                {
+                    EmpUsername = username,
+                    OrderId = (int)model.orderid,
+                    PrivateKey = model.PrivateKey
+                };
+
+                var json = System.Text.Json.JsonSerializer.Serialize(plainDto);
                 var encrypted = WebApp.Helpers.EncryptHelper.HybridEncrypt(json, keyResp.Data);
 
-                var response = await _httpClient.PostAsJsonAsync("api/admin/import/post-secure", new
+                var response = await _httpClient.PostAsJsonAsync("api/Admin/export/create-secure", new
                 {
                     encryptedKeyBlockBase64 = encrypted.EncryptedKeyBlock,
                     cipherDataBase64 = encrypted.CipherData
                 });
+
                 if (response.IsSuccessStatusCode)
                 {
-                    TempData["Success"] = "Import thành công";
-                    return RedirectToAction(nameof(Index));
+                    TempData["Success"] = "Hoàn tất và xuất kho cho đơn hàng thành công.";
+                    return RedirectToAction("Index", "Order", new { area = "Admin" });
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
+                    HttpContext.Session.Clear();
+                    return RedirectToAction("Login", "Employee", new { area = "Admin" });
                 }
                 else
                 {
-                    var msg = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = $"Import thất bại: {msg}";
-                    return View(model);
+                    var err = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = "Không thể hoàn tất đơn hàng: " + response.ReasonPhrase + " - " + err;
+                    return RedirectToAction("Index", "Order", new { area = "Admin" });
                 }
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(model);
+                return RedirectToAction("Index", "Order", new { area = "Admin" });
             }
         }
-        // GET: /Admin/Import/Verifysign/5
+        // GET: /Admin/Export/Verifysign/5
         [HttpGet]
         public async Task<IActionResult> Verifysign(int id)
         {
@@ -149,7 +171,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Gọi WebAPI endpoint verify chữ ký
-                var response = await _httpClient.GetAsync($"api/admin/import/verifysign/{id}");
+                var response = await _httpClient.GetAsync($"api/admin/export/verifysign/{id}");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();
@@ -169,11 +191,11 @@ namespace WebApp.Areas.Admin.Controllers
                 // Thông báo kết quả
                 if (result.IsValid)
                 {
-                    TempData["Success"] = $"Chữ ký StockIn ID {result.StockInId} là hợp lệ ✅";
+                    TempData["Success"] = $"Chữ ký StockOut ID {result.StockInId} là hợp lệ ✅";
                 }
                 else
                 {
-                    TempData["Error"] = $"Chữ ký StockIn ID {result.StockInId} không hợp lệ ❌";
+                    TempData["Error"] = $"Chữ ký StockOut ID {result.StockInId} không hợp lệ ❌";
                 }
 
                 return RedirectToAction(nameof(Index));
@@ -185,7 +207,7 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
 
-        // GET: /Admin/Import/Invoice/5
+        // GET: /Admin/Export/Invoice/5
         [HttpGet]
         public async Task<IActionResult> Invoice(int id)
         {
@@ -194,7 +216,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/import/invoice/{id}");
+                var response = await _httpClient.GetAsync($"api/admin/export/invoice/{id}");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();
@@ -203,7 +225,7 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 var stream = await response.Content.ReadAsStreamAsync();
-                var fileName = $"ImportInvoice_{id}.pdf";
+                var fileName = $"ExportInvoice_{id}.pdf";
                 return File(stream, "application/pdf", fileName);
             }
             catch (Exception ex)

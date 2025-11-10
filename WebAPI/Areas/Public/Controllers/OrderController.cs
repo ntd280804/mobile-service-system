@@ -53,15 +53,16 @@ namespace WebAPI.Areas.Public.Controllers
                     list.Add(new OrderDto
                     {
                         OrderId = reader.GetDecimal(0),
-                        CustomerPhone = reader.GetString(1),
-                        ReceiverEmpName = reader.GetString(2),
-                        HandlerEmpName = reader.GetString(3),
-                        OrderType = reader.GetString(4),
+                        CustomerPhone = SafeGetString(reader, 1),
+                        ReceiverEmpName = SafeGetString(reader, 2),
+                        HandlerEmpName = SafeGetString(reader, 3),
+                        OrderType = SafeGetString(reader, 4),
                         ReceivedDate = reader.GetDateTime(5),
-                        Status = reader.GetString(6),
-                        Description = reader.IsDBNull(7) ? "" : reader.GetString(7)
+                        Status = SafeGetString(reader, 6),
+                        Description = SafeGetString(reader, 7)
                     });
                 }
+
 
                 return Ok(list);
             }
@@ -74,6 +75,11 @@ namespace WebAPI.Areas.Public.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+        string SafeGetString(OracleDataReader r, int index)
+        {
+            return r.IsDBNull(index) ? "" : r.GetString(index);
+        }
+
     }
 }
 

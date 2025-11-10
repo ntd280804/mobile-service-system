@@ -1,7 +1,7 @@
-﻿@model List<WebApp.Models.Part.ImportViewModel>
+﻿@model List<WebApp.Models.Part.ExportViewModel>
 
 @{
-    ViewData["Title"] = "Danh sách Import";
+    ViewData["Title"] = "Danh sách Export";
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -15,16 +15,13 @@
     <div class="alert alert-success">@TempData["Success"]</div>
 }
 
-<p>
-    <a class="btn btn-primary" asp-area="Admin" asp-controller="Import" asp-action="Create">Thêm Import</a>
-</p>
 
 <table class="table table-bordered table-striped">
     <thead>
         <tr>
-            <th>StockIn ID</th>
+            <th>StockOut ID</th>
             <th>Employee Username</th>
-            <th>In Date</th>
+            <th>Out Date</th>
             <th>Note</th>
             <th>Actions</th>
         </tr>
@@ -33,28 +30,28 @@
         @foreach (var item in Model)
         {
             <tr>
-                <td>@item.StockInId</td>
+                <td>@item.StockOutId</td>
                 <td>@item.EmpUsername</td>
                 <td>@item.OutDate.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>@item.Note</td>
                 <td>
                     <a class="btn btn-sm btn-info"
                        asp-area="Admin"
-                       asp-controller="Import"
+                       asp-controller="Export"
                        asp-action="Details"
-                       asp-route-id="@item.StockInId">Xem chi tiết</a>
+                       asp-route-id="@item.StockOutId">Xem chi tiết</a>
 
                     <a class="btn btn-sm btn-info"
                        asp-area="Admin"
-                       asp-controller="Import"
+                       asp-controller="Export"
                        asp-action="Verifysign"
-                       asp-route-id="@item.StockInId">Xác thực chữ kí số</a>
+                       asp-route-id="@item.StockOutId">Xác thực chữ kí số</a>
 
                     <a class="btn btn-sm btn-secondary"
                        asp-area="Admin"
-                       asp-controller="Import"
+                       asp-controller="Export"
                        asp-action="Invoice"
-                       asp-route-id="@item.StockInId">Tạo hóa đơn nhập (PDF)</a>
+                       asp-route-id="@item.StockOutId">Tạo hóa đơn xuất (PDF)</a>
                 </td>
             </tr>
         }
