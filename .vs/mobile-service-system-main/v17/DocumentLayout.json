@@ -1,71 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\DOCUMENT\\mobile-service-system\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\admin\\views\\order\\warrantyindex.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\admin\\views\\order\\warrantyindex.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\admin\\views\\order\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\admin\\views\\order\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\admin\\views\\order\\repairindex.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\admin\\views\\order\\repairindex.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": [
-        {
-          "DockedWidth": 1373,
-          "SelectedChildIndex": 0,
-          "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "WarrantyIndex.cshtml",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Views\\Order\\WarrantyIndex.cshtml",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Admin\\Views\\Order\\WarrantyIndex.cshtml",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Views\\Order\\WarrantyIndex.cshtml",
-              "RelativeToolTip": "WebApp\\Areas\\Admin\\Views\\Order\\WarrantyIndex.cshtml",
-              "ViewState": "AgIAAEoAAAAAAAAAAADwv4QAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-10T15:57:12.146Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "RepairIndex.cshtml",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Views\\Order\\RepairIndex.cshtml",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Admin\\Views\\Order\\RepairIndex.cshtml",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Views\\Order\\RepairIndex.cshtml",
-              "RelativeToolTip": "WebApp\\Areas\\Admin\\Views\\Order\\RepairIndex.cshtml",
-              "ViewState": "AgIAAEoAAAAAAAAAAADwv4QAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-10T15:56:16.293Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Index.cshtml",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Views\\Order\\Index.cshtml",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Admin\\Views\\Order\\Index.cshtml",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Views\\Order\\Index.cshtml",
-              "RelativeToolTip": "WebApp\\Areas\\Admin\\Views\\Order\\Index.cshtml",
-              "ViewState": "AgIAAEoAAAAAAAAAAADwv4QAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-10T15:56:09.163Z",
-              "EditorCaption": ""
-            }
-          ]
-        }
-      ]
+      "DocumentGroups": []
     }
   ]
 }

@@ -2,12 +2,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
-using WebAPI.Helpers;
-
-using WebAPI.Services;
-using WebAPI.Models.Security;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
+using WebAPI.Helpers;
+using WebAPI.Models.Security;
+using WebAPI.Services;
 
 namespace WebAPI.Areas.Admin.Controllers
 {
@@ -65,83 +65,46 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Internal Server Error", detail = ex.Message });
             }
         }
-
-        [HttpGet("invoice/{stockoutId}")]
+        /// <summary>
+        /// Returns the previously saved signed PDF BLOB for a StockIn, if present.
+        /// </summary>
+        [HttpGet("invoice/{stockinId}")]
         [Authorize]
-        public IActionResult GetImportInvoicePdf(int stockoutId)
+        public IActionResult GetSignedImportInvoicePdf(int stockinId)
         {
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
 
             try
             {
-                // 1) Load import header + items
-                var items = new List<ImportItemDto>();
-                string? empUsername = null;
-                DateTime? inDate = null;
-                string note = null;
-
+                byte[] pdfBytes = null;
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "APP.GET_IMPORT_BY_ID";
+                    cmd.CommandText = "APP.GET_STOCKIN_PDF";
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
-                    var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
-                    cmd.Parameters.Add(outputCursor);
+                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockinId;
+                    var pPdf = new OracleParameter("p_pdf", OracleDbType.Blob, ParameterDirection.Output);
+                    cmd.Parameters.Add(pPdf);
 
-                    using var reader = cmd.ExecuteReader();
-                    if (!reader.HasRows)
-                        return NotFound(new { message = $"StockIn ID {stockoutId} not found" });
+                    cmd.ExecuteNonQuery();
 
-                    while (reader.Read())
+                    if (pPdf.Value == null || pPdf.Value == DBNull.Value)
                     {
-                        if (empUsername == null)
-                        {
-                            empUsername = Convert.ToString(reader["EmpUsername"]);
-                            inDate = Convert.ToDateTime(reader["OutDate"]);
-                            note = reader["Note"]?.ToString();
-                        }
+                        return NotFound(new { message = $"Signed PDF for StockIn ID {stockinId} not found" });
+                    }
 
-                        items.Add(new ImportItemDto
-                        {
-                            PartName = reader["PartName"]?.ToString(),
-                            Manufacturer = reader["Manufacturer"]?.ToString(),
-                            Serial = reader["Serial"]?.ToString(),
-                            Price = reader["Price"] != DBNull.Value ? Convert.ToInt64(reader["Price"]) : 0
-                        });
+                    using (var blob = (Oracle.ManagedDataAccess.Types.OracleBlob)pPdf.Value)
+                    {
+                        pdfBytes = blob?.Value;
                     }
                 }
 
-                var dto = new ImportStockDto
+                if (pdfBytes == null || pdfBytes.Length == 0)
                 {
-                    StockInId = stockoutId,
-                    EmpUsername = empUsername ?? string.Empty,
-                    OutDate = inDate ?? DateTime.MinValue,
-                    Note = note,
-                    Items = items
-                };
-
-                // 2) Load persisted signature
-                string signature;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.GET_STOCKIN_SIGNATURE";
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
-                    var pSig = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
-                    cmd.Parameters.Add(pSig);
-                    cmd.ExecuteNonQuery();
-
-                    if (pSig.Value == DBNull.Value || pSig.Value == null)
-                        signature = string.Empty;
-                    else
-                        signature = ((Oracle.ManagedDataAccess.Types.OracleClob)pSig.Value).Value;
+                    return NotFound(new { message = $"Signed PDF for StockIn ID {stockinId} is empty" });
                 }
 
-                // 3) Generate PDF without verify URL
-                var pdfBytes = _invoicePdfService.GenerateImportInvoicePdf(dto, signature ?? string.Empty, null, null);
-
-                return File(pdfBytes, "application/pdf", $"ImportInvoice_{stockoutId}.pdf");
+                return File(pdfBytes, "application/pdf", $"ImportInvoice_{stockinId}.pdf");
             }
             catch (OracleException ex)
             {
@@ -153,10 +116,9 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-
-        [HttpGet("details/{stockoutId}")]
+        [HttpGet("details/{stockinid}")]
         [Authorize]
-        public IActionResult GetImportDetails(int stockoutId)
+        public IActionResult GetImportDetails(int stockinid)
         {
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
@@ -168,7 +130,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 cmd.CommandText = "APP.GET_IMPORT_BY_ID";
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockinid;
                 var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
                 cmd.Parameters.Add(outputCursor);
 
@@ -180,7 +142,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 using var reader = cmd.ExecuteReader();
 
                 if (!reader.HasRows)
-                    return NotFound(new { message = $"StockIn ID {stockoutId} not found" });
+                    return NotFound(new { message = $"StockIn ID {stockinid} not found" });
 
                 while (reader.Read())
                 {
@@ -188,7 +150,7 @@ namespace WebAPI.Areas.Admin.Controllers
                     if (empUsername == null)
                     {
                         empUsername = Convert.ToString(reader["EmpUsername"]);
-                        inDate = Convert.ToDateTime(reader["OutDate"]);
+                        inDate = Convert.ToDateTime(reader["InDate"]);
                         note = reader["Note"]?.ToString();
                     }
 
@@ -204,9 +166,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
                 var result = new ImportStockDto
                 {
-                    StockInId = stockoutId,
+                    StockInId = stockinid,
                     EmpUsername = empUsername ?? "",
-                    OutDate = inDate ?? DateTime.MinValue,
+                    InDate = inDate ?? DateTime.MinValue,
                     Note = note,
                     Items = items
                 };
@@ -241,10 +203,12 @@ namespace WebAPI.Areas.Admin.Controllers
         {
             if (dto.Items == null || dto.Items.Count == 0)
                 return BadRequest("No items to import");
-            if (string.IsNullOrEmpty(dto.PrivateKey))
-                return BadRequest("Missing private key");
+            bool hasProvidedPfx = !string.IsNullOrWhiteSpace(dto.CertificatePfxBase64) && !string.IsNullOrWhiteSpace(dto.CertificatePassword);
+            bool hasPrivateKey = !string.IsNullOrEmpty(dto.PrivateKey);
+            if (!hasProvidedPfx && !hasPrivateKey)
+                return BadRequest("Missing private key or certificate");
 
-            var privateKeyPem = dto.PrivateKey;
+            var privateKey = dto.PrivateKey;
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
             try
@@ -330,37 +294,124 @@ namespace WebAPI.Areas.Admin.Controllers
                         cmdPart.ExecuteNonQuery();
                     }
                 }
-                string signature;
-                using (var cmdSign = conn.CreateCommand())
+                // Nếu dùng certificate (có PFX) thì bỏ qua bước ký/ghi chữ ký chuỗi ở STOCK_IN.
+                // Nếu không có PFX nhưng có private key: vẫn bỏ qua, vì sẽ ký PDF với certificate tự sinh từ private key.
+                if (hasProvidedPfx == false)
                 {
-                    cmdSign.Transaction = transaction;
-                    cmdSign.CommandText = "APP.SIGN_STOCKIN";
-                    cmdSign.CommandType = CommandType.StoredProcedure;
+                    string signature;
+                    using (var cmdSign = conn.CreateCommand())
+                    {
+                        cmdSign.Transaction = transaction;
+                        cmdSign.CommandText = "APP.SIGN_STOCKIN";
+                        cmdSign.CommandType = CommandType.StoredProcedure;
 
-                    cmdSign.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                    cmdSign.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = privateKeyPem;
+                        cmdSign.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                        cmdSign.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = privateKey;
 
-                    var outSignature = new OracleParameter("p_signature", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
-                    cmdSign.Parameters.Add(outSignature);
+                        var outSignature = new OracleParameter("p_signature", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
+                        cmdSign.Parameters.Add(outSignature);
 
-                    cmdSign.ExecuteNonQuery();
-                    signature = outSignature.Value.ToString();
-                }
+                        cmdSign.ExecuteNonQuery();
+                        signature = outSignature.Value.ToString();
+                    }
 
-                // --- 5. Update signature vào bảng STOCK_IN ---
-                using (var cmdUpdateSig = conn.CreateCommand())
-                {
-                    cmdUpdateSig.Transaction = transaction;
-                    cmdUpdateSig.CommandText = "APP.UPDATE_STOCKIN_SIGNATURE";
-                    cmdUpdateSig.CommandType = CommandType.StoredProcedure;
+                    // --- 5. Update signature vào bảng STOCK_IN ---
+                    using (var cmdUpdateSig = conn.CreateCommand())
+                    {
+                        cmdUpdateSig.Transaction = transaction;
+                        cmdUpdateSig.CommandText = "APP.UPDATE_STOCKIN_SIGNATURE";
+                        cmdUpdateSig.CommandType = CommandType.StoredProcedure;
 
-                    cmdUpdateSig.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                    cmdUpdateSig.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = signature;
+                        cmdUpdateSig.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                        cmdUpdateSig.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = signature;
 
-                    cmdUpdateSig.ExecuteNonQuery();
+                        cmdUpdateSig.ExecuteNonQuery();
+                    }
                 }
                 transaction.Commit();
-                return Ok(new { Message = "Import successful", StockInId = stockInId });
+                // 6) Generate PDF and sign blocks, persist signature blob
+                
+                
+                if (hasProvidedPfx || !string.IsNullOrEmpty(privateKey))
+                {
+                    // Reload data to render PDF
+                    var itemsSigned = new List<ImportItemDto>();
+                    string? empUsernameSigned = dto.EmpUsername;
+                    DateTime? inDateSigned = null;
+                    string noteSigned = dto.Note ?? "";
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "APP.GET_IMPORT_BY_ID";
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                        var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
+                        cmd.Parameters.Add(outputCursor);
+                        using var reader = cmd.ExecuteReader();
+                        while (reader.Read())
+                        {
+                            if (inDateSigned == null)
+                            {
+                                empUsernameSigned ??= Convert.ToString(reader["EmpUsername"]);
+                                inDateSigned = Convert.ToDateTime(reader["Indate"]);
+                                noteSigned = reader["Note"]?.ToString();
+                            }
+                            itemsSigned.Add(new ImportItemDto
+                            {
+                                PartName = reader["PartName"]?.ToString(),
+                                Manufacturer = reader["Manufacturer"]?.ToString(),
+                                Serial = reader["Serial"]?.ToString(),
+                                Price = reader["Price"] != DBNull.Value ? Convert.ToInt64(reader["Price"]) : 0
+                            });
+                        }
+                    }
+                    var pdfDto = new ImportStockDto
+                    {
+                        StockInId = stockInId,
+                        EmpUsername = empUsernameSigned ?? string.Empty,
+                        InDate = inDateSigned ?? DateTime.MinValue,
+                        Note = noteSigned,
+                        Items = itemsSigned
+                    };
+                    // Chọn nguồn certificate
+                    byte[] pfxBytes = null;
+                    string pfxPassword = dto.CertificatePassword;
+                    if (hasProvidedPfx)
+                    {
+                        try
+                        {
+                            pfxBytes = Convert.FromBase64String(dto.CertificatePfxBase64);
+                        }
+                        catch
+                        {
+                            return BadRequest("Invalid certificate PFX base64.");
+                        }
+                    }
+                    else
+                    {
+                        // Tạo PFX tự ký từ private key để GroupDocs nhúng vào PDF
+                        pfxPassword = "auto-" + Guid.NewGuid().ToString("N");
+                        pfxBytes = MobileServiceSystem.Signing.PdfSignatureService.CreateSelfSignedPfxFromPrivateKey(
+                            privateKey,
+                            empUsernameSigned ?? "MobileServiceSystem",
+                            pfxPassword
+                        );
+                    }
+
+                    var signedPdf = _invoicePdfService.GenerateImportInvoicePdfAndSignWithCertificate(
+                        pdfDto,
+                        pfxBytes,
+                        pfxPassword,
+                        cmd =>
+                        {
+                            cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                        },
+                        null,
+                        null
+                    );
+                    var fileNameOut = $"ImportInvoice_{stockInId}.pdf";
+                    return File(signedPdf, "application/pdf", fileNameOut);
+                }
+                return Ok(new { Message = "Import successful (PDF signing skipped due to invalid key format).", StockInId = stockInId });
             }
             catch (OracleException ex)
             {
@@ -554,8 +605,11 @@ namespace WebAPI.Areas.Admin.Controllers
         public int StockInId { get; set; }
         public string EmpUsername { get; set; }
         public string Note { get; set; }
-        public DateTime OutDate { get; set; }
+        public DateTime InDate { get; set; }
         public string PrivateKey { get; set; }
         public List<ImportItemDto> Items { get; set; }
+        // Optional: dùng GroupDocs (PFX + password) để ký PDF
+        public string CertificatePfxBase64 { get; set; }
+        public string CertificatePassword { get; set; }
     }
 }

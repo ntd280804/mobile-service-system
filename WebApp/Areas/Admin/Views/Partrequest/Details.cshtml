@@ -6,7 +6,13 @@
     <div class="card-body">
         <dl class="row">
             <dt class="col-sm-3">ORDER_ID</dt>
-            <dd class="col-sm-9">@Model.ORDER_ID</dd>
+            <dd class="col-sm-9"><a asp-area="Admin"
+                       asp-controller="Order"
+                       asp-action="Details"
+                       asp-route-id="@Model.ORDER_ID"
+                       class="text-decoration-none fw-bold text-primary">
+                        @Model.ORDER_ID
+                    </a></dd>
 
             <dt class="col-sm-3">EMPLOYEE USERNAME</dt>
             <dd class="col-sm-9">@Model.EmpUsername</dd>

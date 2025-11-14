@@ -8,6 +8,7 @@ CREATE OR REPLACE PACKAGE APP_CTX_PKG AS
   PROCEDURE set_role(p_role_name IN VARCHAR2);
   PROCEDURE set_emp(p_emp_id IN NUMBER);
   PROCEDURE set_customer(p_customer_phone IN VARCHAR2);
+  PROCEDURE set_username(p_username IN VARCHAR2);
 END APP_CTX_PKG;
 /
 
@@ -25,6 +26,10 @@ CREATE OR REPLACE PACKAGE BODY APP_CTX_PKG AS
   PROCEDURE set_customer(p_customer_phone IN VARCHAR2) IS
   BEGIN
     DBMS_SESSION.SET_CONTEXT('APP_CTX','CUSTOMER_PHONE', p_customer_phone);
+  END;
+  PROCEDURE set_username(p_username IN VARCHAR2) IS
+  BEGIN
+    DBMS_SESSION.SET_CONTEXT('APP_CTX','USERNAME', p_username);
   END;
 END APP_CTX_PKG;
 /

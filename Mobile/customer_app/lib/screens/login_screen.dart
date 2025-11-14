@@ -34,9 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() => _isLoading = true);
     try {
+      // Use secure encrypted login
       final res = await _api.login(phone, password);
       final roles = (res['roles'] ?? '').toString().toLowerCase();
-      if (!roles.contains('customer')) {
+      if (!roles.contains('role_khachhang')) {
         _showSnack('Chỉ dành cho khách hàng');
         return;
       }
@@ -110,15 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('Đăng ký'),
                 ),
               ),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () => Navigator.pushNamed(context, '/forgot'),
-                  child: const Text('Quên mật khẩu?'),
-                ),
-              ),
+
             ],
           ),
         ),

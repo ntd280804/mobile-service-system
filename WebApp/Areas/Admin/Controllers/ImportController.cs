@@ -116,15 +116,37 @@ namespace WebApp.Areas.Admin.Controllers
                 var json = System.Text.Json.JsonSerializer.Serialize(model);
                 var encrypted = WebApp.Helpers.EncryptHelper.HybridEncrypt(json, keyResp.Data);
 
-                var response = await _httpClient.PostAsJsonAsync("api/admin/import/post-secure", new
+                using var requestMessage = new HttpRequestMessage(HttpMethod.Post, "api/admin/import/post-secure");
+                requestMessage.Content = JsonContent.Create(new
                 {
                     encryptedKeyBlockBase64 = encrypted.EncryptedKeyBlock,
                     cipherDataBase64 = encrypted.CipherData
                 });
+                // Prefer receiving PDF if API returns it
+                requestMessage.Headers.Accept.Clear();
+                requestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/pdf"));
+                requestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                var response = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead);
                 if (response.IsSuccessStatusCode)
                 {
-                    TempData["Success"] = "Import thành công";
-                    return RedirectToAction(nameof(Index));
+                    var mediaType = response.Content.Headers.ContentType?.MediaType ?? "";
+                    if (string.Equals(mediaType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var stream = await response.Content.ReadAsStreamAsync();
+                        // Try to parse stockInId from Content-Disposition filename if present; otherwise fallback to timestamp
+                        var fileName = "ImportInvoice.pdf";
+                        if (response.Content.Headers.ContentDisposition != null && !string.IsNullOrWhiteSpace(response.Content.Headers.ContentDisposition.FileNameStar))
+                            fileName = response.Content.Headers.ContentDisposition.FileNameStar;
+                        else if (response.Content.Headers.ContentDisposition != null && !string.IsNullOrWhiteSpace(response.Content.Headers.ContentDisposition.FileName))
+                            fileName = response.Content.Headers.ContentDisposition.FileName.Trim('\"');
+                        return File(stream, "application/pdf", fileName);
+                    }
+                    else
+                    {
+                        TempData["Success"] = "Import thành công";
+                        return RedirectToAction(nameof(Index));
+                    }
                 }
                 else
                 {
@@ -203,6 +225,46 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 var stream = await response.Content.ReadAsStreamAsync();
+                var fileName = $"ImportInvoice_{id}.pdf";
+                return File(stream, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: /Admin/Import/Invoice/5 (send body to API GET endpoint)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Invoice(int id, string PrivateKey)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                var decodedKey = string.IsNullOrEmpty(PrivateKey) ? "" : Uri.UnescapeDataString(PrivateKey);
+                var req = new HttpRequestMessage(HttpMethod.Get, $"api/admin/import/invoice/{id}")
+                {
+                    Content = JsonContent.Create(new
+                    {
+                        EmpUsername = "",
+                        StockinId = id,
+                        PrivateKey = decodedKey
+                    })
+                };
+
+                var resp = await _httpClient.SendAsync(req);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var errorMsg = await resp.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Tải hóa đơn thất bại: {resp.ReasonPhrase} - {errorMsg}";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var stream = await resp.Content.ReadAsStreamAsync();
                 var fileName = $"ImportInvoice_{id}.pdf";
                 return File(stream, "application/pdf", fileName);
             }

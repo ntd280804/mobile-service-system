@@ -1,0 +1,77 @@
+@model List<InvoiceSummaryViewModel>
+@{
+    ViewData["Title"] = "Quản lý hóa đơn";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>@ViewData["Title"]</h2>
+</div>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mã hóa đơn</th>
+                        <th>StockOut ID</th>
+                        <th>SĐT khách</th>
+                        <th>Nhân viên</th>
+                        <th>Ngày lập</th>
+                        <th class="text-end">Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var invoice in Model)
+                        {
+                            <tr>
+                                <td>@invoice.InvoiceId</td>
+                                <td>
+                                    <a asp-area="Admin"
+                                       asp-controller="Export"
+                                       asp-action="Details"
+                                       asp-route-id="@invoice.StockOutId"
+                                       class="text-decoration-none fw-bold text-primary">
+                                        @invoice.StockOutId
+                                    </a>
+                                </td>
+                                <td>@invoice.CustomerPhone</td>
+                                <td>@invoice.EmpUsername</td>
+                                <td>@invoice.InvoiceDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-end">@invoice.TotalAmount.ToString("N0") ₫</td>
+                                <td>
+                                    <span class="badge bg-primary">@invoice.Status</span>
+                                </td>
+                                <td class="d-flex gap-2">
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@invoice.InvoiceId">Chi tiết</a>
+                                    <a class="btn btn-sm btn-outline-success" asp-action="DownloadPdf" asp-route-id="@invoice.InvoiceId">Tải PDF</a>
+                                    <a class="btn btn-sm btn-outline-warning" asp-action="Verify" asp-route-id="@invoice.InvoiceId">Xác thực</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4">Chưa có hóa đơn nào.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

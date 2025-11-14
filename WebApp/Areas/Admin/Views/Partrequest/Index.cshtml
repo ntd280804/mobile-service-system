@@ -33,7 +33,15 @@
                 <td>@item.REQUEST_ID</td>
                 <td>@item.EmpUsername</td>
                 <td>@item.REQUEST_DATE.ToString("yyyy-MM-dd HH:mm")</td>
-                <td>@item.ORDER_ID</td>
+                <td>
+                    <a asp-area="Admin"
+                       asp-controller="Order"
+                       asp-action="Details"
+                       asp-route-id="@item.ORDER_ID"
+                       class="text-decoration-none fw-bold text-primary">
+                        @item.ORDER_ID
+                    </a>
+                </td>
                 <td>@item.STATUS</td>
                 <td>
                     <a class="btn btn-sm btn-info"

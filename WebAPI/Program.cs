@@ -6,6 +6,7 @@ using WebAPI.Helpers;
 using WebAPI.Hubs;
 using WebAPI.Services;
 using QuestPDF.Infrastructure;
+using MobileServiceSystem.Signing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -109,7 +110,15 @@ builder.Services.AddSingleton<JwtHelper>();
 builder.Services.AddSingleton<OracleSessionHelper>();
 builder.Services.AddSingleton<OracleConnectionManager>();
 builder.Services.AddSingleton<QrGeneratorSingleton>();
-builder.Services.AddSingleton<InvoicePdfService>();
+// PDF signing services
+builder.Services.AddSingleton<PdfSignatureService>(sp =>
+    new PdfSignatureService(
+        sp.GetRequiredService<OracleSessionHelper>(),
+        sp.GetRequiredService<OracleConnectionManager>(),
+        sp.GetRequiredService<IHttpContextAccessor>()
+    )
+);
+builder.Services.AddSingleton<InvoicePdfService>(sp => new InvoicePdfService(sp.GetRequiredService<PdfSignatureService>()));
 builder.Services.AddSingleton<RsaKeyService>();
 // Add SignalR
 builder.Services.AddSignalR();

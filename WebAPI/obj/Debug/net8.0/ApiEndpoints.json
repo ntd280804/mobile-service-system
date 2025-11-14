@@ -10,6 +10,16 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.AuditController",
+    "Method": "GetAllAuditLog",
+    "RelativePath": "api/admin/Audit",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.CustomerController",
     "Method": "GetAll",
     "RelativePath": "api/Admin/Customer",
@@ -248,7 +258,7 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "request",
+        "Name": "dto",
         "Type": "WebAPI.Areas.Admin.Controllers.CreateExportFromOrderDto",
         "IsRequired": true
       }
@@ -299,7 +309,7 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
-    "Method": "GetExportInvoicePdf",
+    "Method": "GetSignedExportInvoicePdf",
     "RelativePath": "api/admin/Export/invoice/{stockoutId}",
     "HttpMethod": "GET",
     "IsController": true,
@@ -332,13 +342,13 @@
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
     "Method": "GetImportDetails",
-    "RelativePath": "api/admin/Import/details/{stockoutId}",
+    "RelativePath": "api/admin/Import/details/{stockinid}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "stockoutId",
+        "Name": "stockinid",
         "Type": "System.Int32",
         "IsRequired": true
       }
@@ -357,14 +367,14 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
-    "Method": "GetImportInvoicePdf",
-    "RelativePath": "api/admin/Import/invoice/{stockoutId}",
+    "Method": "GetSignedImportInvoicePdf",
+    "RelativePath": "api/admin/Import/invoice/{stockinId}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "stockoutId",
+        "Name": "stockinId",
         "Type": "System.Int32",
         "IsRequired": true
       }
@@ -413,6 +423,64 @@
     "Parameters": [
       {
         "Name": "stockoutId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
+    "Method": "GetAllInvoices",
+    "RelativePath": "api/admin/Invoice",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
+    "Method": "GetInvoiceDetails",
+    "RelativePath": "api/admin/Invoice/{invoiceId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "invoiceId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
+    "Method": "GetInvoicePdf",
+    "RelativePath": "api/admin/Invoice/{invoiceId}/pdf",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "invoiceId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
+    "Method": "VerifyInvoiceSignature",
+    "RelativePath": "api/admin/Invoice/{invoiceId}/verify",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "invoiceId",
         "Type": "System.Int32",
         "IsRequired": true
       }
@@ -531,6 +599,22 @@
     "IsController": true,
     "Order": 0,
     "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartController",
+    "Method": "GetPartBySerial",
+    "RelativePath": "api/Admin/Part/detail-by-serial/{serial}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "serial",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -960,17 +1044,11 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.OrderController",
     "Method": "GetByPhone",
-    "RelativePath": "api/Public/Order/get-by-phone",
+    "RelativePath": "api/Public/Order/all",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
-    "Parameters": [
-      {
-        "Name": "phone",
-        "Type": "System.String",
-        "IsRequired": false
-      }
-    ],
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

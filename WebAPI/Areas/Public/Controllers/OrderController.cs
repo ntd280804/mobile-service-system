@@ -27,14 +27,10 @@ namespace WebAPI.Areas.Public.Controllers
             _jwtHelper = jwtHelper;
             _oracleSessionHelper = oracleSessionHelper;
         }
-        [HttpGet("get-by-phone")]
+        [HttpGet("all")]
         [Authorize]
-        public IActionResult GetByPhone([FromQuery] string phone)
-        {
-            if (string.IsNullOrEmpty(phone))
-                return BadRequest(new { message = "Số điện thoại không được để trống" });
-
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+        public IActionResult GetByPhone()
+        {            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
 
             try

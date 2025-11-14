@@ -11,9 +11,9 @@
 ### Vai trò và predicate
 - **ROLE_ADMIN**: `1=1` (xem tất cả)
 - **ROLE_TIEPTAN**: `1=1` (xem tất cả)
-- **ROLE_THUKHO**: `1=0` (không xem được)
-- **ROLE_KITHUATVIEN**: `1=0` (không xem được)
-- **ROLE_KHACHHANG**: `1=0` (không xem được)
+- **ROLE_THUKHO**: only own rows 
+- **ROLE_KITHUATVIEN**:only own rows 
+- **ROLE_KHACHHANG**: only own rows 
 
 ### Thành phần cần có
 - Application Context: `APP_CTX` (đã tồn tại – xem `SQL/VPD/init/02_app_context.sql`).

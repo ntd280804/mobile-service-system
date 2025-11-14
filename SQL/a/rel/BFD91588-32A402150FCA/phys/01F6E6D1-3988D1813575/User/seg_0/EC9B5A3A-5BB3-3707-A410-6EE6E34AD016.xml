@@ -1,9 +1,0 @@
-<?xml version = '1.0' encoding = 'UTF-8'?>
-<UserOraclev10g class="oracle.dbtools.crest.model.design.storage.oracle.v10g.UserOraclev10g" name="APP" directorySegmentName="seg_0" id="EC9B5A3A-5BB3-3707-A410-6EE6E34AD016">
-<sourceConnName>OL8-app</sourceConnName>
-<sourceObjName>APP</sourceObjName>
-<createdBy>ntdmi</createdBy>
-<createdTime>2025-11-10 06:55:17 UTC</createdTime>
-<ownerDesignName>a</ownerDesignName>
-<schemaObject>1B01873A-DFF2-C5D2-4E3D-CA3A73BE68B7</schemaObject>
-</UserOraclev10g>

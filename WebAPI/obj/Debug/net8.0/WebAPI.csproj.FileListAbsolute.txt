@@ -315,3 +315,16 @@ D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\osx-arm64\nat
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\osx-x64\native\libQuestPdfSkia.dylib
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\QuestPdfSkia.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win-x86\native\QuestPdfSkia.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\Aspose.Drawing.Common.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\Autofac.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\GroupDocs.Signature.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\SkiaSharp.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\System.Security.Permissions.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\System.Text.Encoding.CodePages.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\System.Windows.Extensions.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\osx\native\libSkiaSharp.dylib
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win-arm64\native\libSkiaSharp.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win-x64\native\libSkiaSharp.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win-x86\native\libSkiaSharp.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Text.Encoding.CodePages.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll

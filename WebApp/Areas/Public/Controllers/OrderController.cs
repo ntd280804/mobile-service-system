@@ -30,7 +30,7 @@ namespace WebApp.Areas.Public.Controllers
             }
             try
             {
-                var response = await _httpClient.GetAsync($"api/Public/Order/get-by-phone?phone={username}");
+                var response = await _httpClient.GetAsync($"api/Public/Order/all");
 
                 if (response.IsSuccessStatusCode)
                 {

@@ -139,8 +139,23 @@ namespace WebApp.Areas.Admin.Controllers
 
                 if (response.IsSuccessStatusCode)
                 {
-                    TempData["Success"] = "Hoàn tất và xuất kho cho đơn hàng thành công.";
-                    return RedirectToAction("Index", "Order", new { area = "Admin" });
+                    var mediaType = response.Content.Headers.ContentType?.MediaType ?? "";
+                    if (string.Equals(mediaType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var stream = await response.Content.ReadAsStreamAsync();
+                        // Try to parse stockInId from Content-Disposition filename if present; otherwise fallback to timestamp
+                        var fileName = "ExportInvoice.pdf";
+                        if (response.Content.Headers.ContentDisposition != null && !string.IsNullOrWhiteSpace(response.Content.Headers.ContentDisposition.FileNameStar))
+                            fileName = response.Content.Headers.ContentDisposition.FileNameStar;
+                        else if (response.Content.Headers.ContentDisposition != null && !string.IsNullOrWhiteSpace(response.Content.Headers.ContentDisposition.FileName))
+                            fileName = response.Content.Headers.ContentDisposition.FileName.Trim('\"');
+                        return File(stream, "application/pdf", fileName);
+                    }
+                    else
+                    {
+                        TempData["Success"] = "Export thành công";
+                        return RedirectToAction(nameof(Index));
+                    }
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {

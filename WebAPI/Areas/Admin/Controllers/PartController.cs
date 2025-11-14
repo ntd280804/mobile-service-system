@@ -64,7 +64,7 @@ namespace WebAPI.Areas.Admin.Controllers
                         Serial = reader.GetString(3),
                         QRImage = _qrGenerator.GenerateQRImage(reader.GetString(3)),
                         Status = reader.GetString(4),
-                        StockinItemId = reader.GetDecimal(5),
+                        StockinID = reader.GetDecimal(5),
                         OrderId = orderId, // Cột NULL
                         Price = price // Cột NULL (sử dụng GetDecimal cho kiểu NUMBER(20,2))
                     });
@@ -117,7 +117,7 @@ namespace WebAPI.Areas.Admin.Controllers
                         Serial = reader.GetString(3),
                         QRImage = _qrGenerator.GenerateQRImage(reader.GetString(3)),
                         Status = reader.GetString(4),
-                        StockinItemId = reader.GetDecimal(5),
+                        StockinID = reader.GetDecimal(5),
                         OrderId = orderId,
                         Price = price
                     });
@@ -134,6 +134,65 @@ namespace WebAPI.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Lỗi khi lấy danh sách linh kiện trong kho", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("detail-by-serial/{serial}")]
+        [Authorize]
+        public IActionResult GetPartBySerial(string serial)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.GET_PART_BY_SERIAL";
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_serial", OracleDbType.Varchar2, ParameterDirection.Input).Value = serial;
+                var outputCursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(outputCursor);
+
+                using var reader = cmd.ExecuteReader();
+                if (!reader.HasRows)
+                    return NotFound(new { message = $"Part with serial {serial} not found" });
+
+                object? result = null;
+                if (reader.Read())
+                {
+                    var manufacturer = reader.IsDBNull(2) ? null : reader.GetString(2);
+                    var orderId = reader.IsDBNull(6) ? (decimal?)null : reader.GetDecimal(6);
+                    var price = reader.IsDBNull(7) ? (decimal?)null : reader.GetDecimal(7);
+
+                    result = new
+                    {
+                        PartId = reader.GetDecimal(0),
+                        Name = reader.GetString(1),
+                        Manufacturer = manufacturer,
+                        Serial = reader.GetString(3),
+                        QRImage = _qrGenerator.GenerateQRImage(reader.GetString(3)),
+                        Status = reader.GetString(4),
+                        StockinID = reader.GetDecimal(5),
+                        OrderId = orderId,
+                        Price = price
+                    };
+                }
+
+                return Ok(result);
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (OracleException ex)
+            {
+                return StatusCode(500, new { Message = "Oracle Error", ErrorCode = ex.Number, Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Lỗi khi lấy chi tiết linh kiện", Error = ex.Message });
             }
         }
 
@@ -172,7 +231,7 @@ namespace WebAPI.Areas.Admin.Controllers
                         Serial = reader.GetString(3),
                         QRImage = _qrGenerator.GenerateQRImage(reader.GetString(3)),
                         Status = reader.GetString(4),
-                        StockinItemId = reader.GetDecimal(5),
+                        StockinID = reader.GetDecimal(5),
                         OrderId = orderId,
                         Price = price
                     };

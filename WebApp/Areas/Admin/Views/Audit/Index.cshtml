@@ -1,0 +1,110 @@
+@model List<WebApp.Areas.Admin.Controllers.AuditController.AuditLogDto>
+
+@{
+    ViewData["Title"] = "Audit Log";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
+        <table class="table table-bordered table-striped table-hover mt-3" style="font-size: 0.9em;">
+            <thead class="table-dark sticky-top">
+                <tr>
+                    <th>Log ID</th>
+                    <th>Thời gian</th>
+                    <th>DB User</th>
+                    <th>OS User</th>
+                    <th>Machine</th>
+                    <th>Module</th>
+                    <th>App Role</th>
+                    <th>Emp ID</th>
+                    <th>Customer Phone</th>
+                    <th>Object Name</th>
+                    <th>Note</th>
+                    <th>DML Type</th>
+                    <th>Changed Columns</th>
+                    <th>Old Values</th>
+                    <th>New Values</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td>@log.LogId</td>
+                        <td>@(log.EventTs?.ToString("dd/MM/yyyy HH:mm:ss") ?? "")</td>
+                        <td>@log.DbUser</td>
+                        <td>@log.OsUser</td>
+                        <td>@log.Machine</td>
+                        <td>@log.Module</td>
+                        <td>@log.AppRole</td>
+                        <td>@log.EmpId</td>
+                        <td>@log.CustomerPhone</td>
+                        <td>@log.ObjectName</td>
+                        <td style="max-width: 200px; word-wrap: break-word;">@log.Note</td>
+
+                        <td>@log.DmlType</td>
+                        <td>@log.ChangedColumns</td>
+
+                        <!-- Hiển thị OldValues dưới dạng JSON với xuống dòng -->
+                        <td style="max-width: 300px; word-wrap: break-word; white-space: pre-wrap;">
+                            @{
+                                if (!string.IsNullOrEmpty(log.OldValues))
+                                {
+                                    try
+                                    {
+                                        var oldDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(log.OldValues);
+                                        foreach (var kv in oldDict)
+                                        {
+                                            <div>@kv.Key: @kv.Value</div>
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        @log.OldValues
+                                    }
+                                }
+                            }
+                        </td>
+
+                        <!-- Hiển thị NewValues dưới dạng JSON với xuống dòng -->
+                        <td style="max-width: 300px; word-wrap: break-word; white-space: pre-wrap;">
+                            @{
+                                if (!string.IsNullOrEmpty(log.NewValues))
+                                {
+                                    try
+                                    {
+                                        var newDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(log.NewValues);
+                                        foreach (var kv in newDict)
+                                        {
+                                            <div>@kv.Key: @kv.Value</div>
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        @log.NewValues
+                                    }
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info mt-3">
+        Không có audit log nào.
+    </div>
+}

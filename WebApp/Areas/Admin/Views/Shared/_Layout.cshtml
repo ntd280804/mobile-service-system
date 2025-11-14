@@ -55,6 +55,7 @@
                 @* Quản lý nhân viên *@
                 @if (HasRole("ROLE_ADMIN"))
                 {
+
                     <li>
                         <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseEmployee" role="button" aria-expanded="false" aria-controls="collapseEmployee">
                             Quản lý nhân viên <span>▾</span>
@@ -139,7 +140,12 @@
                         </ul>
                     </li>
                 }
+                @if (HasRole("ROLE_ADMIN"))
+                {
 
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="Index">Log</a></li>
+
+                }
                 <li class="nav-item mt-3">
                     <form method="post" asp-area="Admin" asp-controller="Employee" asp-action="Logout">
                         <button type="submit" class="nav-link btn btn-link text-start">Logout (@username)</button>

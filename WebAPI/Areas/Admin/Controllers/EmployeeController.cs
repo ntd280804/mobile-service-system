@@ -283,27 +283,26 @@ namespace WebAPI.Areas.Admin.Controllers
                         setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = primaryRole;
                         setRoleCmd.ExecuteNonQuery();
                     }
-
-                    if (primaryRole == "ROLE_KITHUATVIEN")
+                    decimal empId;
+                    using (var setEmpCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_username(:p_username); END;", conn))
                     {
-                        // fetch EMP_ID and set into context
-                        decimal empId;
-                        using (var getIdCmd = new OracleCommand("APP.GET_EMPLOYEE_ID_BY_USERNAME", conn))
-                        {
-                            getIdCmd.CommandType = CommandType.StoredProcedure;
-                            getIdCmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
-                            var outEmp = new OracleParameter("p_emp_id", OracleDbType.Decimal)
-                            { Direction = ParameterDirection.Output };
-                            getIdCmd.Parameters.Add(outEmp);
-                            getIdCmd.ExecuteNonQuery();
-                            empId = ((OracleDecimal)outEmp.Value).Value;
-                        }
-
-                        using (var setEmpCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_emp(:p_emp_id); END;", conn))
-                        {
-                            setEmpCmd.Parameters.Add("p_emp_id", OracleDbType.Decimal).Value = empId;
-                            setEmpCmd.ExecuteNonQuery();
-                        }
+                        setEmpCmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
+                        setEmpCmd.ExecuteNonQuery();
+                    }
+                    using (var getIdCmd = new OracleCommand("APP.GET_EMPLOYEE_ID_BY_USERNAME", conn))
+                    {
+                        getIdCmd.CommandType = CommandType.StoredProcedure;
+                        getIdCmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
+                        var outEmp = new OracleParameter("p_emp_id", OracleDbType.Decimal)
+                        { Direction = ParameterDirection.Output };
+                        getIdCmd.Parameters.Add(outEmp);
+                        getIdCmd.ExecuteNonQuery();
+                        empId = ((OracleDecimal)outEmp.Value).Value;
+                    }
+                    using (var setEmpCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_emp(:p_emp_id); END;", conn))
+                    {
+                        setEmpCmd.Parameters.Add("p_emp_id", OracleDbType.Decimal).Value = empId;
+                        setEmpCmd.ExecuteNonQuery();
                     }
                 }
                 using var cmd = new OracleCommand("APP.LOGIN_EMPLOYEE", conn);

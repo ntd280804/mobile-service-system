@@ -1,0 +1,135 @@
+@model InvoiceDetailViewModel
+@{
+    ViewData["Title"] = $"Chi tiết hóa đơn #{Model.InvoiceId}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>@ViewData["Title"]</h2>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-success" asp-action="DownloadPdf" asp-route-id="@Model.InvoiceId">Tải PDF</a>
+        <a class="btn btn-outline-warning" asp-action="Verify" asp-route-id="@Model.InvoiceId">Xác thực chữ ký</a>
+        <a class="btn btn-secondary" asp-action="Index">Quay lại</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Thông tin chung</h5>
+                <ul class="list-unstyled mb-0">
+                    <li><strong>Mã hóa đơn:</strong> @Model.InvoiceId</li>
+                    <li>
+                        <strong>StockOut ID:</strong>
+                        <a asp-area="Admin"
+                                                        asp-controller="Export"
+                                                        asp-action="Details"
+                                                        asp-route-id="@Model.StockOutId"
+                                                        class="text-decoration-none fw-bold text-primary">
+                            @Model.StockOutId
+                        </a>
+                    </li>
+                    <li><strong>Khách hàng:</strong> @Model.CustomerPhone</li>
+                    <li><strong>Nhân viên:</strong> @Model.EmpUsername</li>
+                    <li><strong>Ngày lập:</strong> @Model.InvoiceDate.ToString("dd/MM/yyyy HH:mm")</li>
+                    <li><strong>Trạng thái:</strong> <span class="badge bg-primary">@Model.Status</span></li>
+                    <li><strong>Tổng tiền:</strong> @Model.TotalAmount.ToString("N0") ₫</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Ghi chú</h5>
+                <p class="text-muted mb-0">Hóa đơn được sinh tự động từ phiếu xuất kho sau khi hoàn tất đơn hàng.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h4 class="card-title">Danh sách linh kiện</h4>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Tên linh kiện</th>
+                        <th>Hãng</th>
+                        <th>Serial</th>
+                        <th class="text-end">Giá</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items != null && Model.Items.Any())
+                    {
+                        var idx = 1;
+                        foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@idx</td>
+                                <td>@item.PartName</td>
+                                <td>@item.Manufacturer</td>
+                                <td>@item.Serial</td>
+                                <td class="text-end">@item.Price.ToString("N0") ₫</td>
+                            </tr>
+                            idx++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-3">Không có linh kiện nào.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h4 class="card-title">Danh sách dịch vụ</h4>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Tên dịch vụ</th>
+                        <th class="text-end">Số lượng</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Services != null && Model.Services.Any())
+                    {
+                        var idx = 1;
+                        foreach (var service in Model.Services)
+                        {
+                            var total = service.Price * service.Quantity;
+                            <tr>
+                                <td>@idx</td>
+                                <td>@service.ServiceName</td>
+                                <td class="text-end">@service.Quantity</td>
+                                <td class="text-end">@service.Price.ToString("N0") ₫</td>
+                                <td class="text-end">@total.ToString("N0") ₫</td>
+                            </tr>
+                            idx++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-3">Không có dịch vụ nào.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+

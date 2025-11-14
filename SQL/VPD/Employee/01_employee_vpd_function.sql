@@ -7,17 +7,22 @@ CREATE OR REPLACE FUNCTION EMPLOYEE_VPD_PREDICATE(
 ) RETURN VARCHAR2
 AS
   v_role  VARCHAR2(100) := SYS_CONTEXT('APP_CTX','ROLE_NAME');
+  v_emp   VARCHAR2(100) := SYS_CONTEXT('APP_CTX','EMP_ID');
 BEGIN
   -- ADMIN, TIEPTAN: xem full
   IF v_role IN ('ROLE_ADMIN', 'ROLE_TIEPTAN') THEN
     RETURN '1=1';
   END IF;
 
-  -- THUKHO, KITHUATVIEN, KHACHHANG: không được xem
-  IF v_role IN ('ROLE_THUKHO', 'ROLE_KITHUATVIEN', 'ROLE_KHACHHANG') THEN
-    RETURN '1=0';
+  -- THUKHO, KITHUATVIEN: chỉ xem bản thân
+  IF v_role IN ('ROLE_THUKHO', 'ROLE_KITHUATVIEN') THEN
+    IF v_emp IS NULL THEN
+      RETURN '1=0';
+    END IF;
+    RETURN 'EMP_ID = ' || TO_NUMBER(v_emp);
   END IF;
 
+  -- KHACHHANG hoặc role khác: không được xem
   -- Mặc định: chặn
   RETURN '1=0';
 END EMPLOYEE_VPD_PREDICATE;

@@ -3,10 +3,11 @@ import 'dart:io'; // ✅ Import để bypass SSL
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart'; // ✅ Import adapter
+import 'dart:convert';
 
 import '../config/api_config.dart';
 import 'storage_service.dart';
-
+import '../models/order.dart';
 class ApiService {
   ApiService._internal() {
     // ⚠️ DEVELOPMENT ONLY: Bypass SSL certificate validation
@@ -68,12 +69,12 @@ class ApiService {
           'platform': 'MOBILE',
         },
       );
-      
-      final data = resp.data as Map<String, dynamic>;
-      final token = data['token'] ?? data['Token'] ?? '';
-      final roles = data['roles'] ?? data['Roles'] ?? '';
-      final sessionId = data['sessionId'] ?? data['SessionId'] ?? '';
-      final username = data['username'] ?? data['Username'] ?? phone;
+
+      final data = resp.data['data'] as Map<String, dynamic>;
+      final token = data['token'] ?? '';
+      final roles = data['roles'] ?? '';
+      final sessionId = data['sessionId'] ?? '';
+      final username = data['username'] ?? phone;
 
       if (token is String && token.isNotEmpty) {
         await _storage.saveToken(token);
@@ -97,6 +98,8 @@ class ApiService {
       throw 'Không thể kết nối máy chủ';
     }
   }
+
+
 
   Future<Map<String, dynamic>> register({
     required String fullName,
@@ -129,27 +132,6 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> forgotPassword(String phone) async {
-    await _ensureInterceptors();
-    try {
-      // Note: Backend may not have this endpoint yet
-      final resp = await _dio.post(
-        '/api/Public/Customer/forgot-password',
-        data: {'phone': phone},
-      );
-      return resp.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        throw 'Chức năng quên mật khẩu chưa được hỗ trợ';
-      }
-      final msg = e.response?.data is Map
-          ? (e.response?.data['message'] ?? 'Gửi yêu cầu thất bại')
-          : 'Gửi yêu cầu thất bại';
-      throw msg;
-    } catch (_) {
-      throw 'Không thể kết nối máy chủ';
-    }
-  }
 
   Future<void> logout() async {
     await _ensureInterceptors();
@@ -161,13 +143,39 @@ class ApiService {
       await _storage.clearAll();
     }
   }
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    await _ensureInterceptors();
+    try {
+      await _dio.post(
+        ApiConfig.ChangePass,
+        data: {
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+        },
+      );
 
-  Future<List<Map<String, dynamic>>> getOrders() async {
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? e.response?.data['message'] ?? 'Đổi mật khẩu thất bại'
+          : 'Đổi mật khẩu thất bại';
+      throw msg;
+    } catch (_) {
+      throw 'Không thể kết nối máy chủ';
+    }
+  }
+
+
+  Future<List<Order>> getOrders() async {
     await _ensureInterceptors();
     try {
       final resp = await _dio.get(ApiConfig.getOrders);
-      final list = (resp.data as List).cast<Map<String, dynamic>>();
-      return list;
+      if (resp.data is List) {
+        // Parse mỗi item sang model Order
+        return (resp.data as List)
+            .map((e) => Order.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+      return [];
     } catch (_) {
       return [];
     }
@@ -176,11 +184,56 @@ class ApiService {
   Future<List<Map<String, dynamic>>> getAppointments() async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get(ApiConfig.getAppointments);
-      final list = (resp.data as List).cast<Map<String, dynamic>>();
-      return list;
-    } catch (_) {
+      final username = await _storage.getUsername();
+      if (username == null || username.isEmpty) {
+        throw 'Không tìm thấy username trong bộ nhớ';
+      }
+
+      final resp = await _dio.get(
+        '${ApiConfig.getAppointments}',
+      );
+      if (resp.data is List) {
+        return (resp.data as List)
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print('Lỗi getAppointments: $e');
       return [];
+    }
+  }
+
+  Future<void> createAppointment(DateTime date, {String? description}) async {
+    await _ensureInterceptors();
+    try {
+      final username = await _storage.getUsername();
+      if (username == null || username.isEmpty) {
+        throw 'Không tìm thấy username trong bộ nhớ';
+      }
+
+      // Chuẩn hóa về đầu ngày (date-only)
+      final dateOnly = DateTime(date.year, date.month, date.day);
+
+      final payload = {
+        'customerPhone': username,
+        'appointmentDate': dateOnly.toIso8601String(),
+        if (description != null && description.trim().isNotEmpty)
+          'description': description.trim(),
+      };
+
+      await _dio.post(
+        ApiConfig.createAppointment,
+        data: payload,
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['detail'] ?? 'Đặt lịch thất bại')
+          : 'Đặt lịch thất bại';
+      throw msg;
+    } catch (_) {
+      throw 'Không thể kết nối máy chủ';
     }
   }
 }

@@ -6,6 +6,7 @@ namespace WebApp.Models.Part
         public string Note { get; set; }
         public string PrivateKey { get; set; }
         public List<ImportItemDto> Items { get; set; } = new();
+        public string CertificatePfxBase64 { get; set; }
     }
     public class ExportStockDto
     {
