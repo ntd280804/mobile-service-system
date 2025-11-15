@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -8,12 +9,23 @@ using QuestPDF.Infrastructure;
 using WebAPI.Areas.Admin.Controllers;
 using Oracle.ManagedDataAccess.Client;
 using MobileServiceSystem.Signing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using GroupDocs.Signature.Domain;
 
 namespace WebAPI.Services
 {
     public class InvoicePdfService
     {
         private readonly PdfSignatureService? _pdfSigner;
+        private readonly IConfiguration? _configuration;
+        private readonly IHostEnvironment? _hostEnvironment;
+        private byte[]? _logoBytes;
+        private string? _companyName;
+        private string? _taxCode;
+        private string? _address;
+        private string? _phone;
+        private string? _email;
 
         public InvoicePdfService()
         {
@@ -22,6 +34,127 @@ namespace WebAPI.Services
         public InvoicePdfService(PdfSignatureService pdfSigner)
         {
             _pdfSigner = pdfSigner;
+        }
+
+        public InvoicePdfService(PdfSignatureService pdfSigner, IConfiguration configuration)
+        {
+            _pdfSigner = pdfSigner;
+            _configuration = configuration;
+            LoadCompanyInfo();
+        }
+
+        public InvoicePdfService(PdfSignatureService pdfSigner, IConfiguration configuration, IHostEnvironment hostEnvironment)
+        {
+            _pdfSigner = pdfSigner;
+            _configuration = configuration;
+            _hostEnvironment = hostEnvironment;
+            LoadCompanyInfo();
+        }
+
+        private void LoadCompanyInfo()
+        {
+            if (_configuration == null) return;
+
+            _companyName = _configuration["CompanyInfo:Name"];
+            _taxCode = _configuration["CompanyInfo:TaxCode"];
+            _address = _configuration["CompanyInfo:Address"];
+            _phone = _configuration["CompanyInfo:Phone"];
+            _email = _configuration["CompanyInfo:Email"];
+
+            var logoPath = _configuration["CompanyInfo:LogoPath"];
+            if (!string.IsNullOrEmpty(logoPath))
+            {
+                try
+                {
+                    // Try multiple paths
+                    var paths = new List<string>();
+                    
+                    // Add ContentRootPath if available
+                    if (_hostEnvironment != null && !string.IsNullOrEmpty(_hostEnvironment.ContentRootPath))
+                    {
+                        paths.Add(Path.Combine(_hostEnvironment.ContentRootPath, logoPath));
+                    }
+                    
+                    // Add other common paths
+                    paths.Add(Path.Combine(AppContext.BaseDirectory, logoPath));
+                    paths.Add(Path.Combine(Directory.GetCurrentDirectory(), logoPath));
+                    paths.Add(logoPath); // Absolute path
+
+                    foreach (var fullPath in paths)
+                    {
+                        if (File.Exists(fullPath))
+                        {
+                            _logoBytes = File.ReadAllBytes(fullPath);
+                            break;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore if logo file not found
+                }
+            }
+        }
+
+        // Calculate signature position based on PDF layout
+        // A4 page: 595 x 842 points (1 point = 1/72 inch)
+        // GroupDocs uses pixels (96 DPI), so 1 point = 96/72 = 1.333 pixels
+        // Returns (left, top) in pixels for GroupDocs
+        private (int left, int top) CalculateSignaturePosition(string invoiceType, int itemCount = 0, int serviceCount = 0)
+        {
+            const double pageWidthPoints = 595; // A4 width in points
+            const double pageHeightPoints = 842; // A4 height in points
+            const double margin = 25;
+            const double signatureWidth = 170; // Signature box width in points
+            const double signatureHeight = 90; // Signature box height in points
+            const double pointsToPixels = 96.0 / 72.0; // Convert points to pixels (96 DPI)
+
+            // Calculate left position: right side of page
+            double leftPoints = pageWidthPoints - margin - signatureWidth - 10; // Right aligned with padding
+            int leftPixels = (int)(leftPoints * pointsToPixels);
+
+            // Calculate top position: below "Chữ ký số:" text
+            // Header: ~120 points (with logo and company info)
+            // Content: varies by item/service count
+            double headerHeight = 120;
+            double tableHeaderHeight = 30;
+            double rowHeight = 20;
+            double totalsHeight = 30;
+            double signatureTextHeight = 50; // "Chữ ký số:" text area
+            double footerHeight = 20;
+
+            double contentHeight = headerHeight;
+            
+            if (invoiceType == "Import" || invoiceType == "Export")
+            {
+                contentHeight += tableHeaderHeight;
+                contentHeight += itemCount * rowHeight;
+                contentHeight += totalsHeight;
+            }
+            else if (invoiceType == "Invoice")
+            {
+                contentHeight += tableHeaderHeight;
+                contentHeight += itemCount * rowHeight;
+                if (itemCount > 0) contentHeight += 20; // Spacing
+                if (serviceCount > 0)
+                {
+                    contentHeight += tableHeaderHeight;
+                    contentHeight += serviceCount * rowHeight;
+                }
+                contentHeight += totalsHeight + 20; // Total row
+            }
+
+            contentHeight += signatureTextHeight;
+            
+            // Top position: from top of page
+            double topPoints = contentHeight;
+            int topPixels = (int)(topPoints * pointsToPixels);
+
+            // Ensure reasonable position
+            if (topPixels < 200) topPixels = 200;
+            if (topPixels > 700) topPixels = 700;
+
+            return (leftPixels, topPixels);
         }
 
         public byte[] GenerateImportInvoicePdf(ImportStockDto dto, string signature, byte[]? qrPngBytes, string? verifyUrl)
@@ -36,7 +169,31 @@ namespace WebAPI.Services
                     page.Margin(25);
                     page.DefaultTextStyle(x => x.FontSize(11));
 
-                    page.Header().Row(row =>
+                    page.Header().Column(column =>
+                    {
+                        // Company info with logo
+                        column.Item().Row(row =>
+                        {
+                            if (_logoBytes != null && _logoBytes.Length > 0)
+                            {
+                                row.ConstantItem(60).Image(_logoBytes);
+                            }
+                            row.RelativeItem().PaddingLeft(10).Stack(stack =>
+                            {
+                                if (!string.IsNullOrEmpty(_companyName))
+                                    stack.Item().Text(_companyName).SemiBold().FontSize(14);
+                                if (!string.IsNullOrEmpty(_taxCode))
+                                    stack.Item().Text($"MST: {_taxCode}").FontSize(10);
+                                if (!string.IsNullOrEmpty(_address))
+                                    stack.Item().Text(_address).FontSize(10);
+                                if (!string.IsNullOrEmpty(_phone))
+                                    stack.Item().Text($"ĐT: {_phone}").FontSize(10);
+                                if (!string.IsNullOrEmpty(_email))
+                                    stack.Item().Text($"Email: {_email}").FontSize(10);
+                            });
+                        });
+
+                        column.Item().PaddingTop(10).Row(row =>
                     {
                         row.AutoItem().Stack(stack =>
                         {
@@ -51,6 +208,7 @@ namespace WebAPI.Services
                         {
                             row.RelativeItem().AlignRight().Image(qrPngBytes);
                         }
+                        });
                     });
 
                     page.Content().Stack(stack =>
@@ -175,7 +333,20 @@ namespace WebAPI.Services
 
 			if (_pdfSigner == null) throw new InvalidOperationException("PdfSignatureService is not configured.");
 
-			var signedPdfBytes = _pdfSigner.SignPdfWithDigitalCertificate(pdfBytes, certificatePfxBytes, certificatePassword);
+			// Calculate signature position below "Chữ ký số:" text
+			var (left, top) = CalculateSignaturePosition("Import", dto.Items?.Count ?? 0);
+
+			var signedPdfBytes = _pdfSigner.SignPdfWithDigitalCertificate(
+				pdfBytes, 
+				certificatePfxBytes, 
+				certificatePassword,
+				options => {
+					// Set absolute position - when Left and Top are set, alignment is ignored
+					options.Left = left;
+					options.Top = top;
+					options.Margin = new Padding(0);
+				}
+			);
 
 			// Persist the signed PDF as BLOB (parameter defaults to p_signature unless caller binds differently).
 			_pdfSigner.UpdateFinalSignature(
@@ -199,7 +370,31 @@ namespace WebAPI.Services
                     page.Margin(25);
                     page.DefaultTextStyle(x => x.FontSize(11));
 
-                    page.Header().Row(row =>
+                    page.Header().Column(column =>
+                    {
+                        // Company info with logo
+                        column.Item().Row(row =>
+                        {
+                            if (_logoBytes != null && _logoBytes.Length > 0)
+                            {
+                                row.ConstantItem(60).Image(_logoBytes);
+                            }
+                            row.RelativeItem().PaddingLeft(10).Stack(stack =>
+                            {
+                                if (!string.IsNullOrEmpty(_companyName))
+                                    stack.Item().Text(_companyName).SemiBold().FontSize(14);
+                                if (!string.IsNullOrEmpty(_taxCode))
+                                    stack.Item().Text($"MST: {_taxCode}").FontSize(10);
+                                if (!string.IsNullOrEmpty(_address))
+                                    stack.Item().Text(_address).FontSize(10);
+                                if (!string.IsNullOrEmpty(_phone))
+                                    stack.Item().Text($"ĐT: {_phone}").FontSize(10);
+                                if (!string.IsNullOrEmpty(_email))
+                                    stack.Item().Text($"Email: {_email}").FontSize(10);
+                            });
+                        });
+
+                        column.Item().PaddingTop(10).Row(row =>
                     {
                         row.AutoItem().Stack(stack =>
                         {
@@ -214,6 +409,7 @@ namespace WebAPI.Services
                         {
                             row.RelativeItem().AlignRight().Image(qrPngBytes);
                         }
+                        });
                     });
 
                     page.Content().Stack(stack =>
@@ -334,7 +530,20 @@ namespace WebAPI.Services
 
             if (_pdfSigner == null) throw new InvalidOperationException("PdfSignatureService is not configured.");
 
-            var signedPdfBytes = _pdfSigner.SignPdfWithDigitalCertificate(pdfBytes, certificatePfxBytes, certificatePassword);
+            // Calculate signature position below "Chữ ký số:" text
+            var (left, top) = CalculateSignaturePosition("Export", dto.Items?.Count ?? 0);
+
+            var signedPdfBytes = _pdfSigner.SignPdfWithDigitalCertificate(
+                pdfBytes, 
+                certificatePfxBytes, 
+                certificatePassword,
+                options => {
+                    // Set absolute position - when Left and Top are set, alignment is ignored
+                    options.Left = left;
+                    options.Top = top;
+                    options.Margin = new Padding(0);
+                }
+            );
 
             _pdfSigner.UpdateFinalSignature(
                 procedureName: "APP.UPDATE_STOCKOUT_PDF",
@@ -357,7 +566,31 @@ namespace WebAPI.Services
                     page.Margin(25);
                     page.DefaultTextStyle(x => x.FontSize(11));
 
-                    page.Header().Row(row =>
+                    page.Header().Column(column =>
+                    {
+                        // Company info with logo
+                        column.Item().Row(row =>
+                        {
+                            if (_logoBytes != null && _logoBytes.Length > 0)
+                            {
+                                row.ConstantItem(60).Image(_logoBytes);
+                            }
+                            row.RelativeItem().PaddingLeft(10).Stack(stack =>
+                            {
+                                if (!string.IsNullOrEmpty(_companyName))
+                                    stack.Item().Text(_companyName).SemiBold().FontSize(14);
+                                if (!string.IsNullOrEmpty(_taxCode))
+                                    stack.Item().Text($"MST: {_taxCode}").FontSize(10);
+                                if (!string.IsNullOrEmpty(_address))
+                                    stack.Item().Text(_address).FontSize(10);
+                                if (!string.IsNullOrEmpty(_phone))
+                                    stack.Item().Text($"ĐT: {_phone}").FontSize(10);
+                                if (!string.IsNullOrEmpty(_email))
+                                    stack.Item().Text($"Email: {_email}").FontSize(10);
+                            });
+                        });
+
+                        column.Item().PaddingTop(10).Row(row =>
                     {
                         row.AutoItem().Stack(stack =>
                         {
@@ -373,6 +606,7 @@ namespace WebAPI.Services
                         {
                             row.RelativeItem().AlignRight().Image(qrPngBytes);
                         }
+                        });
                     });
 
                     page.Content().Stack(stack =>
@@ -600,7 +834,20 @@ namespace WebAPI.Services
 
             if (_pdfSigner == null) throw new InvalidOperationException("PdfSignatureService is not configured.");
 
-            var signedPdfBytes = _pdfSigner.SignPdfWithDigitalCertificate(pdfBytes, certificatePfxBytes, certificatePassword);
+            // Calculate signature position below "Chữ ký số:" text
+            var (left, top) = CalculateSignaturePosition("Invoice", dto.Items?.Count ?? 0, dto.Services?.Count ?? 0);
+
+            var signedPdfBytes = _pdfSigner.SignPdfWithDigitalCertificate(
+                pdfBytes, 
+                certificatePfxBytes, 
+                certificatePassword,
+                options => {
+                    // Set absolute position - when Left and Top are set, alignment is ignored
+                    options.Left = left;
+                    options.Top = top;
+                    options.Margin = new Padding(0);
+                }
+            );
 
             _pdfSigner.UpdateFinalSignature(
                 procedureName: "APP.UPDATE_INVOICE_PDF",

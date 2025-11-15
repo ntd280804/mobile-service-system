@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/employee_import_detail_screen.dart';
+import 'screens/employee_export_detail_screen.dart';
+import 'screens/employee_invoice_detail_screen.dart';
 import 'services/storage_service.dart';
 
 void main() {
@@ -25,6 +28,18 @@ class MyApp extends StatelessWidget {
         '/login': (_) => const LoginScreen(),
         '/home': (_) => const HomeScreen(),
         '/register': (_) => const RegisterScreen(),
+        '/employee/import/detail': (context) {
+          final stockInId = ModalRoute.of(context)!.settings.arguments as int;
+          return EmployeeImportDetailScreen(stockInId: stockInId);
+        },
+        '/employee/export/detail': (context) {
+          final stockOutId = ModalRoute.of(context)!.settings.arguments as int;
+          return EmployeeExportDetailScreen(stockOutId: stockOutId);
+        },
+        '/employee/invoice/detail': (context) {
+          final invoiceId = ModalRoute.of(context)!.settings.arguments as int;
+          return EmployeeInvoiceDetailScreen(invoiceId: invoiceId);
+        },
       },
       home: const _InitialRouteDecider(),
     );

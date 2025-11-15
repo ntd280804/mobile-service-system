@@ -118,7 +118,11 @@ builder.Services.AddSingleton<PdfSignatureService>(sp =>
         sp.GetRequiredService<IHttpContextAccessor>()
     )
 );
-builder.Services.AddSingleton<InvoicePdfService>(sp => new InvoicePdfService(sp.GetRequiredService<PdfSignatureService>()));
+builder.Services.AddSingleton<InvoicePdfService>(sp => new InvoicePdfService(
+    sp.GetRequiredService<PdfSignatureService>(),
+    sp.GetRequiredService<IConfiguration>(),
+    sp.GetRequiredService<IHostEnvironment>()
+));
 builder.Services.AddSingleton<RsaKeyService>();
 // Add SignalR
 builder.Services.AddSignalR();

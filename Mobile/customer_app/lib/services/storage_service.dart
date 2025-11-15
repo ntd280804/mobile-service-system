@@ -4,6 +4,7 @@ class StorageKeys {
   static const token = 'jwt_token';
   static const sessionId = 'session_id';
   static const username = 'username';
+  static const userRole = 'user_role';
 }
 
 class StorageService {
@@ -37,9 +38,18 @@ class StorageService {
     return _storage.read(key: StorageKeys.username);
   }
 
+  Future<void> saveUserRole(String role) async {
+    await _storage.write(key: StorageKeys.userRole, value: role);
+  }
+
+  Future<String?> getUserRole() async {
+    return _storage.read(key: StorageKeys.userRole);
+  }
+
   Future<void> clearAll() async {
     await _storage.delete(key: StorageKeys.token);
     await _storage.delete(key: StorageKeys.sessionId);
     await _storage.delete(key: StorageKeys.username);
+    await _storage.delete(key: StorageKeys.userRole);
   }
 }

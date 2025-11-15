@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../services/signalr_service.dart';
+import '../services/storage_service.dart';
 import 'appointment_list_screen.dart';
 import 'order_list_screen.dart';
+import 'employee_home_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -17,12 +19,30 @@ class _HomeScreenState extends State<HomeScreen> {
   int _index = 0;
   final _api = ApiService();
   final _signalR = SignalRService();
+  final _storage = StorageService();
+  String? _userRole;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     // Listen to logout event from SignalR
     _signalR.onLogoutReceived = _handleRemoteLogout;
+    _checkUserRole();
+  }
+
+  Future<void> _checkUserRole() async {
+    final role = await _storage.getUserRole();
+    setState(() {
+      _userRole = role;
+      _isLoading = false;
+    });
+  }
+
+  bool get _isEmployee {
+    if (_userRole == null) return false;
+    final roleLower = _userRole!.toLowerCase();
+    return roleLower.contains('role_nhanvien') || roleLower.contains('role_admin');
   }
 
   void _handleRemoteLogout() {
@@ -128,6 +148,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // If employee, show employee home screen
+    if (_isEmployee) {
+      return const EmployeeHomeScreen();
+    }
+
+    // Otherwise show customer home screen
     final pages = [
       const OrderListScreen(),
       const AppointmentListScreen(),

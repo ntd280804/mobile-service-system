@@ -20,6 +20,26 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.BackupRestoreController",
+    "Method": "RunBackup",
+    "RelativePath": "api/admin/BackupRestore/backup",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.BackupRestoreController",
+    "Method": "RunRestore",
+    "RelativePath": "api/admin/BackupRestore/restore",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.CustomerController",
     "Method": "GetAll",
     "RelativePath": "api/Admin/Customer",

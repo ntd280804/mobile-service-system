@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/signalr_service.dart';
 
+enum LoginType { customer, employee }
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -14,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
+  LoginType _loginType = LoginType.customer;
 
   final _api = ApiService();
   final _signalR = SignalRService();
@@ -34,12 +37,21 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() => _isLoading = true);
     try {
-      // Use secure encrypted login
-      final res = await _api.login(phone, password);
+      Map<String, dynamic> res;
+      if (_loginType == LoginType.customer) {
+        res = await _api.login(phone, password);
       final roles = (res['roles'] ?? '').toString().toLowerCase();
       if (!roles.contains('role_khachhang')) {
         _showSnack('Chỉ dành cho khách hàng');
         return;
+        }
+      } else {
+        res = await _api.loginEmployee(phone, password);
+        final roles = (res['roles'] ?? '').toString().toLowerCase();
+        if (!roles.contains('role_nhanvien') && !roles.contains('role_admin')) {
+          _showSnack('Chỉ dành cho nhân viên');
+          return;
+        }
       }
       
       // Connect to SignalR after successful login
@@ -72,6 +84,84 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Login type selector
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!_isLoading) {
+                            setState(() => _loginType = LoginType.customer);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _loginType == LoginType.customer
+                                ? Theme.of(context).primaryColor
+                                : Colors.transparent,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              bottomLeft: Radius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Khách hàng',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: _loginType == LoginType.customer
+                                  ? Colors.white
+                                  : Colors.black,
+                              fontWeight: _loginType == LoginType.customer
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!_isLoading) {
+                            setState(() => _loginType = LoginType.employee);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _loginType == LoginType.employee
+                                ? Theme.of(context).primaryColor
+                                : Colors.transparent,
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(8),
+                              bottomRight: Radius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            'Nhân viên',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: _loginType == LoginType.employee
+                                  ? Colors.white
+                                  : Colors.black,
+                              fontWeight: _loginType == LoginType.employee
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
               TextField(
                 controller: _phoneCtrl,
                 decoration: const InputDecoration(
@@ -98,9 +188,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Đăng nhập'),
+                      : Text(_loginType == LoginType.customer
+                          ? 'Đăng nhập'
+                          : 'Đăng nhập nhân viên'),
                 ),
               ),
+              if (_loginType == LoginType.customer) ...[
               const SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
@@ -111,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Text('Đăng ký'),
                 ),
               ),
-
+              ],
             ],
           ),
         ),

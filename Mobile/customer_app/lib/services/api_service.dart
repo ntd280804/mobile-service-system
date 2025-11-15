@@ -83,6 +83,49 @@ class ApiService {
         await _storage.saveSessionId(sessionId);
       }
       await _storage.saveUsername(username);
+      await _storage.saveUserRole(roles);
+
+      return {
+        'token': token,
+        'roles': roles,
+        'sessionId': sessionId,
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? 'Đăng nhập thất bại')
+          : 'Đăng nhập thất bại';
+      throw msg;
+    } catch (_) {
+      throw 'Không thể kết nối máy chủ';
+    }
+  }
+
+  Future<Map<String, dynamic>> loginEmployee(String phone, String password) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.post(
+        ApiConfig.loginEmployee,
+        data: {
+          'username': phone,
+          'password': password,
+          'platform': 'MOBILE',
+        },
+      );
+
+      final data = resp.data['data'] as Map<String, dynamic>;
+      final token = data['token'] ?? '';
+      final roles = data['roles'] ?? '';
+      final sessionId = data['sessionId'] ?? '';
+      final username = data['username'] ?? phone;
+
+      if (token is String && token.isNotEmpty) {
+        await _storage.saveToken(token);
+      }
+      if (sessionId is String && sessionId.isNotEmpty) {
+        await _storage.saveSessionId(sessionId);
+      }
+      await _storage.saveUsername(username);
+      await _storage.saveUserRole(roles);
 
       return {
         'token': token,
@@ -136,11 +179,250 @@ class ApiService {
   Future<void> logout() async {
     await _ensureInterceptors();
     try {
+      // Try customer logout first, if fails try employee logout
+    try {
       await _dio.post(ApiConfig.logout);
+      } catch (_) {
+        await _dio.post(ApiConfig.logoutEmployee);
+      }
     } catch (_) {
       // ignore network errors on logout
     } finally {
       await _storage.clearAll();
+    }
+  }
+
+  // Employee endpoints
+  Future<List<Map<String, dynamic>>> getAllAppointments() async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get(ApiConfig.getAllAppointments);
+      if (resp.data is List) {
+        return (resp.data as List).cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllOrders() async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get(ApiConfig.getAllOrders);
+      if (resp.data is List) {
+        return (resp.data as List).cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> changePasswordEmployee(String oldPassword, String newPassword) async {
+    await _ensureInterceptors();
+    try {
+      await _dio.post(
+        ApiConfig.changePasswordEmployee,
+        data: {
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+        },
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? e.response?.data['message'] ?? e.response?.data['error'] ?? 'Đổi mật khẩu thất bại'
+          : 'Đổi mật khẩu thất bại';
+      throw msg;
+    } catch (_) {
+      throw 'Không thể kết nối máy chủ';
+    }
+  }
+
+  // Import/Export/Invoice endpoints
+  Future<List<Map<String, dynamic>>> getAllImports() async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get(ApiConfig.getAllImports);
+      if (resp.data is List) {
+        return (resp.data as List).cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllExports() async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get(ApiConfig.getAllExports);
+      if (resp.data is List) {
+        return (resp.data as List).cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllInvoices() async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get(ApiConfig.getAllInvoices);
+      if (resp.data is List) {
+        return (resp.data as List).cast<Map<String, dynamic>>();
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // Detail endpoints
+  Future<Map<String, dynamic>> getImportDetails(int stockInId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.getImportDetails}/$stockInId');
+      return resp.data as Map<String, dynamic>;
+    } catch (e) {
+      throw 'Không thể tải chi tiết: $e';
+    }
+  }
+
+  Future<Map<String, dynamic>> getExportDetails(int stockOutId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.getExportDetails}/$stockOutId');
+      return resp.data as Map<String, dynamic>;
+    } catch (e) {
+      throw 'Không thể tải chi tiết: $e';
+    }
+  }
+
+  Future<Map<String, dynamic>> getInvoiceDetails(int invoiceId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.getInvoiceDetails}/$invoiceId');
+      return resp.data as Map<String, dynamic>;
+    } catch (e) {
+      throw 'Không thể tải chi tiết: $e';
+    }
+  }
+
+  // PDF download endpoints
+  Future<List<int>> downloadImportPdf(int stockInId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get(
+        '${ApiConfig.getImportInvoice}/$stockInId',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return resp.data as List<int>;
+    } catch (e) {
+      throw 'Không thể tải PDF: $e';
+    }
+  }
+
+  Future<List<int>> downloadExportPdf(int stockOutId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get(
+        '${ApiConfig.getExportInvoice}/$stockOutId',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return resp.data as List<int>;
+    } catch (e) {
+      throw 'Không thể tải PDF: $e';
+    }
+  }
+
+  Future<List<int>> downloadInvoicePdf(int invoiceId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get(
+        '${ApiConfig.getInvoicePdf}/$invoiceId/pdf',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return resp.data as List<int>;
+    } catch (e) {
+      throw 'Không thể tải PDF: $e';
+    }
+  }
+
+  // Verify endpoints
+  Future<Map<String, dynamic>> verifyImportSign(int stockInId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.verifyImportSign}/$stockInId');
+      final data = resp.data as Map<String, dynamic>;
+      // Normalize isValid to boolean - handle both isValid and IsValid, both boolean and int
+      dynamic isValidValue = data['isValid'] ?? data['IsValid'] ?? false;
+      if (isValidValue is bool) {
+        data['isValid'] = isValidValue;
+      } else if (isValidValue is int) {
+        data['isValid'] = isValidValue == 1;
+      } else {
+        data['isValid'] = false;
+      }
+      return data;
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['Message'] ?? 'Không thể xác thực')
+          : 'Không thể xác thực';
+      throw msg;
+    } catch (e) {
+      throw 'Không thể xác thực: $e';
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyExportSign(int stockOutId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.verifyExportSign}/$stockOutId');
+      final data = resp.data as Map<String, dynamic>;
+      // Normalize isValid to boolean - handle both isValid and IsValid, both boolean and int
+      dynamic isValidValue = data['isValid'] ?? data['IsValid'] ?? false;
+      if (isValidValue is bool) {
+        data['isValid'] = isValidValue;
+      } else if (isValidValue is int) {
+        data['isValid'] = isValidValue == 1;
+      } else {
+        data['isValid'] = false;
+      }
+      return data;
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['Message'] ?? 'Không thể xác thực')
+          : 'Không thể xác thực';
+      throw msg;
+    } catch (e) {
+      throw 'Không thể xác thực: $e';
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyInvoice(int invoiceId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.verifyInvoice}/$invoiceId/verify');
+      final data = resp.data as Map<String, dynamic>;
+      // Normalize isValid to boolean - handle both isValid and IsValid, both boolean and int
+      dynamic isValidValue = data['isValid'] ?? data['IsValid'] ?? false;
+      if (isValidValue is bool) {
+        data['isValid'] = isValidValue;
+      } else if (isValidValue is int) {
+        data['isValid'] = isValidValue == 1;
+      } else {
+        data['isValid'] = false;
+      }
+      return data;
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['Message'] ?? 'Không thể xác thực')
+          : 'Không thể xác thực';
+      throw msg;
+    } catch (e) {
+      throw 'Không thể xác thực: $e';
     }
   }
   Future<void> changePassword(String oldPassword, String newPassword) async {
