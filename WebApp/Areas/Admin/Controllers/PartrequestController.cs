@@ -79,6 +79,25 @@ namespace WebApp.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Lấy danh sách parts từ yêu cầu
+                try
+                {
+                    var partsResponse = await _httpClient.GetAsync($"api/admin/partrequest/by-request-id/{id}");
+                    if (partsResponse.IsSuccessStatusCode)
+                    {
+                        var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
+                        ViewBag.Parts = parts;
+                    }
+                    else
+                    {
+                        ViewBag.Parts = new List<WebApp.Models.Part.PartDto>();
+                    }
+                }
+                catch
+                {
+                    ViewBag.Parts = new List<WebApp.Models.Part.PartDto>();
+                }
+
                 return View(item);
             }
             catch (Exception ex)

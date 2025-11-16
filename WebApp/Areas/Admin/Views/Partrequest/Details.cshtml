@@ -1,8 +1,13 @@
 ﻿@model WebApp.Models.Part.PartRequestViewModel
+@using WebApp.Models.Part
+
+@{
+    var parts = ViewBag.Parts as List<PartDto> ?? new List<PartDto>();
+}
 
 <h2>Chi tiết yêu cầu linh kiện #@Model.REQUEST_ID</h2>
 
-<div class="card">
+<div class="card mb-3">
     <div class="card-body">
         <dl class="row">
             <dt class="col-sm-3">ORDER_ID</dt>
@@ -44,3 +49,55 @@
         </div>
     </div>
 </div>
+
+@if (parts.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Danh sách linh kiện được yêu cầu</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mã linh kiện</th>
+                            <th>Tên linh kiện</th>
+                            <th>Nhà sản xuất</th>
+                            <th>Serial</th>
+                            <th>Trạng thái</th>
+                            <th>Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var part in parts)
+                        {
+                            <tr>
+                                <td>@part.PartId</td>
+                                <td>@part.Name</td>
+                                <td>@(string.IsNullOrEmpty(part.Manufacturer) ? "-" : part.Manufacturer)</td>
+                                <td>
+                                    <a asp-area="Admin"
+                                       asp-controller="Part"
+                                       asp-action="Details"
+                                       asp-route-serial="@part.Serial"
+                                       class="text-decoration-none fw-bold text-primary">
+                                        @part.Serial
+                                    </a>
+                                </td>
+                                <td>@part.Status</td>
+                                <td>@(part.Price.HasValue ? part.Price.Value.ToString("N0") + " đ" : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Yêu cầu này chưa có linh kiện nào.
+    </div>
+}

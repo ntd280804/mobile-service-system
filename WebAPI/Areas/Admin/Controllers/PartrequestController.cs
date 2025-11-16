@@ -128,6 +128,69 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
+        [HttpGet("by-request-id/{requestId}")]
+        [Authorize]
+        public IActionResult GetPartsByRequestId(int requestId)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.GET_PART_BY_REQUEST_ID";
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_request_id", OracleDbType.Int32, ParameterDirection.Input).Value = requestId;
+                var outputCursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
+                cmd.Parameters.Add(outputCursor);
+
+                using var reader = cmd.ExecuteReader();
+                var list = new List<object>();
+
+                while (reader.Read())
+                {
+                    var manufacturer = reader.IsDBNull(2) ? null : reader.GetString(2);
+                    var orderId = reader.IsDBNull(6) ? (decimal?)null : reader.GetDecimal(6);
+                    var price = reader.IsDBNull(7) ? (decimal?)null : reader.GetDecimal(7);
+                    var requestIdValue = reader.IsDBNull(8) ? (decimal?)null : reader.GetDecimal(8);
+                    var requestDate = reader.IsDBNull(9) ? (DateTime?)null : reader.GetDateTime(9);
+                    var requestStatus = reader.IsDBNull(10) ? null : reader.GetString(10);
+
+                    list.Add(new
+                    {
+                        PartId = reader.GetDecimal(0),
+                        Name = reader.GetString(1),
+                        Manufacturer = manufacturer,
+                        Serial = reader.GetString(3),
+                        QRImage = _qrGenerator.GenerateQRImage(reader.GetString(3)),
+                        Status = reader.GetString(4),
+                        StockinID = reader.GetDecimal(5),
+                        OrderId = orderId,
+                        Price = price,
+                        RequestId = requestIdValue,
+                        RequestDate = requestDate,
+                        RequestStatus = requestStatus
+                    });
+                }
+
+                return Ok(list);
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (OracleException ex)
+            {
+                return StatusCode(500, new { Message = "Oracle Error", ErrorCode = ex.Number, Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Lỗi khi lấy danh sách linh kiện từ yêu cầu", Error = ex.Message });
+            }
+        }
+
         [HttpPost("post")]
         [Authorize]
         public IActionResult CreatePartRequest([FromBody] CreatePartRequestDto dto)

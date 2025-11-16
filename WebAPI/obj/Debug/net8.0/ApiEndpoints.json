@@ -623,6 +623,38 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.PartController",
+    "Method": "GetPartsByOrderId",
+    "RelativePath": "api/Admin/Part/by-order-id/{orderId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "orderId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartController",
+    "Method": "GetPartsByPartRequest",
+    "RelativePath": "api/Admin/Part/by-part-request/{orderId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "orderId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartController",
     "Method": "GetPartBySerial",
     "RelativePath": "api/Admin/Part/detail-by-serial/{serial}",
     "HttpMethod": "GET",
@@ -668,6 +700,22 @@
     "Method": "AcceptPartRequest",
     "RelativePath": "api/Admin/Partrequest/accept/{requestId}",
     "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.PartrequestController",
+    "Method": "GetPartsByRequestId",
+    "RelativePath": "api/Admin/Partrequest/by-request-id/{requestId}",
+    "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
     "Parameters": [

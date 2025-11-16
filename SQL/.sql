@@ -81,6 +81,8 @@ DROP PROCEDURE "APP"."GET_INVOICE_PDF";
 DROP PROCEDURE "APP"."GET_INVOICE_SIGNATURE";
 DROP PROCEDURE "APP"."GET_ORDER_BY_ID";
 DROP PROCEDURE "APP"."GET_PART_BY_ORDERID";
+DROP PROCEDURE "APP"."GET_PART_BY_PARTREQUEST";
+DROP PROCEDURE "APP"."GET_PART_BY_REQUEST_ID";
 DROP PROCEDURE "APP"."GET_PART_BY_SERIAL";
 DROP PROCEDURE "APP"."GET_PART_BY_STATUS";
 DROP PROCEDURE "APP"."GET_PART_BY_STOCK";
@@ -2863,6 +2865,78 @@ BEGIN
 END get_part_by_orderId;
 
 /
+
+  GRANT EXECUTE ON "APP"."GET_PART_BY_ORDERID" TO "ROLE_ADMIN";
+--------------------------------------------------------
+--  DDL for Procedure GET_PART_BY_PARTREQUEST
+--------------------------------------------------------
+set define off;
+
+  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."GET_PART_BY_PARTREQUEST" (
+    p_order_id IN PART_REQUEST.ORDER_ID%TYPE,
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT
+            p.PART_ID,
+            p.NAME,
+            p.MANUFACTURER,
+            p.SERIAL,
+            p.STATUS,
+            p.STOCK_IN_ID,
+            p.ORDER_ID,
+            p.PRICE,
+            pri.REQUEST_ID,
+            pr.REQUEST_DATE,
+            pr.STATUS AS REQUEST_STATUS
+        FROM
+            PART p
+        INNER JOIN PART_REQUEST_ITEM pri ON p.PART_ID = pri.PART_ID
+        INNER JOIN PART_REQUEST pr ON pri.REQUEST_ID = pr.REQUEST_ID
+        WHERE
+            pr.ORDER_ID = p_order_id;
+END GET_PART_BY_PARTREQUEST;
+
+/
+
+  GRANT EXECUTE ON "APP"."GET_PART_BY_PARTREQUEST" TO "ROLE_ADMIN";
+--------------------------------------------------------
+--  DDL for Procedure GET_PART_BY_REQUEST_ID
+--------------------------------------------------------
+set define off;
+
+  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."GET_PART_BY_REQUEST_ID" (
+    p_request_id IN PART_REQUEST.REQUEST_ID%TYPE,
+    p_cursor OUT SYS_REFCURSOR
+)
+IS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT
+            p.PART_ID,
+            p.NAME,
+            p.MANUFACTURER,
+            p.SERIAL,
+            p.STATUS,
+            p.STOCK_IN_ID,
+            p.ORDER_ID,
+            p.PRICE,
+            pri.REQUEST_ID,
+            pr.REQUEST_DATE,
+            pr.STATUS AS REQUEST_STATUS
+        FROM
+            PART p
+        INNER JOIN PART_REQUEST_ITEM pri ON p.PART_ID = pri.PART_ID
+        INNER JOIN PART_REQUEST pr ON pri.REQUEST_ID = pr.REQUEST_ID
+        WHERE
+            pr.REQUEST_ID = p_request_id;
+END GET_PART_BY_REQUEST_ID;
+
+/
+
+  GRANT EXECUTE ON "APP"."GET_PART_BY_REQUEST_ID" TO "ROLE_ADMIN";
 --------------------------------------------------------
 --  DDL for Procedure GET_PART_BY_SERIAL
 --------------------------------------------------------

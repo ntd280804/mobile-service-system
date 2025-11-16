@@ -1,4 +1,9 @@
 @model WebApp.Models.Part.PartDto
+@using WebApp.Models.Part
+
+@{
+    var partsRequest = ViewBag.PartsRequest as List<PartDto> ?? new List<PartDto>();
+}
 
 <h2>Chi tiết linh kiện #@Model.PartId</h2>
 
@@ -37,13 +42,22 @@
                             </a></dd>
 
             <dt class="col-sm-3">Order ID</dt>
-            <dd class="col-sm-9"><a asp-area="Admin" 
-                               asp-controller="Order" 
-                               asp-action="Details" 
-                               asp-route-id="@Model.OrderId.Value"
-                               class="text-decoration-none fw-bold text-primary">
-                                @Model.OrderId.Value
-                            </a></dd>
+            <dd class="col-sm-9">
+                @if (Model.OrderId.HasValue)
+                {
+                    <a asp-area="Admin" 
+                       asp-controller="Order" 
+                       asp-action="Details" 
+                       asp-route-id="@Model.OrderId.Value"
+                       class="text-decoration-none fw-bold text-primary">
+                        @Model.OrderId.Value
+                    </a>
+                }
+                else
+                {
+                    <text>-</text>
+                }
+            </dd>
 
             <dt class="col-sm-3">Giá</dt>
             <dd class="col-sm-9">@(Model.Price?.ToString() ?? "-")</dd>
@@ -51,7 +65,58 @@
 
         <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
     </div>
-    
 </div>
+
+@if (Model.OrderId.HasValue && partsRequest.Any())
+{
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5 class="mb-0">Danh sách linh kiện được yêu cầu (Part Request) - Order #@Model.OrderId.Value</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mã linh kiện</th>
+                            <th>Tên linh kiện</th>
+                            <th>Nhà sản xuất</th>
+                            <th>Serial</th>
+                            <th>Trạng thái</th>
+                            <th>Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var part in partsRequest)
+                        {
+                            <tr>
+                                <td>@part.PartId</td>
+                                <td>@part.Name</td>
+                                <td>@(string.IsNullOrEmpty(part.Manufacturer) ? "-" : part.Manufacturer)</td>
+                                <td>
+                                    <a asp-area="Admin"
+                                       asp-controller="Part"
+                                       asp-action="Details"
+                                       asp-route-serial="@part.Serial"
+                                       class="text-decoration-none fw-bold text-primary">
+                                        @part.Serial
+                                    </a>
+                                </td>
+                                <td>@part.Status</td>
+                                <td>@(part.Price.HasValue ? part.Price.Value.ToString("N0") + " đ" : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else if (Model.OrderId.HasValue)
+{
+    <div class="alert alert-info mt-3">
+        <i class="bi bi-info-circle"></i> Order #@Model.OrderId.Value chưa có linh kiện nào được yêu cầu.
+    </div>
+}
 
 

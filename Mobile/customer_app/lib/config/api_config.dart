@@ -33,4 +33,10 @@ class ApiConfig {
   static const String getInvoiceDetails = '/api/admin/invoice';
   static const String getInvoicePdf = '/api/admin/invoice';
   static const String verifyInvoice = '/api/admin/invoice';
+  
+  // Part endpoints
+  static const String getPartsByOrderId = '/api/admin/part/by-order-id';
+  static const String getPartsByPartRequest = '/api/admin/part/by-part-request';
+  static const String getPartsByRequestId = '/api/admin/partrequest/by-request-id';
+  static const String getOrderDetails = '/api/admin/order/details';
 }

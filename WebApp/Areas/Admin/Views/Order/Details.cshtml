@@ -1,8 +1,11 @@
 @model WebApp.Models.Order.OrderDto
 @using WebApp.Models.Order
+@using WebApp.Models.Part
 
 @{
     var services = ViewBag.Services as List<OrderServiceDto> ?? new List<OrderServiceDto>();
+    var parts = ViewBag.Parts as List<PartDto> ?? new List<PartDto>();
+    var partsRequest = ViewBag.PartsRequest as List<PartDto> ?? new List<PartDto>();
 }
 
 <h2>Chi tiết đơn hàng #@Model.OrderId</h2>
@@ -95,6 +98,110 @@ else
 {
     <div class="alert alert-info">
         <i class="bi bi-info-circle"></i> Đơn hàng này chưa có dịch vụ nào.
+    </div>
+}
+
+@if (parts.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">Danh sách linh kiện được gán</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mã linh kiện</th>
+                            <th>Tên linh kiện</th>
+                            <th>Nhà sản xuất</th>
+                            <th>Serial</th>
+                            <th>Trạng thái</th>
+                            <th>Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var part in parts)
+                        {
+                            <tr>
+                                <td>@part.PartId</td>
+                                <td>@part.Name</td>
+                                <td>@(string.IsNullOrEmpty(part.Manufacturer) ? "-" : part.Manufacturer)</td>
+                                <td>
+                                    <a asp-area="Admin"
+                                       asp-controller="Part"
+                                       asp-action="Details"
+                                       asp-route-serial="@part.Serial"
+                                       class="text-decoration-none fw-bold text-primary">
+                                        @part.Serial
+                                    </a>
+                                </td>
+                                <td>@part.Status</td>
+                                <td>@(part.Price.HasValue ? part.Price.Value.ToString("N0") + " đ" : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Đơn hàng này chưa có linh kiện nào được gán.
+    </div>
+}
+
+@if (partsRequest.Any())
+{
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">Danh sách linh kiện được yêu cầu (Part Request)</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mã linh kiện</th>
+                            <th>Tên linh kiện</th>
+                            <th>Nhà sản xuất</th>
+                            <th>Serial</th>
+                            <th>Trạng thái</th>
+                            <th>Giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var part in partsRequest)
+                        {
+                            <tr>
+                                <td>@part.PartId</td>
+                                <td>@part.Name</td>
+                                <td>@(string.IsNullOrEmpty(part.Manufacturer) ? "-" : part.Manufacturer)</td>
+                                <td>
+                                    <a asp-area="Admin"
+                                       asp-controller="Part"
+                                       asp-action="Details"
+                                       asp-route-serial="@part.Serial"
+                                       class="text-decoration-none fw-bold text-primary">
+                                        @part.Serial
+                                    </a>
+                                </td>
+                                <td>@part.Status</td>
+                                <td>@(part.Price.HasValue ? part.Price.Value.ToString("N0") + " đ" : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Đơn hàng này chưa có linh kiện nào được yêu cầu.
     </div>
 }
 

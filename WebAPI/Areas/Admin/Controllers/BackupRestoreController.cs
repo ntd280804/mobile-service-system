@@ -42,7 +42,8 @@ namespace WebAPI.Areas.Admin.Controllers
                 }
                 // Chạy job backup
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = "BEGIN DBMS_SCHEDULER.RUN_JOB('APP.RUN_RMAN_PDB_BACKUP'); END;";
+                cmd.CommandText = "BEGIN APP.RUN_RMAN_PDB_BACKUP_PROC; END;";
+
                 cmd.ExecuteNonQuery();
 
                 return Ok(ApiResponse<string>.Ok("Backup job đã được khởi chạy thành công"));
@@ -83,7 +84,8 @@ namespace WebAPI.Areas.Admin.Controllers
 
                 // Chạy job restore
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = "BEGIN DBMS_SCHEDULER.RUN_JOB('APP.RUN_RMAN_PDB_RESTORE'); END;";
+                cmd.CommandText = "BEGIN APP.RUN_RMAN_PDB_RESTORE_PROC; END;";
+
                 cmd.ExecuteNonQuery();
 
                 return Ok(ApiResponse<string>.Ok("Restore job đã được khởi chạy thành công"));

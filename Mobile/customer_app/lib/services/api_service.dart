@@ -8,6 +8,7 @@ import 'dart:convert';
 import '../config/api_config.dart';
 import 'storage_service.dart';
 import '../models/order.dart';
+import '../models/part.dart';
 class ApiService {
   ApiService._internal() {
     // ⚠️ DEVELOPMENT ONLY: Bypass SSL certificate validation
@@ -516,6 +517,65 @@ class ApiService {
       throw msg;
     } catch (_) {
       throw 'Không thể kết nối máy chủ';
+    }
+  }
+
+  // Part endpoints
+  Future<List<Part>> getPartsByOrderId(int orderId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.getPartsByOrderId}/$orderId');
+      if (resp.data is List) {
+        return (resp.data as List)
+            .map((e) => Part.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('Lỗi getPartsByOrderId: $e');
+      return [];
+    }
+  }
+
+  Future<List<Part>> getPartsByPartRequest(int orderId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.getPartsByPartRequest}/$orderId');
+      if (resp.data is List) {
+        return (resp.data as List)
+            .map((e) => Part.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('Lỗi getPartsByPartRequest: $e');
+      return [];
+    }
+  }
+
+  Future<List<Part>> getPartsByRequestId(int requestId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.getPartsByRequestId}/$requestId');
+      if (resp.data is List) {
+        return (resp.data as List)
+            .map((e) => Part.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      print('Lỗi getPartsByRequestId: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>> getOrderDetails(int orderId) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.get('${ApiConfig.getOrderDetails}/$orderId');
+      return resp.data as Map<String, dynamic>;
+    } catch (e) {
+      throw 'Không thể tải chi tiết đơn hàng: $e';
     }
   }
 }

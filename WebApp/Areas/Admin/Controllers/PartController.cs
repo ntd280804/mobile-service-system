@@ -94,6 +94,32 @@ namespace WebApp.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // Lấy danh sách parts từ part request nếu part có OrderId
+                if (part.OrderId.HasValue)
+                {
+                    try
+                    {
+                        var partsRequestResponse = await _httpClient.GetAsync($"api/admin/part/by-part-request/{part.OrderId.Value}");
+                        if (partsRequestResponse.IsSuccessStatusCode)
+                        {
+                            var partsRequest = await partsRequestResponse.Content.ReadFromJsonAsync<List<PartDto>>() ?? new List<PartDto>();
+                            ViewBag.PartsRequest = partsRequest;
+                        }
+                        else
+                        {
+                            ViewBag.PartsRequest = new List<PartDto>();
+                        }
+                    }
+                    catch
+                    {
+                        ViewBag.PartsRequest = new List<PartDto>();
+                    }
+                }
+                else
+                {
+                    ViewBag.PartsRequest = new List<PartDto>();
+                }
+
                 return View(part);
             }
             catch (Exception ex)

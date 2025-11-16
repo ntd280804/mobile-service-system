@@ -98,6 +98,44 @@ namespace WebApp.Areas.Admin.Controllers
                     services = await servicesResponse.Content.ReadFromJsonAsync<List<OrderServiceDto>>() ?? new List<OrderServiceDto>();
                 }
 
+                // Lấy danh sách parts được gán với order
+                try
+                {
+                    var partsResponse = await _httpClient.GetAsync($"api/admin/part/by-order-id/{id}");
+                    if (partsResponse.IsSuccessStatusCode)
+                    {
+                        var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
+                        ViewBag.Parts = parts;
+                    }
+                    else
+                    {
+                        ViewBag.Parts = new List<WebApp.Models.Part.PartDto>();
+                    }
+                }
+                catch
+                {
+                    ViewBag.Parts = new List<WebApp.Models.Part.PartDto>();
+                }
+
+                // Lấy danh sách parts từ part request
+                try
+                {
+                    var partsRequestResponse = await _httpClient.GetAsync($"api/admin/part/by-part-request/{id}");
+                    if (partsRequestResponse.IsSuccessStatusCode)
+                    {
+                        var partsRequest = await partsRequestResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
+                        ViewBag.PartsRequest = partsRequest;
+                    }
+                    else
+                    {
+                        ViewBag.PartsRequest = new List<WebApp.Models.Part.PartDto>();
+                    }
+                }
+                catch
+                {
+                    ViewBag.PartsRequest = new List<WebApp.Models.Part.PartDto>();
+                }
+
                 ViewBag.Services = services;
                 return View(order);
             }
