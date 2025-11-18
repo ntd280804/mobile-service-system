@@ -4,6 +4,7 @@ using Oracle.ManagedDataAccess.Client;
 using System.Collections.Generic;
 using System.Linq;
 using WebAPI.Helpers;
+using WebAPI.Models.Permission;
 using WebAPI.Services;
 
 namespace WebAPI.Areas.Admin.Controllers
@@ -113,10 +114,11 @@ namespace WebAPI.Areas.Admin.Controllers
                     .Select(g => new
                     {
                         ProfileName = g.Key,
+                        IdleTime = g.FirstOrDefault(r => r.ResourceName == "IDLE_TIME")?.Limit,
+                        ConnectTime = g.FirstOrDefault(r => r.ResourceName == "CONNECT_TIME")?.Limit,
                         FailedLogin = g.FirstOrDefault(r => r.ResourceName == "FAILED_LOGIN_ATTEMPTS")?.Limit,
-                        LifeTime = g.FirstOrDefault(r => r.ResourceName == "PASSWORD_LIFE_TIME")?.Limit,
-                        GraceTime = g.FirstOrDefault(r => r.ResourceName == "PASSWORD_GRACE_TIME")?.Limit,
-                        LockTime = g.FirstOrDefault(r => r.ResourceName == "PASSWORD_LOCK_TIME")?.Limit
+                        LockTime = g.FirstOrDefault(r => r.ResourceName == "PASSWORD_LOCK_TIME")?.Limit,
+                        InactiveAccountTime = g.FirstOrDefault(r => r.ResourceName == "INACTIVE_ACCOUNT_TIME")?.Limit
                     });
 
                 return Ok(grouped);
@@ -155,10 +157,11 @@ namespace WebAPI.Areas.Admin.Controllers
                 var result = new
                 {
                     ProfileName = profileName.ToUpper(),
+                    IdleTime = dict.ContainsKey("IDLE_TIME") ? dict["IDLE_TIME"] : null,
+                    ConnectTime = dict.ContainsKey("CONNECT_TIME") ? dict["CONNECT_TIME"] : null,
                     FailedLogin = dict.ContainsKey("FAILED_LOGIN_ATTEMPTS") ? dict["FAILED_LOGIN_ATTEMPTS"] : null,
-                    LifeTime = dict.ContainsKey("PASSWORD_LIFE_TIME") ? dict["PASSWORD_LIFE_TIME"] : null,
-                    GraceTime = dict.ContainsKey("PASSWORD_GRACE_TIME") ? dict["PASSWORD_GRACE_TIME"] : null,
-                    LockTime = dict.ContainsKey("PASSWORD_LOCK_TIME") ? dict["PASSWORD_LOCK_TIME"] : null
+                    LockTime = dict.ContainsKey("PASSWORD_LOCK_TIME") ? dict["PASSWORD_LOCK_TIME"] : null,
+                    InactiveAccountTime = dict.ContainsKey("INACTIVE_ACCOUNT_TIME") ? dict["INACTIVE_ACCOUNT_TIME"] : null
                 };
 
                 return Ok(result);
@@ -172,10 +175,11 @@ namespace WebAPI.Areas.Admin.Controllers
         public class CreateProfileRequest
         {
             public string ProfileName { get; set; } = string.Empty;
+            public string IdleTime { get; set; } = "UNLIMITED";
+            public string ConnectTime { get; set; } = "UNLIMITED";
             public string FailedLogin { get; set; } = "UNLIMITED";
-            public string LifeTime { get; set; } = "UNLIMITED";
-            public string GraceTime { get; set; } = "UNLIMITED";
             public string LockTime { get; set; } = "UNLIMITED";
+            public string InactiveAccountTime { get; set; } = "UNLIMITED";
         }
 
         [HttpPost]
@@ -192,10 +196,11 @@ namespace WebAPI.Areas.Admin.Controllers
                 cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
                 cmd.Parameters.Add("p_profile_name", OracleDbType.Varchar2, request.ProfileName.Trim().ToUpper(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("p_idle_time", OracleDbType.Varchar2, request.IdleTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("p_connect_time", OracleDbType.Varchar2, request.ConnectTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
                 cmd.Parameters.Add("p_failed_login", OracleDbType.Varchar2, request.FailedLogin.Trim().ToUpper(), System.Data.ParameterDirection.Input);
-                cmd.Parameters.Add("p_life_time", OracleDbType.Varchar2, request.LifeTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
-                cmd.Parameters.Add("p_grace_time", OracleDbType.Varchar2, request.GraceTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
                 cmd.Parameters.Add("p_lock_time", OracleDbType.Varchar2, request.LockTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
+                cmd.Parameters.Add("p_inactive_account_time", OracleDbType.Varchar2, request.InactiveAccountTime.Trim().ToUpper(), System.Data.ParameterDirection.Input);
 
                 cmd.ExecuteNonQuery();
 
@@ -273,6 +278,56 @@ namespace WebAPI.Areas.Admin.Controllers
                     return NotFound(new { message = $"User '{request.Username}' does not exist", oracleError = ex.Number, detail = ex.Message });
 
                 return StatusCode(500, new { message = "Failed to assign profile", oracleError = ex.Number, detail = ex.Message });
+            }
+        }
+
+
+        [HttpPut("{profileName}")]
+        [Authorize]
+        public IActionResult UpdateProfile(string profileName, [FromBody] UpdateProfileRequest request)
+        {
+            if (GetConnectionOrUnauthorized(out var unauthorized) is not OracleConnection conn) return unauthorized;
+            if (string.IsNullOrWhiteSpace(profileName)) return BadRequest(new { message = "Profile name is required" });
+            if (request == null) return BadRequest(new { message = "Request body is required" });
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "APP.UPDATE_PROFILE";
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_profile_name", OracleDbType.Varchar2, profileName.Trim().ToUpper(), System.Data.ParameterDirection.Input);
+                
+                var idleTimeParam = new OracleParameter("p_idle_time", OracleDbType.Varchar2);
+                idleTimeParam.Value = string.IsNullOrWhiteSpace(request.IdleTime) ? DBNull.Value : (object)request.IdleTime.Trim().ToUpper();
+                cmd.Parameters.Add(idleTimeParam);
+
+                var connectTimeParam = new OracleParameter("p_connect_time", OracleDbType.Varchar2);
+                connectTimeParam.Value = string.IsNullOrWhiteSpace(request.ConnectTime) ? DBNull.Value : (object)request.ConnectTime.Trim().ToUpper();
+                cmd.Parameters.Add(connectTimeParam);
+
+                var failedLoginParam = new OracleParameter("p_failed_login", OracleDbType.Varchar2);
+                failedLoginParam.Value = string.IsNullOrWhiteSpace(request.FailedLogin) ? DBNull.Value : (object)request.FailedLogin.Trim().ToUpper();
+                cmd.Parameters.Add(failedLoginParam);
+
+                var lockTimeParam = new OracleParameter("p_lock_time", OracleDbType.Varchar2);
+                lockTimeParam.Value = string.IsNullOrWhiteSpace(request.LockTime) ? DBNull.Value : (object)request.LockTime.Trim().ToUpper();
+                cmd.Parameters.Add(lockTimeParam);
+
+                var inactiveAccountTimeParam = new OracleParameter("p_inactive_account_time", OracleDbType.Varchar2);
+                inactiveAccountTimeParam.Value = string.IsNullOrWhiteSpace(request.InactiveAccountTime) ? DBNull.Value : (object)request.InactiveAccountTime.Trim().ToUpper();
+                cmd.Parameters.Add(inactiveAccountTimeParam);
+
+                cmd.ExecuteNonQuery();
+
+                return Ok(new { message = $"Profile '{profileName}' updated successfully" });
+            }
+            catch (OracleException ex)
+            {
+                if (ex.Number == 2380)
+                    return NotFound(new { message = $"Profile '{profileName}' does not exist", detail = ex.Message });
+
+                return StatusCode(500, new { message = "Failed to update profile", oracleError = ex.Number, detail = ex.Message });
             }
         }
     }

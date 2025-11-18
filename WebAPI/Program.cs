@@ -110,6 +110,8 @@ builder.Services.AddSingleton<JwtHelper>();
 builder.Services.AddSingleton<OracleSessionHelper>();
 builder.Services.AddSingleton<OracleConnectionManager>();
 builder.Services.AddSingleton<QrGeneratorSingleton>();
+builder.Services.AddSingleton<QrLoginStore>();
+builder.Services.AddSingleton<CustomerQrLoginService>();
 // PDF signing services
 builder.Services.AddSingleton<PdfSignatureService>(sp =>
     new PdfSignatureService(

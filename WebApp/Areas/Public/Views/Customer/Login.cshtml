@@ -1,38 +1,324 @@
-﻿@{
+﻿@inject IConfiguration Configuration
+@{
     Layout = "~/Areas/Public/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Public Login";
+
+    var webApiBase = (Configuration["WebApi:BaseUrl"] ?? string.Empty).TrimEnd('/');
+    var qrCreateUrl = string.IsNullOrEmpty(webApiBase) ? string.Empty : $"{webApiBase}/api/Public/QrLogin/create";
+    var qrStatusUrlBase = string.IsNullOrEmpty(webApiBase) ? string.Empty : $"{webApiBase}/api/Public/QrLogin/status/";
+    var qrCompleteUrl = Url.Action("CompleteQrLogin", "Customer", new { area = "Public" }) ?? string.Empty;
+    var dashboardUrl = Url.Action("Index", "Home", new { area = "Public" }) ?? string.Empty;
 }
 
-<h2>Public Login</h2>
+<div class="row g-4 align-items-stretch">
+    <div class="col-lg-5 col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h3 class="card-title mb-3">Đăng nhập bằng mật khẩu</h3>
+                <form asp-area="Public"
+                      asp-controller="Customer"
+                      asp-action="Login"
+                      method="post"
+                      data-login-form="true">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input class="form-control" name="username" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input class="form-control" type="password" name="password" required />
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">Đăng nhập</button>
+                    <p class="text-muted small mt-3 mb-0">
+                        Cách truyền thống bằng username/password.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
 
-<form asp-area="Public" asp-controller="Customer" asp-action="Login" method="post">
-    <div class="mb-3">
-        <label>Username</label>
-        <input class="form-control" name="username" required />
+    <div class="col-lg-7 col-md-6">
+        <div class="card shadow-sm h-100" id="qr-login-card">
+            <div class="card-header bg-white">
+                <h3 class="card-title h5 mb-1">Đăng nhập web bằng ứng dụng di động</h3>
+                <p class="text-muted small mb-0">
+                    Mở app Mobile Service đã đăng nhập &gt; Chọn “Đăng nhập Web” &gt; Quét QR hoặc nhập mã bên dưới.
+                </p>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <div id="qrLoginStatus" class="text-muted small mb-3">Đang chuẩn bị...</div>
+                <div class="text-center mb-3">
+                    <img id="qrLoginImage"
+                         alt="QR Login"
+                         class="img-fluid border rounded p-2 bg-light"
+                         style="max-width:220px; min-height:220px;" />
+                </div>
+                <div class="text-center mb-3">
+                    <div id="qrLoginCode" class="fw-bold display-6 text-uppercase">------</div>
+                    <div id="qrCountdownText" class="text-muted small"></div>
+                </div>
+                <button class="btn btn-outline-primary w-100 mb-3" type="button" id="btnRefreshQr">
+                    Tạo QR mới
+                </button>
+                <div class="mb-3">
+                    <label class="form-label small text-uppercase text-muted">Nhập mã trên app (nếu không quét được)</label>
+                    <div class="input-group">
+                        <input class="form-control text-uppercase" id="qrManualCode" readonly />
+                        <button class="btn btn-outline-secondary" type="button" id="btnCopyQrCode">Copy</button>
+                    </div>
+                </div>
+                <div class="alert alert-success d-none" id="qrSuccessAlert"></div>
+                <div class="mt-auto small text-muted">
+                    Lưu ý: Mã QR chỉ có hiệu lực 2 phút. Sau khi app xác nhận, trang này sẽ tự đăng nhập.
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="mb-3">
-        <label>Password</label>
-        <input class="form-control" type="password" name="password" required />
-    </div>
-    <button class="btn btn-primary" type="submit">Login</button>
-</form>
-<script>
-    // sử dụng lại channel đã được định nghĩa trong _Layout.cshtml
-    const loginForm = document.querySelector('form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', () => {
-            // Gửi tín hiệu login cho các tab khác
-            channel.postMessage('login');
-            console.log('📡 Gửi sự kiện login sang các tab khác');
-        });
-    }
-</script>
+</div>
+
 @if (!ViewData.ModelState.IsValid)
 {
-    <div class="alert alert-danger mt-2">
+    <div class="alert alert-danger mt-3">
         @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
         {
-            <p>@error.ErrorMessage</p>
+            <p class="mb-0">@error.ErrorMessage</p>
         }
     </div>
+}
+
+@section Scripts {
+<script>
+    (() => {
+        const loginForm = document.querySelector('form[data-login-form="true"]');
+        if (loginForm) {
+            loginForm.addEventListener('submit', () => {
+                if (typeof channel !== 'undefined') {
+                    channel.postMessage('login');
+                }
+            });
+        }
+
+        const qrConfig = {
+            createUrl: '@qrCreateUrl',
+            statusUrlBase: '@qrStatusUrlBase',
+            completeUrl: '@qrCompleteUrl',
+            dashboardUrl: '@dashboardUrl'
+        };
+
+        const els = {
+            status: document.getElementById('qrLoginStatus'),
+            code: document.getElementById('qrLoginCode'),
+            countdown: document.getElementById('qrCountdownText'),
+            img: document.getElementById('qrLoginImage'),
+            refreshBtn: document.getElementById('btnRefreshQr'),
+            copyBtn: document.getElementById('btnCopyQrCode'),
+            manualInput: document.getElementById('qrManualCode'),
+            successAlert: document.getElementById('qrSuccessAlert')
+        };
+
+        if (!els.status || !qrConfig.createUrl) {
+            if (els.status) {
+                els.status.textContent = 'Chưa cấu hình WebApi:BaseUrl nên không thể tạo QR.';
+                els.status.classList.add('text-danger');
+            }
+            return;
+        }
+
+        const qrState = {
+            id: null,
+            code: null,
+            expiresAt: null
+        };
+
+        let pollTimer = null;
+        let countdownTimer = null;
+
+        const antiForgeryToken = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+        function setStatus(message, type = 'muted') {
+            if (!els.status) return;
+            els.status.textContent = message;
+            els.status.className = `text-${type} small mb-3`;
+        }
+
+        function toggleSuccess(show, detail) {
+            if (!els.successAlert) return;
+            if (show) {
+                els.successAlert.classList.remove('d-none');
+                els.successAlert.textContent = detail ?? 'Đã xác nhận từ ứng dụng di động. Đang đăng nhập...';
+            } else {
+                els.successAlert.classList.add('d-none');
+                els.successAlert.textContent = '';
+            }
+        }
+
+        function clearTimers() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }
+
+        function updateCodeUI() {
+            if (els.code) {
+                els.code.textContent = qrState.code ?? '------';
+            }
+            if (els.manualInput) {
+                els.manualInput.value = qrState.code ?? '';
+            }
+            if (els.img) {
+                if (qrState.code) {
+                    const encoded = encodeURIComponent(qrState.code);
+                    els.img.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encoded}`;
+                    els.img.alt = `QR cho mã ${qrState.code}`;
+                } else {
+                    els.img.removeAttribute('src');
+                }
+            }
+        }
+
+        function updateCountdown() {
+            if (!els.countdown || !qrState.expiresAt) {
+                if (els.countdown) els.countdown.textContent = '';
+                return;
+            }
+            const remaining = Math.max(0, qrState.expiresAt - new Date());
+            const seconds = Math.ceil(remaining / 1000);
+            if (seconds <= 0) {
+                els.countdown.textContent = 'QR đã hết hạn.';
+                handleExpired();
+            } else {
+                els.countdown.textContent = `Hết hạn sau ${seconds}s`;
+            }
+        }
+
+        function startCountdown() {
+            updateCountdown();
+            countdownTimer = setInterval(updateCountdown, 1000);
+        }
+
+        function handleExpired() {
+            clearTimers();
+            setStatus('QR đã hết hạn. Nhấn "Tạo QR mới" để lấy mã mới.', 'warning');
+        }
+
+        async function fetchJson(url, options) {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || 'Yêu cầu thất bại');
+            }
+            return response.json();
+        }
+
+        async function initQrLogin() {
+            toggleSuccess(false);
+            clearTimers();
+            setStatus('Đang tạo mã QR...', 'info');
+
+            try {
+                const payload = await fetchJson(qrConfig.createUrl, { method: 'POST' });
+                if (!payload.success || !payload.data) {
+                    throw new Error(payload.error ?? 'Không thể tạo QR');
+                }
+
+                qrState.id = payload.data.qrLoginId;
+                qrState.code = payload.data.code;
+                qrState.expiresAt = payload.data.expiresAtUtc ? new Date(payload.data.expiresAtUtc) : null;
+
+                updateCodeUI();
+                startCountdown();
+                startPolling();
+                setStatus('Quét QR bằng app Mobile Service hoặc nhập mã thủ công.', 'info');
+            } catch (error) {
+                setStatus(`Lỗi tạo QR: ${error.message}`, 'danger');
+            }
+        }
+
+        async function startPolling() {
+            if (!qrState.id || !qrConfig.statusUrlBase) return;
+            pollTimer = setInterval(async () => {
+                try {
+                    const url = `${qrConfig.statusUrlBase}${qrState.id}`;
+                    const payload = await fetchJson(url);
+                    if (!payload.success || !payload.data) {
+                        throw new Error(payload.error ?? 'Không lấy được trạng thái.');
+                    }
+
+                    const data = payload.data;
+                    const status = data.status;
+                    // status có thể là số (0,1,2) hoặc chuỗi ('Pending','Confirmed','Expired')
+                    if (status === 2 || status === 'Expired') {
+                        handleExpired();
+                    } else if (status === 1 || status === 'Confirmed') {
+                        clearTimers();
+                        setStatus('Ứng dụng di động đã xác nhận. Đang đăng nhập...', 'success');
+                        await finalizeQrLogin(data);
+                    }
+                } catch (error) {
+                    console.warn('QR poll error:', error);
+                }
+            }, 2000);
+        }
+
+        async function finalizeQrLogin(data) {
+            if (!data || !data.webToken) {
+                setStatus('Thiếu token trả về từ server.', 'danger');
+                return;
+            }
+
+            try {
+                toggleSuccess(true, `Đã xác nhận cho tài khoản ${data.username ?? ''}.`);
+                const result = await fetchJson(qrConfig.completeUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': antiForgeryToken()
+                    },
+                    body: JSON.stringify({
+                        username: data.username,
+                        roles: data.roles,
+                        token: data.webToken,
+                        sessionId: data.webSessionId
+                    })
+                });
+
+                if (typeof channel !== 'undefined') {
+                    channel.postMessage('login');
+                }
+
+                const redirectUrl = result.redirect || qrConfig.dashboardUrl || '/';
+                setTimeout(() => {
+                    window.location.href = redirectUrl;
+                }, 800);
+            } catch (error) {
+                toggleSuccess(false);
+                setStatus(`Không thể hoàn tất đăng nhập: ${error.message}`, 'danger');
+            }
+        }
+
+        if (els.refreshBtn) {
+            els.refreshBtn.addEventListener('click', () => initQrLogin());
+        }
+
+        if (els.copyBtn) {
+            els.copyBtn.addEventListener('click', async () => {
+                if (!qrState.code) return;
+                try {
+                    await navigator.clipboard.writeText(qrState.code);
+                    setStatus('Đã copy mã vào clipboard.', 'info');
+                } catch {
+                    setStatus('Không thể copy tự động, vui lòng chọn thủ công.', 'warning');
+                }
+            });
+        }
+
+        initQrLogin();
+    })();
+</script>
 }

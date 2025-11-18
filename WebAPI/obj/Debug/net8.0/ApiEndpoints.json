@@ -829,6 +829,27 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ProfileController",
+    "Method": "UpdateProfile",
+    "RelativePath": "api/Admin/Profile/{profileName}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "profileName",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "WebAPI.Models.Permission.UpdateProfileRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ProfileController",
     "Method": "AssignProfileToUser",
     "RelativePath": "api/Admin/Profile/assign",
     "HttpMethod": "POST",
@@ -1118,6 +1139,78 @@
     "Order": 0,
     "Parameters": [],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.QrLoginController",
+    "Method": "Confirm",
+    "RelativePath": "api/Public/QrLogin/confirm",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "WebAPI.Models.Auth.QrLoginConfirmRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.QrLoginController",
+    "Method": "Create",
+    "RelativePath": "api/Public/QrLogin/create",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.QrLoginCreateResponse, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.QrLoginController",
+    "Method": "Status",
+    "RelativePath": "api/Public/QrLogin/status/{qrLoginId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "qrLoginId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.QrLoginStatusResponse, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.SecurityController",

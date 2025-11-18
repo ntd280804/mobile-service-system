@@ -101,6 +101,48 @@ namespace WebApp.Areas.Admin.Controllers
         }
 
         // =============================
+        // Cập nhật Profile
+        // =============================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile(UpdateProfileRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.ProfileName))
+            {
+                TempData["UpdateProfileMessage"] = "❌ Tên profile không được để trống.";
+                return RedirectToAction(nameof(Index));
+            }
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+            try
+            {
+                var json = new StringContent(
+                    System.Text.Json.JsonSerializer.Serialize(request),
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _httpClient.PutAsync($"api/Admin/Profile/{Uri.EscapeDataString(request.ProfileName)}", json);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["UpdateProfileMessage"] = $"✅ Đã cập nhật profile '{request.ProfileName}' thành công.";
+                }
+                else
+                {
+                    var msg = await response.Content.ReadAsStringAsync();
+                    TempData["UpdateProfileMessage"] = $"❌ Lỗi cập nhật profile: {msg}";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["UpdateProfileMessage"] = $"🚨 Lỗi kết nối API: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // =============================
         // Gán Profile cho User
         // =============================
         [HttpPost]

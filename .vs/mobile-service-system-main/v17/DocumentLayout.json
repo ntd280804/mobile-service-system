@@ -3,8 +3,24 @@
   "WorkspaceRootPath": "D:\\DOCUMENT\\mobile-service-system\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\admin\\controllers\\backuprestorecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\admin\\controllers\\backuprestorecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\public\\controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\public\\controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\public\\controllers\\qrlogincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\public\\controllers\\qrlogincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\public\\views\\customer\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\public\\views\\customer\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     }
   ],
   "DocumentGroupContainers": [
@@ -19,14 +35,66 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "BackupRestoreController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\BackupRestoreController.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Areas\\Admin\\Controllers\\BackupRestoreController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\BackupRestoreController.cs",
-              "RelativeToolTip": "WebAPI\\Areas\\Admin\\Controllers\\BackupRestoreController.cs",
-              "ViewState": "AgIAAD8AAAAAAAAAAAAowFYAAABBAAAAAAAAAA==",
+              "Title": "AppointmentController.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\AppointmentController.cs",
+              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Controllers\\AppointmentController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\AppointmentController.cs",
+              "RelativeToolTip": "WebApp\\Areas\\Public\\Controllers\\AppointmentController.cs",
+              "ViewState": "AgIAAD0AAAAAAAAAAAAIwEwAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-16T14:25:56.999Z",
+              "WhenOpened": "2025-11-18T09:41:39.807Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CustomerController.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "RelativeToolTip": "WebAPI\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "ViewState": "AgIAAB8AAAAAAAAAAAAjwCUAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-18T09:41:10.703Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Views\\Customer\\Login.cshtml",
+              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Views\\Customer\\Login.cshtml",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Views\\Customer\\Login.cshtml",
+              "RelativeToolTip": "WebApp\\Areas\\Public\\Views\\Customer\\Login.cshtml",
+              "ViewState": "AgIAADkAAAAAAAAAAAAAAAgAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-18T09:40:27.795Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CustomerController.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "RelativeToolTip": "WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAAA1wFEAAAAIAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-18T09:39:30.958Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "QrLoginController.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\QrLoginController.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Areas\\Public\\Controllers\\QrLoginController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\QrLoginController.cs",
+              "RelativeToolTip": "WebAPI\\Areas\\Public\\Controllers\\QrLoginController.cs",
+              "ViewState": "AgIAADYAAAAAAAAAAAAnwEYAAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-18T09:39:10.683Z",
               "EditorCaption": ""
             }
           ]

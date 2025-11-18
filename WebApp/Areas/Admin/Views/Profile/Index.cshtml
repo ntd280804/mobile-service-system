@@ -14,6 +14,10 @@
     {
         <div class="alert alert-warning">@TempData["DeleteProfileMessage"]</div>
     }
+    @if (TempData["UpdateProfileMessage"] != null)
+    {
+        <div class="alert alert-info">@TempData["UpdateProfileMessage"]</div>
+    }
     @if (TempData["AssignProfileMessage"] != null)
     {
         <div class="alert alert-success">@TempData["AssignProfileMessage"]</div>
@@ -39,10 +43,11 @@
                             <thead class="table-secondary">
                                 <tr>
                                     <th>Tên Profile</th>
+                                    <th>Idle Time</th>
+                                    <th>Connect Time</th>
                                     <th>Failed Login</th>
-                                    <th>Life Time</th>
-                                    <th>Grace Time</th>
                                     <th>Lock Time</th>
+                                    <th>Inactive Account Time</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -52,17 +57,18 @@
                                     {
                                         <tr>
                                             <td>@profile.ProfileName</td>
+                                            <td>@profile.IdleTime</td>
+                                            <td>@profile.ConnectTime</td>
                                             <td>@profile.FailedLogin</td>
-                                            <td>@profile.LifeTime</td>
-                                            <td>@profile.GraceTime</td>
                                             <td>@profile.LockTime</td>
+                                            <td>@profile.InactiveAccountTime</td>
                                         </tr>
                                     }
                                 }
                                 else
                                 {
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">Không có profile nào.</td>
+                                        <td colspan="6" class="text-center text-muted">Không có profile nào.</td>
                                     </tr>
                                 }
                             </tbody>
@@ -126,22 +132,26 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group mb-2">
-                                    <label for="FailedLogin">Failed Login Attempts</label>
-                                    <input type="text" name="FailedLogin" class="form-control" value="UNLIMITED" />
+                                    <label for="IdleTime">Idle Time</label>
+                                    <input type="text" name="IdleTime" class="form-control" value="UNLIMITED" />
                                 </div>
                                 <div class="form-group mb-2">
-                                    <label for="LifeTime">Password Life Time</label>
-                                    <input type="text" name="LifeTime" class="form-control" value="UNLIMITED" />
+                                    <label for="ConnectTime">Connect Time</label>
+                                    <input type="text" name="ConnectTime" class="form-control" value="UNLIMITED" />
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label for="FailedLogin">Failed Login Attempts</label>
+                                    <input type="text" name="FailedLogin" class="form-control" value="UNLIMITED" />
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-2">
-                                    <label for="GraceTime">Password Grace Time</label>
-                                    <input type="text" name="GraceTime" class="form-control" value="UNLIMITED" />
+                                    <label for="LockTime">Password Lock Time</label>
+                                    <input type="text" name="LockTime" class="form-control" value="UNLIMITED" />
                                 </div>
                                 <div class="form-group mb-2">
-                                    <label for="LockTime">Inactive Account Time</label>
-                                    <input type="text" name="LockTime" class="form-control" value="UNLIMITED" />
+                                    <label for="InactiveAccountTime">Inactive Account Time</label>
+                                    <input type="text" name="InactiveAccountTime" class="form-control" value="UNLIMITED" />
                                 </div>
                             </div>
                         </div>
@@ -169,6 +179,53 @@
                             </select>
                         </div>
                         <button type="submit" class="btn btn-danger">Xóa Profile</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow mt-4">
+                <div class="card-header bg-warning text-dark">
+                    <strong>✏️ Cập nhật Profile</strong>
+                </div>
+                <div class="card-body">
+                    <form asp-action="UpdateProfile" method="post">
+                        <div class="form-group mb-3">
+                            <label for="ProfileName">Chọn Profile</label>
+                            <select name="ProfileName" id="updateProfileName" class="form-control" required>
+                                <option value="">-- Chọn Profile --</option>
+                                @foreach (var p in Model.Profiles)
+                                {
+                                    <option value="@p.ProfileName">@p.ProfileName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label for="IdleTime">Idle Time (để trống nếu không đổi)</label>
+                                    <input type="text" name="IdleTime" class="form-control" placeholder="UNLIMITED hoặc số" />
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label for="ConnectTime">Connect Time (để trống nếu không đổi)</label>
+                                    <input type="text" name="ConnectTime" class="form-control" placeholder="UNLIMITED hoặc số" />
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label for="FailedLogin">Failed Login Attempts (để trống nếu không đổi)</label>
+                                    <input type="text" name="FailedLogin" class="form-control" placeholder="UNLIMITED hoặc số" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-2">
+                                    <label for="LockTime">Password Lock Time (để trống nếu không đổi)</label>
+                                    <input type="text" name="LockTime" class="form-control" placeholder="UNLIMITED hoặc số" />
+                                </div>
+                                <div class="form-group mb-2">
+                                    <label for="InactiveAccountTime">Inactive Account Time (để trống nếu không đổi)</label>
+                                    <input type="text" name="InactiveAccountTime" class="form-control" placeholder="UNLIMITED hoặc số" />
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-warning mt-2">Cập nhật Profile</button>
                     </form>
                 </div>
             </div>

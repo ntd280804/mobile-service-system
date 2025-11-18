@@ -52,13 +52,21 @@ namespace WebAPI.Services
         /// <summary>
         /// Tạo connection mới cho 1 user + platform + sessionId.
         /// </summary>
-        public OracleConnection CreateConnection(string username, string password, string platform, string sessionId)
+        public OracleConnection CreateConnection(string username, string password, string platform, string sessionId, bool proxy = false)
         {
-            // ❌ Xóa hết connection cũ của username + platform và push logout
+            // username ở đây luôn là "logical username" (ví dụ: số điện thoại của customer)
+            // Nếu proxy=true thì chỉ dùng username để build Oracle username, còn key trong dictionary vẫn dùng logical username.
+
+            // ❌ Xóa hết connection cũ của logical username + platform và push logout
             RemoveAllConnections(username, platform).Wait();
+
+            var oracleUsername = proxy
+                ? BuildProxyUsername(username)
+                : username;
+
             var connectionStringTemplate = _configuration.GetConnectionString("OracleDb");
             var connString = connectionStringTemplate
-                .Replace("{username}", username)
+                .Replace("{username}", oracleUsername)
                 .Replace("{password}", password);
 
             var conn = new OracleConnection(connString);
@@ -92,6 +100,14 @@ namespace WebAPI.Services
             Console.WriteLine($"[CreateConnection] New Oracle SID={oracleSid} for {key}");
 
             return conn;
+        }
+
+        private string BuildProxyUsername(string targetUsername)
+        {
+            var proxyUser = _configuration["QrLogin:ProxyUser"]
+                ?? _configuration.GetConnectionString("DefaultUsername")
+                ?? "APP";
+            return $"{proxyUser}[{targetUsername}]";
         }
 
         /// <summary>

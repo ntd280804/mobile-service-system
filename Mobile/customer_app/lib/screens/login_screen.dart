@@ -194,16 +194,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               if (_loginType == LoginType.customer) ...[
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () => Navigator.pushNamed(context, '/register'),
-                  child: const Text('Đăng ký'),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.pushNamed(context, '/register'),
+                    child: const Text('Đăng ký'),
+                  ),
                 ),
-              ),
               ],
             ],
           ),

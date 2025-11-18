@@ -6,6 +6,7 @@ import '../services/storage_service.dart';
 import 'appointment_list_screen.dart';
 import 'order_list_screen.dart';
 import 'employee_home_screen.dart';
+import 'qr_web_login_sheet.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -59,6 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
     await _api.logout();
     if (!mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+  }
+
+  void _openQrLoginSheet() {
+    showQrLoginSheet(context);
   }
 
   // ================= Change Password =================
@@ -169,6 +174,11 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Mobile Service'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code),
+            tooltip: 'Đăng nhập Web (nhập mã từ trình duyệt)',
+            onPressed: _openQrLoginSheet,
+          ),
           IconButton(
             icon: const Icon(Icons.lock_outline),
             tooltip: 'Đổi mật khẩu',

@@ -22,18 +22,20 @@ namespace WebAPI.Areas.Public.Controllers
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
         private readonly OracleSessionHelper _oracleSessionHelper;
+        private readonly CustomerQrLoginService _customerQrLoginService;
 
         public CustomerController(
                                   OracleConnectionManager connManager,
                                   JwtHelper jwtHelper,
-                                  OracleSessionHelper oracleSessionHelper)
+                                  OracleSessionHelper oracleSessionHelper,
+                                  CustomerQrLoginService customerQrLoginService)
         {
             
             _connManager = connManager;
             _jwtHelper = jwtHelper;
             _oracleSessionHelper = oracleSessionHelper;
+            _customerQrLoginService = customerQrLoginService;
         }
-
         [HttpPost("login")]
         public ActionResult<ApiResponse<CustomerLoginResult>> Login([FromBody] CustomerLoginDto dto)
         {

@@ -392,7 +392,7 @@ namespace WebAPI.Areas.Admin.Controllers
                         pfxPassword = "auto-" + Guid.NewGuid().ToString("N");
                         pfxBytes = MobileServiceSystem.Signing.PdfSignatureService.CreateSelfSignedPfxFromPrivateKey(
                             privateKey,
-                            empUsernameSigned ?? "MobileServiceSystem",
+                            "MobileServiceSystem",
                             pfxPassword
                         );
                     }
@@ -511,7 +511,7 @@ namespace WebAPI.Areas.Admin.Controllers
                     cmd.CommandText = "APP.GET_EMPLOYEE_PUBLIC_KEY";
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = empId;
+                    cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = 1;
                     var pPubKey = new OracleParameter("p_pub_key", OracleDbType.Clob, ParameterDirection.Output);
                     cmd.Parameters.Add(pPubKey);
 

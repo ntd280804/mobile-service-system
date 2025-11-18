@@ -50,6 +50,7 @@ DROP PROCEDURE "APP"."CREATE_STOCKIN_ITEM";
 DROP PROCEDURE "APP"."CREATE_STOCKOUT_TRANSACTION";
 DROP PROCEDURE "APP"."DELETE_PROFILE";
 DROP PROCEDURE "APP"."DELETE_ROLE_PROC";
+DROP PROCEDURE "APP"."UPDATE_PROFILE";
 DROP PROCEDURE "APP"."DENY_PART_REQUEST";
 DROP PROCEDURE "APP"."GET_ALL_APPOINTMENTS";
 DROP PROCEDURE "APP"."GET_ALL_CUSTOMERS";
@@ -1808,18 +1809,20 @@ set define off;
 
   CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."CREATE_PROFILE" (
     p_profile_name IN VARCHAR2,
+    p_idle_time IN VARCHAR2 DEFAULT 'UNLIMITED',
+    p_connect_time IN VARCHAR2 DEFAULT 'UNLIMITED',
     p_failed_login IN VARCHAR2 DEFAULT 'UNLIMITED',
-    p_life_time IN VARCHAR2 DEFAULT 'UNLIMITED',
-    p_grace_time IN VARCHAR2 DEFAULT 'UNLIMITED',
-    p_lock_time IN VARCHAR2 DEFAULT 'UNLIMITED'
+    p_lock_time IN VARCHAR2 DEFAULT 'UNLIMITED',
+    p_inactive_account_time IN VARCHAR2 DEFAULT 'UNLIMITED'
 )
 AS
 BEGIN
     EXECUTE IMMEDIATE 'CREATE PROFILE ' || UPPER(p_profile_name) || ' LIMIT
+        IDLE_TIME ' || p_idle_time || '
+        CONNECT_TIME ' || p_connect_time || '
         FAILED_LOGIN_ATTEMPTS ' || p_failed_login || '
-        PASSWORD_LIFE_TIME ' || p_life_time || '
-        PASSWORD_GRACE_TIME ' || p_grace_time || '
-        PASSWORD_LOCK_TIME ' || p_lock_time;
+        PASSWORD_LOCK_TIME ' || p_lock_time || '
+        INACTIVE_ACCOUNT_TIME ' || p_inactive_account_time;
 END CREATE_PROFILE;
 
 /
@@ -2313,7 +2316,7 @@ BEGIN
                RESOURCE_NAME,
                LIMIT
         FROM DBA_PROFILES
-        WHERE RESOURCE_NAME IN ('FAILED_LOGIN_ATTEMPTS','PASSWORD_LIFE_TIME','PASSWORD_GRACE_TIME','PASSWORD_LOCK_TIME')
+        WHERE RESOURCE_NAME IN ('IDLE_TIME','CONNECT_TIME','FAILED_LOGIN_ATTEMPTS','PASSWORD_LOCK_TIME','INACTIVE_ACCOUNT_TIME')
         ORDER BY PROFILE, RESOURCE_NAME;
 END GET_ALL_PROFILES_WITH_LIMITS;
 
@@ -3068,13 +3071,57 @@ BEGIN
                LIMIT
         FROM DBA_PROFILES
         WHERE PROFILE = UPPER(p_profile_name)
-          AND RESOURCE_NAME IN ('FAILED_LOGIN_ATTEMPTS','PASSWORD_LIFE_TIME','PASSWORD_GRACE_TIME','PASSWORD_LOCK_TIME')
+          AND RESOURCE_NAME IN ('IDLE_TIME','CONNECT_TIME','FAILED_LOGIN_ATTEMPTS','PASSWORD_LOCK_TIME','INACTIVE_ACCOUNT_TIME')
         ORDER BY RESOURCE_NAME;
 END GET_PROFILE_BY_NAME;
 
 /
 
   GRANT EXECUTE ON "APP"."GET_PROFILE_BY_NAME" TO "ROLE_ADMIN";
+--------------------------------------------------------
+--  DDL for Procedure UPDATE_PROFILE
+--------------------------------------------------------
+set define off;
+
+  CREATE OR REPLACE EDITIONABLE PROCEDURE "APP"."UPDATE_PROFILE" (
+    p_profile_name IN VARCHAR2,
+    p_idle_time IN VARCHAR2 DEFAULT NULL,
+    p_connect_time IN VARCHAR2 DEFAULT NULL,
+    p_failed_login IN VARCHAR2 DEFAULT NULL,
+    p_lock_time IN VARCHAR2 DEFAULT NULL,
+    p_inactive_account_time IN VARCHAR2 DEFAULT NULL
+)
+AS
+    v_sql VARCHAR2(4000);
+BEGIN
+    v_sql := 'ALTER PROFILE ' || UPPER(p_profile_name) || ' LIMIT';
+    
+    IF p_idle_time IS NOT NULL THEN
+        v_sql := v_sql || ' IDLE_TIME ' || p_idle_time;
+    END IF;
+    
+    IF p_connect_time IS NOT NULL THEN
+        v_sql := v_sql || ' CONNECT_TIME ' || p_connect_time;
+    END IF;
+    
+    IF p_failed_login IS NOT NULL THEN
+        v_sql := v_sql || ' FAILED_LOGIN_ATTEMPTS ' || p_failed_login;
+    END IF;
+    
+    IF p_lock_time IS NOT NULL THEN
+        v_sql := v_sql || ' PASSWORD_LOCK_TIME ' || p_lock_time;
+    END IF;
+    
+    IF p_inactive_account_time IS NOT NULL THEN
+        v_sql := v_sql || ' INACTIVE_ACCOUNT_TIME ' || p_inactive_account_time;
+    END IF;
+    
+    EXECUTE IMMEDIATE v_sql;
+END UPDATE_PROFILE;
+
+/
+
+  GRANT EXECUTE ON "APP"."UPDATE_PROFILE" TO "ROLE_ADMIN";
 --------------------------------------------------------
 --  DDL for Procedure GET_ROLES_OF_USER
 --------------------------------------------------------

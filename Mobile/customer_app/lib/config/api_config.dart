@@ -11,6 +11,7 @@ class ApiConfig {
   static const String getOrders = '/api/Public/Order/all';
   static const String getAppointments = '/api/Public/Appointment/all';
   static const String createAppointment = '/api/Public/Appointment/Create';
+  static const String qrLoginConfirm = '/api/Public/QrLogin/confirm';
 
   // Admin endpoints (Employee)
   static const String loginEmployee = '/api/Admin/Employee/login';

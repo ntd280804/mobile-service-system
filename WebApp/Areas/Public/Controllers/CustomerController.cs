@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -73,6 +74,27 @@ namespace WebApp.Areas.Public.Controllers
                 ModelState.AddModelError("", "Lỗi kết nối API: " + ex.Message);
                 return View();
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CompleteQrLogin([FromBody] QrLoginCompleteDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Token))
+            {
+                return BadRequest(new { message = "Invalid QR login payload." });
+            }
+
+            HttpContext.Session.SetString("CJwtToken", dto.Token);
+            HttpContext.Session.SetString("CUsername", dto.Username);
+            HttpContext.Session.SetString("CRole", dto.Roles ?? string.Empty);
+            HttpContext.Session.SetString("CPlatform", "WEB");
+            HttpContext.Session.SetString("CSessionId", dto.SessionId ?? Guid.NewGuid().ToString());
+
+            TempData["Message"] = "Đăng nhập bằng QR thành công.";
+
+            var redirectUrl = Url.Action("Index", "Home", new { area = "Public" });
+            return Ok(new { redirect = redirectUrl });
         }
 
         [HttpPost]

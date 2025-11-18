@@ -143,6 +143,35 @@ class ApiService {
     }
   }
 
+  Future<void> confirmQrLogin(String code) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.post(
+        ApiConfig.qrLoginConfirm,
+        data: {
+          'code': code,
+        },
+      );
+
+      Map<String, dynamic> body = {};
+      if (resp.data is Map<String, dynamic>) {
+        body = resp.data as Map<String, dynamic>;
+      }
+
+      if (body['success'] != true) {
+        final errorMsg = body['error'] ?? body['message'] ?? 'Xác nhận đăng nhập thất bại';
+        throw errorMsg;
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['error'] ?? 'Xác nhận đăng nhập thất bại')
+          : 'Xác nhận đăng nhập thất bại';
+      throw msg;
+    } catch (_) {
+      throw 'Không thể kết nối máy chủ';
+    }
+  }
+
 
 
   Future<Map<String, dynamic>> register({
