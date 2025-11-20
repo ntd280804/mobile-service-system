@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Danh sách linh kiện";
+    var query = Context.Request.Query;
+    var status = query["status"].ToString();
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -38,6 +40,38 @@
         </div>
     </div>
 </div>
+
+<!-- Filter/Search form -->
+<form class="row g-3 mb-3" method="get">
+    <div class="col-md-2">
+        <input class="form-control" type="text" name="name" placeholder="Tên linh kiện" value="@query["name"]" />
+    </div>
+    <div class="col-md-2">
+        <input class="form-control" type="text" name="serial" placeholder="Serial" value="@query["serial"]" />
+    </div>
+    <div class="col-md-2">
+        <input class="form-control" type="text" name="manufacturer" placeholder="Hãng SX" value="@query["manufacturer"]" />
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="status">
+            <option value="Trong kho" selected="@(status == "Trong kho" ? "selected" : null)">Trong kho</option>
+            <option value="Đã gán" selected="@(status == "Đã gán" ? "selected" : null)">Đã gán</option>
+            <option value="Đã xuất" selected="@(status == "Đã xuất" ? "selected" : null)">Đã xuất</option>
+
+            <!-- Thêm trạng thái khác nếu có -->
+        </select>
+    </div>
+    <div class="col-md-1">
+        <input class="form-control" type="number" name="priceMin" placeholder="Giá từ" value="@query["priceMin"]" />
+    </div>
+    <div class="col-md-1">
+        <input class="form-control" type="number" name="priceMax" placeholder="Giá đến" value="@query["priceMax"]" />
+    </div>
+    <div class="col-md-2 d-flex align-items-center">
+        <button class="btn btn-primary me-2" type="submit"><i class="bi bi-search"></i> Tìm kiếm</button>
+        <a href="@Url.Action("Index","Part",new { area="Admin"})" class="btn btn-secondary">Đặt lại</a>
+    </div>
+</form>
 
 <table class="table table-bordered table-striped mt-3">
     <thead class="table-dark">

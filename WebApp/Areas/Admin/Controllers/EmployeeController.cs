@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using WebApp.Helpers;
 using WebApp.Services;
 using WebApp.Models.Auth;
+using WebApp.Models;
 
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -51,7 +52,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var keyResp = await _httpClient.GetFromJsonAsync<ApiResponse<string>>("api/public/security/server-public-key");
+                var keyResp = await _httpClient.GetFromJsonAsync<WebApiResponse<string>>("api/public/security/server-public-key");
                 if (keyResp == null || !keyResp.Success || string.IsNullOrWhiteSpace(keyResp.Data))
                 {
                     ModelState.AddModelError(string.Empty, "Không thể lấy khóa công khai của máy chủ.");
@@ -73,7 +74,7 @@ namespace WebApp.Areas.Admin.Controllers
                     cipherDataBase64 = encrypted.CipherData
                 });
 
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+                var apiResult = await response.Content.ReadFromJsonAsync<WebApiResponse<string>>();
                 if (response.IsSuccessStatusCode && apiResult?.Success == true)
                 {
                     TempData["Message"] = "Đổi mật khẩu thành công.";
@@ -131,6 +132,12 @@ namespace WebApp.Areas.Admin.Controllers
         [HttpGet]
         public IActionResult Login() => View();
 
+        private bool IsEmployeeLoggedIn()
+        {
+            var token = HttpContext.Session.GetString("JwtToken");
+            return !string.IsNullOrEmpty(token);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password)
@@ -175,6 +182,70 @@ namespace WebApp.Areas.Admin.Controllers
                 ModelState.AddModelError("", "Lỗi kết nối API: " + ex.Message);
                 return View();
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CompleteQrLogin([FromBody] QrLoginCompleteDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Token))
+            {
+                return BadRequest(new { message = "Invalid QR login payload." });
+            }
+
+            HttpContext.Session.SetString("JwtToken", dto.Token);
+            HttpContext.Session.SetString("Username", dto.Username);
+            HttpContext.Session.SetString("Role", dto.Roles ?? string.Empty);
+            HttpContext.Session.SetString("Platform", "WEB");
+            HttpContext.Session.SetString("SessionId", dto.SessionId ?? Guid.NewGuid().ToString());
+
+            TempData["Message"] = "Đăng nhập Admin bằng QR thành công.";
+
+            var redirectUrl = Url.Action("Index", "Home", new { area = "Admin" });
+            return Ok(new { redirect = redirectUrl });
+        }
+
+        [HttpGet]
+        public IActionResult MobileQrLogin()
+        {
+            if (!IsEmployeeLoggedIn())
+            {
+                TempData["Error"] = "Vui lòng đăng nhập Admin Web trước.";
+                return RedirectToAction("Login");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateMobileQrSession()
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            var response = await _httpClient.PostAsync("api/Public/WebToMobileQr/create", null);
+            var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<WebToMobileQrCreateResponse>>();
+            if (payload == null)
+                return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+
+            return Json(payload);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MobileQrStatus(string qrLoginId)
+        {
+            if (string.IsNullOrWhiteSpace(qrLoginId))
+                return BadRequest(new { message = "qrLoginId is required." });
+
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            var response = await _httpClient.GetAsync($"api/Public/WebToMobileQr/status/{qrLoginId}");
+            var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<WebToMobileQrStatusResponse>>();
+            if (payload == null)
+                return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+
+            return Json(payload);
         }
 
 

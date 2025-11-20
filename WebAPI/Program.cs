@@ -112,6 +112,8 @@ builder.Services.AddSingleton<OracleConnectionManager>();
 builder.Services.AddSingleton<QrGeneratorSingleton>();
 builder.Services.AddSingleton<QrLoginStore>();
 builder.Services.AddSingleton<CustomerQrLoginService>();
+builder.Services.AddSingleton<EmployeeQrLoginService>();
+builder.Services.AddSingleton<WebToMobileQrStore>();
 // PDF signing services
 builder.Services.AddSingleton<PdfSignatureService>(sp =>
     new PdfSignatureService(

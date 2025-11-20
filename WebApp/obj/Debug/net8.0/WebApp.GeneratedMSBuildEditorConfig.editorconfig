@@ -32,12 +32,16 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcQXBwb2ludG1lbnRcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Audit/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcQXVkaXRcSW5kZXguY3NodG1s
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Audit/FGAAudit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcQXVkaXRcRkdBQXVkaXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/BackupRestore/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcQmFja3VwUmVzdG9yZVxJbmRleC5jc2h0bWw=
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Audit/StandardAudit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcQXVkaXRcU3RhbmRhcmRBdWRpdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Audit/TriggerAudit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcQXVkaXRcVHJpZ2dlckF1ZGl0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Customer/Index.cshtml]
@@ -54,6 +58,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Employee/Login.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcRW1wbG95ZWVcTG9naW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Employee/MobileQrLogin.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcQWRtaW5cVmlld3NcRW1wbG95ZWVcTW9iaWxlUXJMb2dpbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Admin/Views/Employee/Register.cshtml]
@@ -172,6 +180,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXEN1c3RvbWVyXExvZ2luLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/Customer/MobileQrLogin.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXEN1c3RvbWVyXE1vYmlsZVFyTG9naW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/Customer/Register.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXEN1c3RvbWVyXFJlZ2lzdGVyLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -198,6 +210,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXFNoYXJlZFxfVmFsaWRhdGlvblNjcmlwdHNQYXJ0aWFsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/Verify/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = QXJlYXNcUHVibGljXFZpZXdzXFZlcmlmeVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DOCUMENT/mobile-service-system/WebApp/Areas/Public/Views/_ViewImports.cshtml]

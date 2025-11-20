@@ -5,13 +5,13 @@
     var title = ViewData["Title"] ?? "Admin Dashboard";
     var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
     var roleString = HttpContextAccessor.HttpContext.Session.GetString("Role") ?? "";
-
     var roles = roleString.Split(',', StringSplitOptions.RemoveEmptyEntries)
                           .Select(r => r.Trim().ToUpperInvariant())
                           .ToList();
+    bool HasRole(params string[] checkRoles) => roles.Intersect(checkRoles.Select(r => r.ToUpperInvariant())).Any();
     var sessionId = HttpContextAccessor.HttpContext.Session.GetString("SessionId");
 
-    bool HasRole(params string[] checkRoles) => roles.Intersect(checkRoles.Select(r => r.ToUpperInvariant())).Any();
+    
 }
 
 <!DOCTYPE html>
@@ -143,8 +143,9 @@
                 @if (HasRole("ROLE_ADMIN"))
                 {
 
-                    <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="Index">Log</a></li>
-                    <li><a class="nav-link" asp-area="Admin" asp-controller="BackupRestore" asp-action="Index">Backup & Restore</a></li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="TriggerAudit">TriggerAudit</a></li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="FGAAudit">FGAAudit</a></li>
+                    <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="StandardAudit">StandardAudit</a></li>
 
                 }
                 <li class="nav-item mt-3">

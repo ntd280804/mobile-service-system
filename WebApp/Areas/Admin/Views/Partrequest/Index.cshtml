@@ -1,7 +1,13 @@
 ﻿@model List<WebApp.Models.Part.PartRequestViewModel>
-
+@inject IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "Danh sách yêu cầu linh kiện";
+    var roleString = HttpContextAccessor.HttpContext.Session.GetString("Role") ?? "";
+
+    var roles = roleString.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                          .Select(r => r.Trim().ToUpperInvariant())
+                          .ToList();
+    bool HasRole(params string[] checkRoles) => roles.Intersect(checkRoles.Select(r => r.ToUpperInvariant())).Any();
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -49,20 +55,22 @@
                        asp-controller="Partrequest"
                        asp-action="Details"
                        asp-route-id="@item.REQUEST_ID">Xem chi tiết</a>
-
-                    @if (item.STATUS == "PENDING")
-                    {                    
-                    <a class="btn btn-sm btn-info"
-                       asp-area="Admin"
-                       asp-controller="Partrequest"
-                       asp-action="Accept"
-                       asp-route-id="@item.REQUEST_ID">Duyệt yêu cầu</a>
-                    <a class="btn btn-sm btn-info"
-                       asp-area="Admin"
-                       asp-controller="Partrequest"
-                       asp-action="Deny"
-                       asp-route-id="@item.REQUEST_ID">Từ chối</a>
-                       }
+                    @if (HasRole("ROLE_ADMIN","ROLE_THUKHO"))
+                        {
+                            @if (item.STATUS == "Đang chờ")
+                            {
+                                <a class="btn btn-sm btn-info"
+                                asp-area="Admin"
+                                asp-controller="Partrequest"
+                                asp-action="Accept"
+                                asp-route-id="@item.REQUEST_ID">Duyệt yêu cầu</a>
+                                <a class="btn btn-sm btn-info"
+                                asp-area="Admin"
+                                asp-controller="Partrequest"
+                                asp-action="Deny"
+                                asp-route-id="@item.REQUEST_ID">Từ chối</a>
+                            }
+                        }
                 </td>
 
             </tr>

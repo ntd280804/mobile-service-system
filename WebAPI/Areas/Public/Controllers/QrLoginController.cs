@@ -16,11 +16,16 @@ namespace WebAPI.Areas.Public.Controllers
     {
         private readonly QrLoginStore _qrLoginStore;
         private readonly CustomerQrLoginService _customerQrLoginService;
+        private readonly EmployeeQrLoginService _employeeQrLoginService;
 
-        public QrLoginController(QrLoginStore qrLoginStore, CustomerQrLoginService customerQrLoginService)
+        public QrLoginController(
+            QrLoginStore qrLoginStore,
+            CustomerQrLoginService customerQrLoginService,
+            EmployeeQrLoginService employeeQrLoginService)
         {
             _qrLoginStore = qrLoginStore;
             _customerQrLoginService = customerQrLoginService;
+            _employeeQrLoginService = employeeQrLoginService;
         }
 
         /// <summary>
@@ -68,13 +73,43 @@ namespace WebAPI.Areas.Public.Controllers
 
             try
             {
-                var loginResult = _customerQrLoginService.LoginViaProxy(username, "WEB");
+                // Lấy roles từ JWT để phân biệt customer vs employee
+                var rolesFromJwt = string.Join(",",
+                    User.Claims
+                        .Where(c => c.Type == ClaimTypes.Role)
+                        .Select(c => c.Value));
+
+                bool isCustomer = rolesFromJwt
+                    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                    .Any(r => r.Equals("ROLE_KHACHHANG", StringComparison.OrdinalIgnoreCase));
+
+                string finalUsername;
+                string finalRoles;
+                string finalToken;
+                string finalSessionId;
+
+                if (isCustomer)
+                {
+                    var result = _customerQrLoginService.LoginViaProxy(username, "WEB");
+                    finalUsername = result.Username ?? username;
+                    finalRoles = result.Roles ?? string.Empty;
+                    finalToken = result.Token ?? string.Empty;
+                    finalSessionId = result.SessionId ?? Guid.NewGuid().ToString();
+                }
+                else
+                {
+                    var result = _employeeQrLoginService.LoginViaProxy(username, "WEB");
+                    finalUsername = result.Username ?? username;
+                    finalRoles = result.Roles ?? string.Empty;
+                    finalToken = result.Token ?? string.Empty;
+                    finalSessionId = result.SessionId ?? Guid.NewGuid().ToString();
+                }
 
                 session.Status = Services.QrLoginStatus.Confirmed;
-                session.Username = loginResult.Username;
-                session.Roles = loginResult.Roles;
-                session.WebToken = loginResult.Token;
-                session.WebSessionId = loginResult.SessionId;
+                session.Username = finalUsername;
+                session.Roles = finalRoles;
+                session.WebToken = finalToken;
+                session.WebSessionId = finalSessionId;
 
                 return Ok(ApiResponse<string>.Ok("CONFIRMED"));
             }

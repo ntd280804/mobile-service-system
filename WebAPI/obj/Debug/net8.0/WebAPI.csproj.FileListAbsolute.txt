@@ -258,7 +258,6 @@ D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\ru\Microsoft.CodeAnaly
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\tr\Microsoft.CodeAnalysis.Scripting.resources.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\zh-Hans\Microsoft.CodeAnalysis.Scripting.resources.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\zh-Hant\Microsoft.CodeAnalysis.Scripting.resources.dll
-D:\DOCUMENT\mobile-service-system\WebAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Diagnostics.Abstractions.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.Hosting.Abstractions.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\Microsoft.Extensions.ObjectPool.dll
@@ -328,3 +327,9 @@ D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win-x64\nativ
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win-x86\native\libSkiaSharp.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Text.Encoding.CodePages.dll
 D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\UglyToad.PdfPig.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\UglyToad.PdfPig.Core.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\UglyToad.PdfPig.Fonts.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\UglyToad.PdfPig.Tokenization.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\bin\Debug\net8.0\UglyToad.PdfPig.Tokens.dll
+D:\DOCUMENT\mobile-service-system\WebAPI\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

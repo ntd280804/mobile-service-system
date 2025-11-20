@@ -1,0 +1,83 @@
+﻿@model List<WebApp.Areas.Admin.Controllers.AuditController.FgaAuditLogDto>
+
+@{
+    ViewData["Title"] = "FGA Audit";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <form asp-area="Admin" asp-controller="Audit" asp-action="EnableFgaAudit" method="post" class="d-inline">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-success">
+            Bật FGA Audit
+        </button>
+    </form>
+    <form asp-area="Admin" asp-controller="Audit" asp-action="DisableFgaAudit" method="post" class="d-inline">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-outline-danger">
+            Tắt FGA Audit
+        </button>
+    </form>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
+        <table class="table table-bordered table-striped table-hover mt-3" style="font-size: 0.9em;">
+            <thead class="table-dark sticky-top">
+                <tr>
+                    <th>Thời gian</th>
+                    <th>DB User</th>
+                    <th>OS User</th>
+                    <th>User Host</th>
+                    <th>Schema</th>
+                    <th>Object</th>
+                    <th>Policy</th>
+                    <th>Statement</th>
+                    <th>SCN</th>
+                    <th>SQL Text</th>
+                    <th>SQL Bind</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td>@(log.EventTs?.ToString("dd/MM/yyyy HH:mm:ss") ?? "")</td>
+                        <td>@log.DbUser</td>
+                        <td>@log.OsUser</td>
+                        <td>@log.UserHost</td>
+                        <td>@log.ObjectSchema</td>
+                        <td>@log.ObjectName</td>
+                        <td>@log.PolicyName</td>
+                        <td>@log.StatementType</td>
+                        <td>@(log.Scn?.ToString() ?? "")</td>
+                        <td style="max-width: 400px; white-space: pre-wrap; word-break: break-word;">@log.SqlText</td>
+                        <td style="max-width: 300px; white-space: pre-wrap; word-break: break-word;">@log.SqlBind</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="alert alert-info mt-3">
+        Không có bản ghi FGA audit nào.
+    </div>
+}

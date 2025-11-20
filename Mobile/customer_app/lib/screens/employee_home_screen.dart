@@ -5,6 +5,7 @@ import 'employee_order_list_screen.dart';
 import 'employee_import_list_screen.dart';
 import 'employee_export_list_screen.dart';
 import 'employee_invoice_list_screen.dart';
+import 'qr_web_login_sheet.dart';
 
 class EmployeeHomeScreen extends StatefulWidget {
   const EmployeeHomeScreen({super.key});
@@ -25,9 +26,23 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     const EmployeeInvoiceListScreen(),
   ];
 
+  void _openQrLoginSheet() {
+    showQrLoginSheet(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Mobile Service - Nhân viên'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code),
+            tooltip: 'Đăng nhập Web Admin (nhập mã từ trình duyệt)',
+            onPressed: _openQrLoginSheet,
+          ),
+        ],
+      ),
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

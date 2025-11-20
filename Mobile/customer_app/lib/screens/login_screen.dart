@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../services/signalr_service.dart';
+import 'web_qr_login_sheet.dart';
 
 enum LoginType { customer, employee }
 
@@ -31,35 +32,42 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     final phone = _phoneCtrl.text.trim();
     final password = _passwordCtrl.text;
+
     if (phone.isEmpty || password.isEmpty) {
       _showSnack('Vui lòng nhập Số điện thoại và Mật khẩu');
       return;
     }
+
     setState(() => _isLoading = true);
+
     try {
       Map<String, dynamic> res;
+
       if (_loginType == LoginType.customer) {
         res = await _api.login(phone, password);
-      final roles = (res['roles'] ?? '').toString().toLowerCase();
-      if (!roles.contains('role_khachhang')) {
-        _showSnack('Chỉ dành cho khách hàng');
-        return;
+
+        final roles = (res['roles'] ?? '').toString().toLowerCase();
+        if (!roles.contains('role_khachhang')) {
+          _showSnack('Chỉ dành cho khách hàng');
+          return;
         }
       } else {
         res = await _api.loginEmployee(phone, password);
+
         final roles = (res['roles'] ?? '').toString().toLowerCase();
-        if (!roles.contains('role_nhanvien') && !roles.contains('role_admin')) {
+        if (!roles.contains('role_nhanvien') &&
+            !roles.contains('role_admin')) {
           _showSnack('Chỉ dành cho nhân viên');
           return;
         }
       }
-      
-      // Connect to SignalR after successful login
+
+      // --- SignalR connect ---
       final sessionId = res['sessionId'] ?? '';
-      if (sessionId.isNotEmpty) {
+      if (sessionId is String && sessionId.isNotEmpty) {
         await _signalR.connect(sessionId);
       }
-      
+
       if (!mounted) return;
       Navigator.of(context).pushReplacementNamed('/home');
     } catch (e) {
@@ -67,6 +75,33 @@ class _LoginScreenState extends State<LoginScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _handleWebQrLogin(String code) async {
+    final platform = 'MOBILE';
+
+    try {
+      final res = await _api.loginViaWebQr(code, platform: platform);
+      final sessionId = res['sessionId'] ?? '';
+
+      if (sessionId is String && sessionId.isNotEmpty) {
+        await _signalR.connect(sessionId);
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed('/home');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack(e.toString());
+    }
+  }
+
+  void _openWebQrLoginSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => WebQrLoginSheet(onSubmit: _handleWebQrLogin),
+    );
   }
 
   void _showSnack(String msg) {
@@ -84,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Login type selector
+              // --- Login type switch ---
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
@@ -94,11 +129,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () {
-                          if (!_isLoading) {
-                            setState(() => _loginType = LoginType.customer);
-                          }
-                        },
+                        onTap: _isLoading
+                            ? null
+                            : () => setState(
+                                () => _loginType = LoginType.customer),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
@@ -127,11 +161,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () {
-                          if (!_isLoading) {
-                            setState(() => _loginType = LoginType.employee);
-                          }
-                        },
+                        onTap: _isLoading
+                            ? null
+                            : () => setState(
+                                () => _loginType = LoginType.employee),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
@@ -161,7 +194,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              // --- Input fields ---
               TextField(
                 controller: _phoneCtrl,
                 decoration: const InputDecoration(
@@ -177,22 +213,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 obscureText: true,
               ),
+
               const SizedBox(height: 24),
+
+              // --- Main login button ---
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
                   child: _isLoading
                       ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(_loginType == LoginType.customer
-                          ? 'Đăng nhập'
-                          : 'Đăng nhập nhân viên'),
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : Text(
+                    _loginType == LoginType.customer
+                        ? 'Đăng nhập'
+                        : 'Đăng nhập nhân viên',
+                  ),
                 ),
               ),
+
+              // --- Customer extra buttons ---
               if (_loginType == LoginType.customer) ...[
                 const SizedBox(height: 8),
                 SizedBox(
@@ -202,6 +245,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? null
                         : () => Navigator.pushNamed(context, '/register'),
                     child: const Text('Đăng ký'),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _openWebQrLoginSheet,
+                    child: const Text('Đăng nhập bằng mã từ Web'),
+                  ),
+                ),
+              ],
+
+              // --- Employee extra buttons ---
+              if (_loginType == LoginType.employee) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: _isLoading ? null : _openWebQrLoginSheet,
+                    child: const Text('Đăng nhập nhân viên bằng mã Web'),
                   ),
                 ),
               ],

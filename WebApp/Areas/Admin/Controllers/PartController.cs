@@ -28,25 +28,35 @@ namespace WebApp.Areas.Admin.Controllers
 
         // --- Index: lấy danh sách nhân viên ---
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string name = null, string serial = null, string manufacturer = null, string status = null, decimal? priceMin = null, decimal? priceMax = null)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
             try
             {
-
                 var response = await _httpClient.GetAsync("api/Admin/Part");
-
                 if (response.IsSuccessStatusCode)
                 {
-                    // Lỗi cũ: var employees = await response.Content.ReadFromJsonAsync<List<PartDto>>();
-                    // Đã sửa: Sử dụng tên biến 'parts' để phù hợp với ngữ cảnh
                     var parts = await response.Content.ReadFromJsonAsync<List<PartDto>>();
+
+                    // Lọc bằng C# LINQ nếu có filter
+                    if (!string.IsNullOrWhiteSpace(name))
+                        parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Name) && p.Name.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (!string.IsNullOrWhiteSpace(serial))
+                        parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Serial) && p.Serial.Contains(serial, StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (!string.IsNullOrWhiteSpace(manufacturer))
+                        parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Manufacturer) && p.Manufacturer.Contains(manufacturer, StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (!string.IsNullOrWhiteSpace(status))
+                        parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Status) && p.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (priceMin.HasValue)
+                        parts = parts.Where(p => p.Price.HasValue && p.Price.Value >= priceMin.Value).ToList();
+                    if (priceMax.HasValue)
+                        parts = parts.Where(p => p.Price.HasValue && p.Price.Value <= priceMax.Value).ToList();
+
                     return View(parts);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    // Session Oracle bị kill → redirect login
                     TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
                     HttpContext.Session.Clear();
                     return RedirectToAction("Login", "Employee", new { area = "Admin" });

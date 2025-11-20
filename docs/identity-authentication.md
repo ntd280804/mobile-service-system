@@ -190,13 +190,13 @@
    - `username = User.Identity.Name` (được map từ khách hàng; thường là số điện thoại).
 4. Gọi dịch vụ đăng nhập proxy:
    ```csharp
-   var loginResult = _customerQrLoginService.LoginViaProxy(username, "WEB_QR");
+   var loginResult = _customerQrLoginService.LoginViaProxy(username, "WEB");
    ```
 5. `CustomerQrLoginService.LoginViaProxy`:
    - Đọc cấu hình:
      - `QrLogin.ProxyUser` – user proxy Oracle (ví dụ `App`).
      - `QrLogin.ProxyPassword` – mật khẩu của proxy user.
-     - `QrLogin.DefaultPlatform` – platform cho QR (ví dụ `WEB_QR`).
+     - `QrLogin.DefaultPlatform` – platform cho QR (ví dụ `WEB`).
    - Tạo `sessionId = Guid.NewGuid().ToString()` cho phiên Web.
    - Mở connection Oracle qua `OracleConnectionManager.CreateConnection`:
      ```csharp
@@ -287,7 +287,7 @@ Kết quả: phía WebAPI đã chuẩn bị xong **JWT + Oracle session** dành 
      HttpContext.Session.SetString("CJwtToken", dto.Token);
      HttpContext.Session.SetString("CUsername", dto.Username);
      HttpContext.Session.SetString("CRole", dto.Roles ?? "");
-     HttpContext.Session.SetString("CPlatform", "WEB_QR");
+     HttpContext.Session.SetString("CPlatform", "WEB");
      HttpContext.Session.SetString("CSessionId", dto.SessionId ?? Guid.NewGuid().ToString());
      ```
   3. Trả về JSON `{ redirect = Url.Action("Index", "Home", new { area = "Public" }) }`.
@@ -307,7 +307,7 @@ Sau khi `CompleteQrLogin` thiết lập session, các controller Public sử d�
   3. Nếu đủ, set header cho `HttpClient`:
      - `Authorization: Bearer {CJwtToken}`.
      - `X-Oracle-Username: CUsername`.
-     - `X-Oracle-Platform: CPlatform` (lúc này là `"WEB_QR"`).
+     - `X-Oracle-Platform: CPlatform` (lúc này là `"WEB"`).
      - `X-Oracle-SessionId: CSessionId`.
 
 **Phía WebAPI**  

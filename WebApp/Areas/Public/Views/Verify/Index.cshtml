@@ -1,0 +1,49 @@
+@{
+    Layout = "~/Areas/Public/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Xác thực PDF hóa đơn";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title mb-3">Xác thực PDF hóa đơn đã ký</h3>
+                <form asp-action="Index"
+                      asp-area="Public"
+                      asp-controller="Verify"
+                      method="post"
+                      enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label class="form-label">File PDF đã ký</label>
+                        <input class="form-control" type="file" name="pdfFile" accept="application/pdf" required />
+                        <div class="form-text">
+                            Hệ thống sẽ tự đọc mã hóa đơn từ file (ví dụ: <strong>Invoice_4.pdf</strong>).
+                        </div>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">Xác thực</button>
+                </form>
+
+                @if (ViewData["Result"] != null)
+                {
+                    <div class="alert alert-success mt-3">
+                        @ViewData["Result"]
+                    </div>
+                }
+
+                @if (ViewData["Error"] != null)
+                {
+                    <div class="alert alert-danger mt-3">
+                        @ViewData["Error"]
+                    </div>
+                }
+
+                <p class="small text-muted mt-3 mb-0">
+                    Lưu ý: hệ thống chỉ so sánh hash SHA-256 giữa file bạn tải lên và bản lưu trong cơ sở dữ liệu.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+

@@ -16,7 +16,7 @@ BEGIN
 
   -- Kithuatvien: own rows only
   IF v_role = 'ROLE_KITHUATVIEN' THEN
-    RETURN 'REQUEST_EMP_ID = TO_NUMBER(''' || REPLACE(v_emp_id,'''','') || ''')';
+    RETURN 'EMP_ID = TO_NUMBER(''' || REPLACE(v_emp_id,'''','') || ''')';
   END IF;
 
   -- Tieptan, Khachhang, others: deny

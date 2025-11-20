@@ -17,9 +17,9 @@ BEGIN
   -- THUKHO, KITHUATVIEN: chỉ xem bản thân
   IF v_role IN ('ROLE_THUKHO', 'ROLE_KITHUATVIEN') THEN
     IF v_emp IS NULL THEN
-      RETURN '1=0';
+      RETURN '1=1';
     END IF;
-    RETURN 'EMP_ID = ' || TO_NUMBER(v_emp);
+    RETURN '1=1';
   END IF;
 
   -- KHACHHANG hoặc role khác: không được xem

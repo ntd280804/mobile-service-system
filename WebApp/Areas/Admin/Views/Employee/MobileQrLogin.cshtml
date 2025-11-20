@@ -1,0 +1,217 @@
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Tạo mã đăng nhập Mobile (Admin)";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm" id="admin-mobile-qr-card">
+                <div class="card-header bg-white">
+                    <h3 class="card-title h5 mb-1">Đăng nhập app Mobile cho nhân viên</h3>
+                    <p class="text-muted small mb-0">
+                        Khi đang đăng nhập Admin Web, bạn có thể tạo mã dưới đây để app Mobile (nhân viên)
+                        nhập mã và đăng nhập ngay, không cần username/password.
+                    </p>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div id="adminMobileQrStatus" class="text-muted small mb-3">Đang tạo mã...</div>
+                    <div class="text-center mb-3">
+                        <img id="adminMobileQrImage" class="img-fluid border rounded p-2 bg-light"
+                             style="max-width:220px; min-height:220px;" alt="QR" />
+                    </div>
+                    <div class="text-center mb-3">
+                        <div id="adminMobileQrCode" class="fw-bold display-5 text-uppercase">------</div>
+                        <div id="adminMobileQrCountdown" class="text-muted small"></div>
+                    </div>
+                    <button class="btn btn-outline-primary w-100 mb-3" id="btnAdminRefreshMobileQr" type="button">
+                        Tạo mã mới
+                    </button>
+                    <div class="mb-3">
+                        <label class="form-label small text-uppercase text-muted">
+                            Nhập mã trên app (nếu không quét được)
+                        </label>
+                        <div class="input-group">
+                            <input class="form-control text-uppercase" id="adminMobileQrManual" readonly />
+                            <button class="btn btn-outline-secondary" id="btnAdminCopyMobileQr" type="button">Copy</button>
+                        </div>
+                    </div>
+                    <div class="alert alert-success d-none" id="adminMobileQrSuccess"></div>
+                    <div class="mt-auto small text-muted">
+                        Mã chỉ có hiệu lực 2 phút. Sau khi app xác nhận, trạng thái sẽ chuyển sang thành công.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+<script>
+    (() => {
+        const els = {
+            status: document.getElementById('adminMobileQrStatus'),
+            code: document.getElementById('adminMobileQrCode'),
+            countdown: document.getElementById('adminMobileQrCountdown'),
+            img: document.getElementById('adminMobileQrImage'),
+            refreshBtn: document.getElementById('btnAdminRefreshMobileQr'),
+            copyBtn: document.getElementById('btnAdminCopyMobileQr'),
+            manualInput: document.getElementById('adminMobileQrManual'),
+            successAlert: document.getElementById('adminMobileQrSuccess')
+        };
+
+        const qrState = { id: null, code: null, expiresAt: null };
+        let pollTimer = null;
+        let countdownTimer = null;
+
+        const antiForgeryToken = () => document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+        function setStatus(message, type = 'muted') {
+            if (!els.status) return;
+            els.status.textContent = message;
+            els.status.className = `text-${type} small mb-3`;
+        }
+
+        function toggleSuccess(show, detail) {
+            if (!els.successAlert) return;
+            if (show) {
+                els.successAlert.classList.remove('d-none');
+                els.successAlert.textContent = detail ?? 'App đã đăng nhập thành công.';
+            } else {
+                els.successAlert.classList.add('d-none');
+                els.successAlert.textContent = '';
+            }
+        }
+
+        function clearTimers() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }
+
+        function updateCodeUI() {
+            if (els.code) els.code.textContent = qrState.code ?? '------';
+            if (els.manualInput) els.manualInput.value = qrState.code ?? '';
+            if (els.img) {
+                if (qrState.code) {
+                    const encoded = encodeURIComponent(qrState.code);
+                    els.img.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encoded}`;
+                } else {
+                    els.img.removeAttribute('src');
+                }
+            }
+        }
+
+        function updateCountdown() {
+            if (!els.countdown || !qrState.expiresAt) {
+                if (els.countdown) els.countdown.textContent = '';
+                return;
+            }
+            const remaining = Math.max(0, qrState.expiresAt - new Date());
+            const seconds = Math.ceil(remaining / 1000);
+            if (seconds <= 0) {
+                els.countdown.textContent = 'Mã đã hết hạn.';
+                handleExpired();
+            } else {
+                els.countdown.textContent = `Hết hạn sau ${seconds}s`;
+            }
+        }
+
+        function startCountdown() {
+            updateCountdown();
+            countdownTimer = setInterval(updateCountdown, 1000);
+        }
+
+        function handleExpired() {
+            clearTimers();
+            setStatus('Mã đã hết hạn. Nhấn "Tạo mã mới" để lấy lại.', 'warning');
+        }
+
+        async function fetchJson(url, options) {
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || 'Yêu cầu thất bại.');
+            }
+            return response.json();
+        }
+
+        async function initQr() {
+            toggleSuccess(false);
+            clearTimers();
+            setStatus('Đang tạo mã...', 'info');
+
+            try {
+                const payload = await fetchJson('@Url.Action("CreateMobileQrSession", "Employee", new { area = "Admin" })', {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': antiForgeryToken()
+                    }
+                });
+                if (!payload.success || !payload.data) {
+                    throw new Error(payload.error ?? 'Không thể tạo mã.');
+                }
+                qrState.id = payload.data.qrLoginId;
+                qrState.code = payload.data.code;
+                qrState.expiresAt = payload.data.expiresAtUtc ? new Date(payload.data.expiresAtUtc) : null;
+
+                updateCodeUI();
+                startCountdown();
+                startPolling();
+                setStatus('Mở app Mobile Service (nhân viên) và nhập mã này để đăng nhập.', 'info');
+            } catch (error) {
+                setStatus(`Lỗi tạo mã: ${error.message}`, 'danger');
+            }
+        }
+
+        async function startPolling() {
+            if (!qrState.id) return;
+            pollTimer = setInterval(async () => {
+                try {
+                    const url = '@Url.Action("MobileQrStatus", "Employee", new { area = "Admin" })' + `?qrLoginId=${encodeURIComponent(qrState.id)}`;
+                    const payload = await fetchJson(url);
+                    if (!payload.success || !payload.data) {
+                        throw new Error(payload.error ?? 'Không lấy được trạng thái.');
+                    }
+                    const data = payload.data;
+                    if (data.status === 2 || data.status === 'Expired') {
+                        handleExpired();
+                    } else if (data.status === 1 || data.status === 'Confirmed') {
+                        clearTimers();
+                        toggleSuccess(true, 'App nhân viên đã đăng nhập thành công.');
+                        setStatus('Mobile đã đăng nhập. Bạn có thể đóng trang này.', 'success');
+                    }
+                } catch (error) {
+                    console.warn('Admin mobile QR status error:', error);
+                }
+            }, 2000);
+        }
+
+        if (els.refreshBtn) {
+            els.refreshBtn.addEventListener('click', () => initQr());
+        }
+
+        if (els.copyBtn) {
+            els.copyBtn.addEventListener('click', async () => {
+                if (!qrState.code) return;
+                try {
+                    await navigator.clipboard.writeText(qrState.code);
+                    setStatus('Đã copy mã vào clipboard.', 'info');
+                } catch {
+                    setStatus('Không thể copy tự động.', 'warning');
+                }
+            });
+        }
+
+        initQr();
+    })();
+</script>
+}
+

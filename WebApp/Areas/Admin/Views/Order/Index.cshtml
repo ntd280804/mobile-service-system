@@ -1,7 +1,12 @@
 ﻿@model List<WebApp.Models.Order.OrderDto>
-
+@inject IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "Danh sách đơn hàng";
+    var roleString = HttpContextAccessor.HttpContext.Session.GetString("Role") ?? "";
+    var roles = roleString.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                          .Select(r => r.Trim().ToUpperInvariant())
+                          .ToList();
+    bool HasRole(params string[] checkRoles) => roles.Intersect(checkRoles.Select(r => r.ToUpperInvariant())).Any();
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -12,7 +17,10 @@
         @TempData["Error"]
     </div>
 }
+@if (HasRole("ROLE_ADMIN","ROLE_TIEPTAN"))
+{
 <a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="Create">Thêm mới</a>
+}
 <table class="table table-bordered table-striped mt-3">
     <thead class="table-dark">
         <tr>
@@ -43,13 +51,20 @@
                     <td>@order.Description</td>
                     <td>
                         <a class="btn btn-sm btn-primary" href="@Url.Action("Details", "Order", new { id = order.OrderId })">Chi tiết</a>
-                        <a class="btn btn-sm btn-primary" href="@Url.Action("Create", "PartRequest", new { id = order.OrderId })">Yêu cầu linh kiện</a>
-                        @if (order.Status != "Đã hoàn thành")
+                        @if (HasRole("ROLE_ADMIN","ROLE_KITHUATVIEN"))
                         {
-                        <!-- Nút "Hoàn thành" để mở modal -->
-                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#completeOrderModal-@order.OrderId">
-                            Hoàn thành
-                        </button>
+                        <a class="btn btn-sm btn-primary" href="@Url.Action("Create", "PartRequest", new { id = order.OrderId })">Yêu cầu linh kiện</a>
+                            
+                        }
+                        @if (HasRole("ROLE_ADMIN","ROLE_TIEPTAN"))
+                        {
+                            @if (order.Status != "Đã hoàn thành")
+                            {
+                            <!-- Nút "Hoàn thành" để mở modal -->
+                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#completeOrderModal-@order.OrderId">
+                                Hoàn thành
+                            </button>
+                            }
                         }
 
                         <!-- Modal để xác nhận và chọn file private key -->

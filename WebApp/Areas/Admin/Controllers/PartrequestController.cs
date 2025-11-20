@@ -187,7 +187,7 @@ namespace WebApp.Areas.Admin.Controllers
             {
                 OrderId = id,
                 EmpUsername = username ?? "",
-                Status = "PENDING",
+                Status = "Đang chờ",
                 RequestDate = DateTime.Now
             };
 

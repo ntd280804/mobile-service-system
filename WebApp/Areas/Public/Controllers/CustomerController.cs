@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using WebApp.Helpers;
 using WebApp.Services;
 using WebApp.Models.Auth;
+using WebApp.Models;
 
 namespace WebApp.Areas.Public.Controllers
 {
@@ -122,6 +123,55 @@ namespace WebApp.Areas.Public.Controllers
         [HttpGet]
         public IActionResult Register() => View();
 
+        private bool IsCustomerLoggedIn()
+        {
+            var token = HttpContext.Session.GetString("CJwtToken");
+            return !string.IsNullOrEmpty(token);
+        }
+
+        [HttpGet]
+        public IActionResult MobileQrLogin()
+        {
+            if (!IsCustomerLoggedIn())
+            {
+                TempData["Error"] = "Vui lòng đăng nhập Web trước.";
+                return RedirectToAction("Login");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateMobileQrSession()
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect, false))
+                return redirect;
+
+            var response = await _httpClient.PostAsync("api/Public/WebToMobileQr/create", null);
+            var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<WebToMobileQrCreateResponse>>();
+            if (payload == null)
+                return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+
+            return Json(payload);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MobileQrStatus(string qrLoginId)
+        {
+            if (string.IsNullOrWhiteSpace(qrLoginId))
+                return BadRequest(new { message = "qrLoginId is required." });
+
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect, false))
+                return redirect;
+
+            var response = await _httpClient.GetAsync($"api/Public/WebToMobileQr/status/{qrLoginId}");
+            var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<WebToMobileQrStatusResponse>>();
+            if (payload == null)
+                return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+
+            return Json(payload);
+        }
+
         [HttpGet]
         public IActionResult ChangePassword()
         {
@@ -147,7 +197,7 @@ namespace WebApp.Areas.Public.Controllers
 
             try
             {
-                var keyResp = await _httpClient.GetFromJsonAsync<ApiResponse<string>>("api/public/security/server-public-key");
+                var keyResp = await _httpClient.GetFromJsonAsync<WebApiResponse<string>>("api/public/security/server-public-key");
                 if (keyResp == null || !keyResp.Success || string.IsNullOrWhiteSpace(keyResp.Data))
                 {
                     ModelState.AddModelError(string.Empty, "Không thể lấy khóa công khai của máy chủ.");
@@ -169,7 +219,7 @@ namespace WebApp.Areas.Public.Controllers
                     cipherDataBase64 = encrypted.CipherData
                 });
 
-                var apiResult = await response.Content.ReadFromJsonAsync<ApiResponse<string>>();
+                var apiResult = await response.Content.ReadFromJsonAsync<WebApiResponse<string>>();
                 if (response.IsSuccessStatusCode && apiResult?.Success == true)
                 {
                     TempData["Message"] = "Đổi mật khẩu thành công.";

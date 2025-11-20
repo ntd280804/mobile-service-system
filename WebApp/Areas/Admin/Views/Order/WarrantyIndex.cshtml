@@ -1,7 +1,12 @@
 ﻿@model List<WebApp.Models.Order.OrderDto>
-
+@inject IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "Danh sách đơn hàng";
+    var roleString = HttpContextAccessor.HttpContext.Session.GetString("Role") ?? "";
+    var roles = roleString.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                          .Select(r => r.Trim().ToUpperInvariant())
+                          .ToList();
+    bool HasRole(params string[] checkRoles) => roles.Intersect(checkRoles.Select(r => r.ToUpperInvariant())).Any();
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -12,7 +17,10 @@
         @TempData["Error"]
     </div>
 }
+@if (HasRole("ROLE_ADMIN", "ROLE_TIEPTAN"))
+{ 
 <a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="Create">Thêm mới</a>
+}
 <table class="table table-bordered table-striped mt-3">
     <thead class="table-dark">
         <tr>

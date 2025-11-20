@@ -172,6 +172,60 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> loginViaWebQr(String code, {String platform = 'MOBILE'}) async {
+    await _ensureInterceptors();
+    try {
+      final resp = await _dio.post(
+        ApiConfig.webToMobileQrConfirm,
+        data: {
+          'code': code,
+          'platform': platform,
+        },
+      );
+
+      Map<String, dynamic> body = {};
+      if (resp.data is Map<String, dynamic>) {
+        body = resp.data as Map<String, dynamic>;
+      }
+
+      if (body['success'] != true || body['data'] == null) {
+        final errorMsg = body['error'] ?? 'Đăng nhập bằng QR thất bại';
+        throw errorMsg;
+      }
+
+      final data = body['data'] as Map<String, dynamic>;
+      final token = data['token'] ?? '';
+      final roles = data['roles'] ?? '';
+      final sessionId = data['sessionId'] ?? '';
+      final username = data['username'] ?? '';
+
+      if (token is String && token.isNotEmpty) {
+        await _storage.saveToken(token);
+      }
+      if (sessionId is String && sessionId.isNotEmpty) {
+        await _storage.saveSessionId(sessionId);
+      }
+      if (username is String && username.isNotEmpty) {
+        await _storage.saveUsername(username);
+      }
+      await _storage.saveUserRole(roles);
+
+      return {
+        'token': token,
+        'roles': roles,
+        'sessionId': sessionId,
+        'username': username,
+      };
+    } on DioException catch (e) {
+      final msg = e.response?.data is Map
+          ? (e.response?.data['message'] ?? e.response?.data['error'] ?? 'Đăng nhập bằng QR thất bại')
+          : 'Đăng nhập bằng QR thất bại';
+      throw msg;
+    } catch (_) {
+      throw 'Không thể kết nối máy chủ';
+    }
+  }
+
 
 
   Future<Map<String, dynamic>> register({
