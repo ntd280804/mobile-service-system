@@ -34,7 +34,7 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mobile Service - Nhân viên'),
+        title: const Text('Health Care - Nhân viên'),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code),

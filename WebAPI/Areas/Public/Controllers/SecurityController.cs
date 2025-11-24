@@ -3,8 +3,11 @@ using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using Oracle.ManagedDataAccess.Client;
+using System.Data;
 using WebAPI.Services;
 using WebAPI.Models;
+using WebAPI.Helpers;
 
 namespace WebAPI.Areas.Public.Controllers
 {
@@ -14,10 +17,14 @@ namespace WebAPI.Areas.Public.Controllers
     public class SecurityController : ControllerBase
     {
         private readonly RsaKeyService _rsaKeyService;
+        private readonly OracleConnectionManager _connManager;
+        private readonly OracleSessionHelper _oracleSessionHelper;
 
-        public SecurityController(RsaKeyService rsaKeyService)
+        public SecurityController(RsaKeyService rsaKeyService, OracleConnectionManager connManager, OracleSessionHelper oracleSessionHelper)
         {
             _rsaKeyService = rsaKeyService;
+            _connManager = connManager;
+            _oracleSessionHelper = oracleSessionHelper;
         }
 
         [HttpGet("server-public-key")] 
@@ -35,44 +42,78 @@ namespace WebAPI.Areas.Public.Controllers
         [HttpPost("register-client-key")] 
         public ActionResult<ApiResponse<string>> RegisterClientKey([FromBody] RegisterClientKeyRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.ClientId) || string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
-                return BadRequest(ApiResponse<string>.Fail("clientId and clientPublicKeyBase64 are required."));
+            if (string.IsNullOrWhiteSpace(request.ClientId))
+                return BadRequest(ApiResponse<string>.Fail("clientId is required."));
 
-            _rsaKeyService.SaveClientPublicKey(request.ClientId, request.ClientPublicKeyBase64);
-            return Ok(ApiResponse<string>.Ok("registered"));
-        }
+            string publicKeyToSave;
 
-        public class EncryptedPayload
-        {
-            public string? EncryptedKeyBlockBase64 { get; set; }
-            public string? CipherDataBase64 { get; set; }
-        }
-
-        [HttpPost("decrypt-echo")] 
-        public ActionResult<ApiResponse<string>> DecryptEcho([FromBody] EncryptedPayload payload)
-        {
-            if (string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
-                return BadRequest(ApiResponse<string>.Fail("encryptedKeyBlockBase64 and cipherDataBase64 are required."));
-
-            byte[] keyBlock = _rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
-
-            byte[] aesKey = new byte[32];
-            byte[] iv = new byte[16];
-            Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
-            Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
-
-            byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
-            using (Aes aes = Aes.Create())
+            // Nếu là admin (clientId bắt đầu bằng "admin-"), lấy public key từ DB
+            if (request.ClientId.StartsWith("admin-", StringComparison.OrdinalIgnoreCase))
             {
-                ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
-                using (var ms = new MemoryStream(cipherBytes))
-                using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                using (var reader = new StreamReader(cs, Encoding.UTF8))
+                // Lấy username từ header Oracle session
+                var username = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
+                if (string.IsNullOrWhiteSpace(username))
                 {
-                    string plaintext = reader.ReadToEnd();
-                    return Ok(ApiResponse<string>.Ok(plaintext));
+                    // Fallback: dùng public key từ request nếu không có session
+                    if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                        return BadRequest(ApiResponse<string>.Fail("clientPublicKeyBase64 is required for admin without session."));
+                    publicKeyToSave = request.ClientPublicKeyBase64;
+                }
+                else
+                {
+                    // Lấy public key từ DB
+                    var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+                    if (conn == null)
+                    {
+                        // Fallback: dùng public key từ request
+                        if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                            return BadRequest(ApiResponse<string>.Fail("clientPublicKeyBase64 is required when session is invalid."));
+                        publicKeyToSave = request.ClientPublicKeyBase64;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            using var cmd = new OracleCommand("APP.GET_PUBLICKEY_BY_USERNAME", conn);
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = username;
+                            var pPubKey = new OracleParameter("p_public_key", OracleDbType.Clob, ParameterDirection.Output);
+                            cmd.Parameters.Add(pPubKey);
+                            cmd.ExecuteNonQuery();
+
+                            if (pPubKey.Value == DBNull.Value || pPubKey.Value == null)
+                            {
+                                // Không có public key trong DB, dùng từ request
+                                if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                                    return BadRequest(ApiResponse<string>.Fail($"Public key not found in DB for username: {username}. Please provide clientPublicKeyBase64."));
+                                publicKeyToSave = request.ClientPublicKeyBase64;
+                            }
+                            else
+                            {
+                                var clobPubKey = (Oracle.ManagedDataAccess.Types.OracleClob)pPubKey.Value;
+                                publicKeyToSave = clobPubKey.Value;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Fallback: dùng public key từ request
+                            if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                                return BadRequest(ApiResponse<string>.Fail($"Error getting public key from DB: {ex.Message}. Please provide clientPublicKeyBase64."));
+                            publicKeyToSave = request.ClientPublicKeyBase64;
+                        }
+                    }
                 }
             }
+            else
+            {
+                // Public client: dùng public key từ request
+                if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                    return BadRequest(ApiResponse<string>.Fail("clientPublicKeyBase64 is required for public clients."));
+                publicKeyToSave = request.ClientPublicKeyBase64;
+            }
+
+            _rsaKeyService.SaveClientPublicKey(request.ClientId, publicKeyToSave);
+            return Ok(ApiResponse<string>.Ok("registered"));
         }
 
         public class EncryptForClientRequest

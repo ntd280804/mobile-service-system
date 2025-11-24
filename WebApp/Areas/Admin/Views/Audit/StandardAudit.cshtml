@@ -1,4 +1,4 @@
-﻿@model List<WebApp.Areas.Admin.Controllers.AuditController.StandardAuditLogDto>
+﻿@model WebApp.Areas.Admin.Controllers.StandardAuditViewModel
 
 @{
     ViewData["Title"] = "Standard Audit";
@@ -6,16 +6,56 @@
 
 <h2>@ViewData["Title"]</h2>
 
+@* Hiển thị trạng thái *@
+@if (Model?.Status != null)
+{
+    var status = Model.Status;
+    <div class="alert @(status.Enabled ? "alert-success" : "alert-danger") mb-3">
+        <strong>Standard Audit:</strong>
+        @if (status.Enabled)
+        {
+            <span class="badge bg-success">Đang bật (ENABLED)</span>
+        }
+        else
+        {
+            <span class="badge bg-danger">Đang tắt (DISABLED)</span>
+        }
+        <span class="ms-3">
+            <strong>Số lượng:</strong> @status.Count / @status.ExpectedCount objects đang được audit
+        </span>
+        @if (status.ExpectedCount > 0)
+        {
+            <div class="progress mt-2" style="height: 20px;">
+                <div class="progress-bar @(status.Enabled ? "bg-success" : "bg-danger")" 
+                     role="progressbar" 
+                     style="width: @((status.Count * 100.0 / status.ExpectedCount))%">
+                    @status.Count / @status.ExpectedCount
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mb-3">
+        <strong>Standard Audit:</strong>
+        <span class="badge bg-warning">Không thể lấy trạng thái</span>
+        <span class="ms-3">
+            <small>Vui lòng làm mới trang hoặc kiểm tra kết nối API</small>
+        </span>
+    </div>
+}
+
 <div class="mb-3 d-flex flex-wrap gap-2">
     <form asp-area="Admin" asp-controller="Audit" asp-action="EnableStandardAudit" method="post" class="d-inline">
         @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-success">
+        <button type="submit" class="btn btn-success" @(Model?.Status?.Enabled == true ? "disabled" : "")>
             Bật Standard Audit
         </button>
     </form>
     <form asp-area="Admin" asp-controller="Audit" asp-action="DisableStandardAudit" method="post" class="d-inline">
         @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-outline-danger">
+        <button type="submit" class="btn btn-outline-danger" @(Model?.Status?.Enabled == false ? "disabled" : "")>
             Tắt Standard Audit
         </button>
     </form>
@@ -35,7 +75,7 @@
     </div>
 }
 
-@if (Model != null && Model.Any())
+@if (Model?.Logs != null && Model.Logs.Any())
 {
     <div class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
         <table class="table table-bordered table-striped table-hover mt-3" style="font-size: 0.95em;">
@@ -50,7 +90,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var log in Model)
+                @foreach (var log in Model.Logs)
                 {
                     <tr>
                         <td>@(log.EventTs?.ToString("dd/MM/yyyy HH:mm:ss") ?? "")</td>

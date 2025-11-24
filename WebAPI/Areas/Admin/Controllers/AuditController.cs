@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
+using Oracle.ManagedDataAccess.Types;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -231,6 +232,90 @@ namespace WebAPI.Areas.Admin.Controllers
         [HttpPost("fga/disable")]
         [Authorize]
         public IActionResult DisableFgaAudit() => ExecuteAuditToggle("APP.DISABLE_ALL_FGA", "Đã tắt FGA audit.");
+
+        [HttpGet("status")]
+        [Authorize]
+        public IActionResult GetAuditStatus()
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                if (!TryEnsureAdminRole(conn, out var failureResult))
+                {
+                    return failureResult;
+                }
+
+                // Check Standard Audit status
+                int standardAuditCount = 0;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = $@"
+                        SELECT COUNT(*)
+                        FROM DBA_OBJ_AUDIT_OPTS
+                        WHERE object_name IN ({CommonObjectFilter})";
+                    cmd.CommandType = CommandType.Text;
+                    var result = cmd.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        standardAuditCount = Convert.ToInt32(result);
+                    }
+                }
+
+                // Check Trigger Audit status
+                int triggerAuditCount = 0;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "APP.GET_ENABLED_TRIGGERS_COUNT";
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    var pCount = new OracleParameter("p_count", OracleDbType.Int32, ParameterDirection.Output);
+                    cmd.Parameters.Add(pCount);
+                    cmd.ExecuteNonQuery();
+                    if (pCount.Value != DBNull.Value && pCount.Value is OracleDecimal oracleDecimal)
+                        triggerAuditCount = oracleDecimal.ToInt32();
+                    // Nếu dùng ExecuteScalar:
+                    // var scalarResult = cmd.ExecuteScalar();
+                    // if (scalarResult is OracleDecimal dec) n = dec.ToInt32();
+                }
+
+                // FGA - tạm để đó, trả về false
+                bool fgaEnabled = false;
+
+                return Ok(new
+                {
+                    StandardAudit = new
+                    {
+                        Enabled = standardAuditCount == 18,
+                        Count = standardAuditCount,
+                        ExpectedCount = 18
+                    },
+                    TriggerAudit = new
+                    {
+                        Enabled = triggerAuditCount == 12,
+                        Count = triggerAuditCount,
+                        ExpectedCount = 12
+                    },
+                    FgaAudit = new
+                    {
+                        Enabled = fgaEnabled,
+                        Count = 0,
+                        ExpectedCount = 0,
+                        Note = "Tạm thời chưa kiểm tra"
+                    }
+                });
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi lấy trạng thái audit", detail = ex.Message });
+            }
+        }
 
         private IActionResult ExecuteAuditToggle(string procedureName, string successMessage)
         {

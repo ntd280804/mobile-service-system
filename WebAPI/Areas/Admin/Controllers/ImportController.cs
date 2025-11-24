@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using WebAPI.Helpers;
+using WebAPI.Models;
 using WebAPI.Models.Security;
 using WebAPI.Services;
 
@@ -193,10 +194,6 @@ namespace WebAPI.Areas.Admin.Controllers
                 });
             }
         }
-
-
-
-
         [HttpPost("post")]
         [Authorize]
         public IActionResult ImportStockStepByStepWithTransaction([FromBody] ImportStockDto dto)
@@ -204,11 +201,11 @@ namespace WebAPI.Areas.Admin.Controllers
             if (dto.Items == null || dto.Items.Count == 0)
                 return BadRequest("No items to import");
             bool hasProvidedPfx = !string.IsNullOrWhiteSpace(dto.CertificatePfxBase64) && !string.IsNullOrWhiteSpace(dto.CertificatePassword);
-            bool hasPrivateKey = !string.IsNullOrEmpty(dto.PrivateKey);
-            if (!hasProvidedPfx && !hasPrivateKey)
-                return BadRequest("Missing private key or certificate");
-
-            var privateKey = dto.PrivateKey;
+            if (!hasProvidedPfx)
+            {
+                throw new InvalidOperationException(
+                    "Không thể tạo PFX hợp lệ khi chỉ có private key. Vui lòng cung cấp PFX do CA cấp.");
+            }
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null) return unauthorized;
             try
@@ -293,125 +290,102 @@ namespace WebAPI.Areas.Admin.Controllers
 
                         cmdPart.ExecuteNonQuery();
                     }
+
                 }
-                // Nếu dùng certificate (có PFX) thì bỏ qua bước ký/ghi chữ ký chuỗi ở STOCK_IN.
-                // Nếu không có PFX nhưng có private key: vẫn bỏ qua, vì sẽ ký PDF với certificate tự sinh từ private key.
-                if (hasProvidedPfx == false)
+                using (var cmdSign = conn.CreateCommand())
                 {
-                    string signature;
-                    using (var cmdSign = conn.CreateCommand())
-                    {
-                        cmdSign.Transaction = transaction;
-                        cmdSign.CommandText = "APP.SIGN_STOCKIN";
-                        cmdSign.CommandType = CommandType.StoredProcedure;
+                    cmdSign.Transaction = transaction;
+                    cmdSign.CommandText = "APP.SIGN_STOCKIN";
+                    cmdSign.CommandType = CommandType.StoredProcedure;
 
-                        cmdSign.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                        cmdSign.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = privateKey;
+                    cmdSign.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                    cmdSign.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = "DUMMY";
 
-                        var outSignature = new OracleParameter("p_signature", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
-                        cmdSign.Parameters.Add(outSignature);
+                    var outSignature = new OracleParameter("p_signature", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
+                    cmdSign.Parameters.Add(outSignature);
 
-                        cmdSign.ExecuteNonQuery();
-                        signature = outSignature.Value.ToString();
-                    }
-
-                    // --- 5. Update signature vào bảng STOCK_IN ---
-                    using (var cmdUpdateSig = conn.CreateCommand())
-                    {
-                        cmdUpdateSig.Transaction = transaction;
-                        cmdUpdateSig.CommandText = "APP.UPDATE_STOCKIN_SIGNATURE";
-                        cmdUpdateSig.CommandType = CommandType.StoredProcedure;
-
-                        cmdUpdateSig.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                        cmdUpdateSig.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = signature;
-
-                        cmdUpdateSig.ExecuteNonQuery();
-                    }
+                    cmdSign.ExecuteNonQuery();
+                    signatureBase64 = outSignature.Value.ToString();
                 }
+                using (var cmdUpdateSig = conn.CreateCommand())
+                {
+                    cmdUpdateSig.Transaction = transaction;
+                    cmdUpdateSig.CommandText = "APP.UPDATE_STOCKIN_SIGNATURE";
+                    cmdUpdateSig.CommandType = CommandType.StoredProcedure;
+
+                    cmdUpdateSig.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                    cmdUpdateSig.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = signatureBase64;
+
+                    cmdUpdateSig.ExecuteNonQuery();
+                }
+                // Ký số nghiệp vụ không cần thiết khi dùng PFX certificate để ký PDF
                 transaction.Commit();
-                // 6) Generate PDF and sign blocks, persist signature blob
+                // 6) Generate PDF and sign with PFX certificate
                 
-                
-                if (hasProvidedPfx || !string.IsNullOrEmpty(privateKey))
+                // Reload data to render PDF
+                var itemsSigned = new List<ImportItemDto>();
+                string? empUsernameSigned = dto.EmpUsername;
+                DateTime? inDateSigned = null;
+                string noteSigned = dto.Note ?? "";
+                using (var cmd = conn.CreateCommand())
                 {
-                    // Reload data to render PDF
-                    var itemsSigned = new List<ImportItemDto>();
-                    string? empUsernameSigned = dto.EmpUsername;
-                    DateTime? inDateSigned = null;
-                    string noteSigned = dto.Note ?? "";
-                    using (var cmd = conn.CreateCommand())
+                    cmd.CommandText = "APP.GET_IMPORT_BY_ID";
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                    var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
+                    cmd.Parameters.Add(outputCursor);
+                    using var reader = cmd.ExecuteReader();
+                    while (reader.Read())
                     {
-                        cmd.CommandText = "APP.GET_IMPORT_BY_ID";
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                        var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
-                        cmd.Parameters.Add(outputCursor);
-                        using var reader = cmd.ExecuteReader();
-                        while (reader.Read())
+                        if (inDateSigned == null)
                         {
-                            if (inDateSigned == null)
-                            {
-                                empUsernameSigned ??= Convert.ToString(reader["EmpUsername"]);
-                                inDateSigned = Convert.ToDateTime(reader["Indate"]);
-                                noteSigned = reader["Note"]?.ToString();
-                            }
-                            itemsSigned.Add(new ImportItemDto
-                            {
-                                PartName = reader["PartName"]?.ToString(),
-                                Manufacturer = reader["Manufacturer"]?.ToString(),
-                                Serial = reader["Serial"]?.ToString(),
-                                Price = reader["Price"] != DBNull.Value ? Convert.ToInt64(reader["Price"]) : 0
-                            });
+                            empUsernameSigned ??= Convert.ToString(reader["EmpUsername"]);
+                            inDateSigned = Convert.ToDateTime(reader["Indate"]);
+                            noteSigned = reader["Note"]?.ToString();
                         }
-                    }
-                    var pdfDto = new ImportStockDto
-                    {
-                        StockInId = stockInId,
-                        EmpUsername = empUsernameSigned ?? string.Empty,
-                        InDate = inDateSigned ?? DateTime.MinValue,
-                        Note = noteSigned,
-                        Items = itemsSigned
-                    };
-                    // Chọn nguồn certificate
-                    byte[] pfxBytes = null;
-                    string pfxPassword = dto.CertificatePassword;
-                    if (hasProvidedPfx)
-                    {
-                        try
+                        itemsSigned.Add(new ImportItemDto
                         {
-                            pfxBytes = Convert.FromBase64String(dto.CertificatePfxBase64);
-                        }
-                        catch
-                        {
-                            return BadRequest("Invalid certificate PFX base64.");
-                        }
+                            PartName = reader["PartName"]?.ToString(),
+                            Manufacturer = reader["Manufacturer"]?.ToString(),
+                            Serial = reader["Serial"]?.ToString(),
+                            Price = reader["Price"] != DBNull.Value ? Convert.ToInt64(reader["Price"]) : 0
+                        });
                     }
-                    else
-                    {
-                        // Tạo PFX tự ký từ private key để GroupDocs nhúng vào PDF
-                        pfxPassword = "auto-" + Guid.NewGuid().ToString("N");
-                        pfxBytes = MobileServiceSystem.Signing.PdfSignatureService.CreateSelfSignedPfxFromPrivateKey(
-                            privateKey,
-                            "MobileServiceSystem",
-                            pfxPassword
-                        );
-                    }
-
-                    var signedPdf = _invoicePdfService.GenerateImportInvoicePdfAndSignWithCertificate(
-                        pdfDto,
-                        pfxBytes,
-                        pfxPassword,
-                        cmd =>
-                        {
-                            cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
-                        },
-                        null,
-                        null
-                    );
-                    var fileNameOut = $"ImportInvoice_{stockInId}.pdf";
-                    return File(signedPdf, "application/pdf", fileNameOut);
                 }
-                return Ok(new { Message = "Import successful (PDF signing skipped due to invalid key format).", StockInId = stockInId });
+                var pdfDto = new ImportStockDto
+                {
+                    StockInId = stockInId,
+                    EmpUsername = empUsernameSigned ?? string.Empty,
+                    InDate = inDateSigned ?? DateTime.MinValue,
+                    Note = noteSigned,
+                    Items = itemsSigned
+                };
+                
+                // Sử dụng PFX certificate từ CA
+                byte[] pfxBytes;
+                string pfxPassword = dto.CertificatePassword;
+                try
+                {
+                    pfxBytes = Convert.FromBase64String(dto.CertificatePfxBase64);
+                }
+                catch
+                {
+                    return BadRequest("Invalid certificate PFX base64.");
+                }
+
+                var signedPdf = _invoicePdfService.GenerateImportInvoicePdfAndSignWithCertificate(
+                    pdfDto,
+                    pfxBytes,
+                    pfxPassword,
+                    cmd =>
+                    {
+                        cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                    },
+                    null,
+                    null
+                );
+                var fileNameOut = $"ImportInvoice_{stockInId}.pdf";
+                return File(signedPdf, "application/pdf", fileNameOut);
             }
             catch (OracleException ex)
             {
@@ -440,15 +414,16 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-        [HttpPost("post-secure")]
+        [HttpPost("post-secure-encrypted")]
         [Authorize]
-        public IActionResult ImportStockSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        public ActionResult<ApiResponse<EncryptedPayload>> ImportStockSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {
             if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
-                return BadRequest("Invalid encrypted payload");
+                return BadRequest(ApiResponse<EncryptedPayload>.Fail("Invalid encrypted payload"));
 
             try
             {
+                // Giải mã request từ client
                 byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
                 byte[] aesKey = new byte[32];
                 byte[] iv = new byte[16];
@@ -456,6 +431,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
 
                 byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
+                string plaintext;
                 using (Aes aes = Aes.Create())
                 {
                     ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
@@ -463,131 +439,255 @@ namespace WebAPI.Areas.Admin.Controllers
                     using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
                     using (var reader = new StreamReader(cs, Encoding.UTF8))
                     {
-                        string plaintext = reader.ReadToEnd();
-                        var dto = System.Text.Json.JsonSerializer.Deserialize<ImportStockDto>(plaintext);
-                        if (dto == null) return BadRequest("Cannot parse payload");
-                        return ImportStockStepByStepWithTransaction(dto);
+                        plaintext = reader.ReadToEnd();
                     }
                 }
+
+                var dto = System.Text.Json.JsonSerializer.Deserialize<ImportStockDto>(plaintext);
+                if (dto == null)
+                    return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
+
+                // Lấy clientId từ session headers
+                var username = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
+                var platform = HttpContext.Request.Headers["X-Oracle-Platform"].ToString();
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(platform))
+                    return StatusCode(500, ApiResponse<EncryptedPayload>.Fail("Cannot determine clientId from session headers"));
+                
+                // Sử dụng clientId với prefix "admin-" để lấy public key từ DB
+                string clientId = "admin-" + username;
+                
+                // Đảm bảo public key đã được load từ DB vào RsaKeyService
+                if (!rsaKeyService.TryGetClientPublicKey(clientId, out _))
+                {
+                    // Lấy public key từ DB và lưu vào RsaKeyService
+                    var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+                    if (conn != null)
+                    {
+                        try
+                        {
+                            using var cmd = new OracleCommand("APP.GET_PUBLICKEY_BY_USERNAME", conn);
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = username;
+                            var pPubKey = new OracleParameter("p_public_key", OracleDbType.Clob, ParameterDirection.Output);
+                            cmd.Parameters.Add(pPubKey);
+                            cmd.ExecuteNonQuery();
+
+                            if (pPubKey.Value != DBNull.Value && pPubKey.Value != null)
+                            {
+                                var clobPubKey = (Oracle.ManagedDataAccess.Types.OracleClob)pPubKey.Value;
+                                string publicKeyFromDb = clobPubKey.Value?.Trim() ?? "";
+                                if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
+                                {
+                                    // Normalize public key: loại bỏ whitespace và kiểm tra format
+                                    string normalizedPublicKey = publicKeyFromDb
+                                        .Replace("\r", "")
+                                        .Replace("\n", "")
+                                        .Replace(" ", "")
+                                        .Replace("\t", "");
+                                    
+                                    // Nếu có PEM headers, extract Base64
+                                    if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
+                                    {
+                                        // Extract Base64 từ PEM format
+                                        int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
+                                        int endIdx = normalizedPublicKey.IndexOf("-----END");
+                                        if (startIdx >= 0 && endIdx > startIdx)
+                                        {
+                                            int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
+                                            if (beginEnd > startIdx)
+                                            {
+                                                normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
+                                                    .Replace("\r", "")
+                                                    .Replace("\n", "")
+                                                    .Replace(" ", "");
+                                            }
+                                        }
+                                    }
+                                    
+                                    rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error nhưng tiếp tục, sẽ throw error sau nếu không có public key
+                        }
+                    }
+                }
+
+                // Xử lý import - cần generate PDF trực tiếp để mã hóa response
+                // Vì FileResult không thể serialize, ta cần generate PDF trực tiếp
+                try
+                {
+                    // Gọi lại logic để lấy PDF bytes
+                    var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+                    if (conn == null)
+                    {
+                        // Mã hóa error message
+                        var errorObj = new { Success = false, Message = "Unauthorized" };
+                        string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
+                        var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
+                        return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                        {
+                            EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
+                            CipherDataBase64 = encryptedError.CipherDataBase64
+                        }));
+                    }
+
+                    // Execute import và get stockInId
+                    int stockInId = 0;
+                    using var transaction = conn.BeginTransaction();
+                    try
+                    {
+                        int empId;
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.Transaction = transaction;
+                            cmd.CommandText = "APP.GET_EMPLOYEE_ID_BY_USERNAME";
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.Add("p_username", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.EmpUsername;
+                            var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
+                            cmd.Parameters.Add(pEmpId);
+                            cmd.ExecuteNonQuery();
+                            empId = Convert.ToInt32(pEmpId.Value.ToString());
+                        }
+
+                        using (var cmd = conn.CreateCommand())
+                        {
+                            cmd.Transaction = transaction;
+                            cmd.CommandText = "APP.CREATE_STOCKIN";
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = empId;
+                            cmd.Parameters.Add("p_note", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.Note ?? "";
+                            cmd.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = "DUMMY_SIGNATURE";
+                            var outStockInId = new OracleParameter("p_stockin_id", OracleDbType.Int32, ParameterDirection.Output);
+                            cmd.Parameters.Add(outStockInId);
+                            cmd.ExecuteNonQuery();
+                            stockInId = Convert.ToInt32(outStockInId.Value.ToString());
+                        }
+
+                        foreach (var item in dto.Items)
+                        {
+                            using (var cmdItem = conn.CreateCommand())
+                            {
+                                cmdItem.Transaction = transaction;
+                                cmdItem.CommandText = "APP.CREATE_STOCKIN_ITEM";
+                                cmdItem.CommandType = CommandType.StoredProcedure;
+                                cmdItem.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                                cmdItem.Parameters.Add("p_part_name", OracleDbType.Varchar2, ParameterDirection.Input).Value = item.PartName;
+                                cmdItem.Parameters.Add("p_manufacturer", OracleDbType.Varchar2, ParameterDirection.Input).Value = item.Manufacturer ?? "";
+                                cmdItem.Parameters.Add("p_serial", OracleDbType.Varchar2, ParameterDirection.Input).Value = item.Serial;
+                                cmdItem.Parameters.Add("p_price", OracleDbType.Decimal, ParameterDirection.Input).Value = item.Price;
+                                var outStockInItemId = new OracleParameter("p_stockin_item_id", OracleDbType.Int32, ParameterDirection.Output);
+                                cmdItem.Parameters.Add(outStockInItemId);
+                                cmdItem.ExecuteNonQuery();
+                            }
+
+                            using (var cmdPart = conn.CreateCommand())
+                            {
+                                cmdPart.Transaction = transaction;
+                                cmdPart.CommandText = "APP.CREATE_PART";
+                                cmdPart.CommandType = CommandType.StoredProcedure;
+                                cmdPart.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                                cmdPart.Parameters.Add("p_part_name", OracleDbType.Varchar2, ParameterDirection.Input).Value = item.PartName;
+                                cmdPart.Parameters.Add("p_manufacturer", OracleDbType.Varchar2, ParameterDirection.Input).Value = item.Manufacturer ?? "";
+                                cmdPart.Parameters.Add("p_serial", OracleDbType.Varchar2, ParameterDirection.Input).Value = item.Serial;
+                                cmdPart.Parameters.Add("p_price", OracleDbType.Decimal, ParameterDirection.Input).Value = item.Price;
+                                cmdPart.ExecuteNonQuery();
+                            }
+                        }
+                        
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+
+                    // Generate PDF
+                    var itemsSigned = new List<ImportItemDto>();
+                    string? empUsernameSigned = dto.EmpUsername;
+                    DateTime? inDateSigned = null;
+                    string noteSigned = dto.Note ?? "";
+                    using (var cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = "APP.GET_IMPORT_BY_ID";
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId;
+                        var outputCursor = new OracleParameter("cur_out", OracleDbType.RefCursor, ParameterDirection.Output);
+                        cmd.Parameters.Add(outputCursor);
+                        using var reader = cmd.ExecuteReader();
+                        while (reader.Read())
+                        {
+                            if (inDateSigned == null)
+                            {
+                                empUsernameSigned ??= Convert.ToString(reader["EmpUsername"]);
+                                inDateSigned = Convert.ToDateTime(reader["Indate"]);
+                                noteSigned = reader["Note"]?.ToString() ?? "";
+                            }
+                            itemsSigned.Add(new ImportItemDto
+                            {
+                                PartName = reader["PartName"]?.ToString(),
+                                Manufacturer = reader["Manufacturer"]?.ToString(),
+                                Serial = reader["Serial"]?.ToString(),
+                                Price = reader["Price"] != DBNull.Value ? Convert.ToInt64(reader["Price"]) : 0
+                            });
+                        }
+                    }
+
+                    var pdfDto = new ImportStockDto
+                    {
+                        StockInId = stockInId,
+                        EmpUsername = empUsernameSigned ?? string.Empty,
+                        InDate = inDateSigned ?? DateTime.MinValue,
+                        Note = noteSigned,
+                        Items = itemsSigned
+                    };
+
+                    byte[] pfxBytes = Convert.FromBase64String(dto.CertificatePfxBase64);
+                    string pfxPassword = dto.CertificatePassword;
+                    var signedPdf = _invoicePdfService.GenerateImportInvoicePdfAndSignWithCertificate(
+                        pdfDto, pfxBytes, pfxPassword,
+                        cmd => cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockInId,
+                        null, null);
+
+                    // Tạo response object chứa PDF base64 và filename
+                    var responseObj = new
+                    {
+                        Success = true,
+                        Type = "pdf",
+                        PdfBase64 = Convert.ToBase64String(signedPdf),
+                        FileName = $"ImportInvoice_{stockInId}.pdf"
+                    };
+
+                    string responseJson = System.Text.Json.JsonSerializer.Serialize(responseObj);
+                    var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
+                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                    {
+                        EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
+                        CipherDataBase64 = encryptedResponse.CipherDataBase64
+                    }));
+                }
+                catch (Exception ex)
+                {
+                    // Nếu có lỗi, mã hóa error message
+                    var errorObj = new { Success = false, Message = ex.Message };
+                    string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
+                    var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
+                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                    {
+                        EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
+                        CipherDataBase64 = encryptedError.CipherDataBase64
+                    }));
+                }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Decrypt failed", Error = ex.Message });
+                return StatusCode(500, ApiResponse<EncryptedPayload>.Fail(ex.Message));
             }
         }
-        [HttpGet("verifysign/{stockoutId}")]
-        [Authorize]
-        public IActionResult VerifyStockInSignature(int stockoutId)
-        {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
-            {
-
-                // --- 1. GET_EMP_ID_FROM_STOCKIN ---
-                int empId;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.GET_EMP_ID_FROM_STOCKIN";
-                    cmd.CommandType = CommandType.StoredProcedure;
-
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
-                    var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
-                    cmd.Parameters.Add(pEmpId);
-
-                    cmd.ExecuteNonQuery();
-
-                    if (pEmpId.Value == DBNull.Value || pEmpId.Value == null)
-                        return NotFound(new { message = $"StockIn ID {stockoutId} không tồn tại" });
-
-                    empId = ((Oracle.ManagedDataAccess.Types.OracleDecimal)pEmpId.Value).ToInt32();
-                }
-
-                // --- 2. GET_EMPLOYEE_PUBLIC_KEY ---
-                string publicKey;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.GET_EMPLOYEE_PUBLIC_KEY";
-                    cmd.CommandType = CommandType.StoredProcedure;
-
-                    cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = 1;
-                    var pPubKey = new OracleParameter("p_pub_key", OracleDbType.Clob, ParameterDirection.Output);
-                    cmd.Parameters.Add(pPubKey);
-
-                    cmd.ExecuteNonQuery();
-
-                    if (pPubKey.Value == DBNull.Value || pPubKey.Value == null)
-                        return NotFound(new { message = $"Public key của Employee ID {empId} không tồn tại" });
-
-                    // đọc CLOB
-                    // Lấy public key từ CLOB
-                    if (pPubKey.Value == DBNull.Value || pPubKey.Value == null)
-                        return NotFound(new { message = $"Public key của Employee ID {empId} không tồn tại" });
-
-                    var clobPubKey = (Oracle.ManagedDataAccess.Types.OracleClob)pPubKey.Value;
-                    publicKey = clobPubKey.Value;  // Lấy toàn bộ text
-
-                }
-
-                // --- 3. GET_STOCKIN_SIGNATURE ---
-                string signature;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.GET_STOCKIN_SIGNATURE";
-                    cmd.CommandType = CommandType.StoredProcedure;
-
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
-                    var pSig = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
-                    cmd.Parameters.Add(pSig);
-
-                    cmd.ExecuteNonQuery();
-
-                    if (pSig.Value == DBNull.Value || pSig.Value == null)
-                        return NotFound(new { message = $"Signature của StockIn ID {stockoutId} không tồn tại" });
-
-                    // Lấy signature từ CLOB
-                    if (pSig.Value == DBNull.Value || pSig.Value == null)
-                        return NotFound(new { message = $"Signature của StockIn ID {stockoutId} không tồn tại" });
-
-                    var clobSig = (Oracle.ManagedDataAccess.Types.OracleClob)pSig.Value;
-                    signature = clobSig.Value;  // Lấy toàn bộ text
-
-                }
-
-                // --- 4. VERIFY_STOCKIN_SIGNATURE ---
-                int isValid;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.VERIFY_STOCKIN_SIGNATURE";
-                    cmd.CommandType = CommandType.StoredProcedure;
-
-                    cmd.Parameters.Add("p_stockin_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
-                    cmd.Parameters.Add("p_public_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = publicKey;
-                    cmd.Parameters.Add("p_signature", OracleDbType.Clob, ParameterDirection.Input).Value = signature;
-
-                    var pIsValid = new OracleParameter("p_is_valid", OracleDbType.Int32, ParameterDirection.Output);
-                    cmd.Parameters.Add(pIsValid);
-
-                    cmd.ExecuteNonQuery();
-                    isValid = ((Oracle.ManagedDataAccess.Types.OracleDecimal)pIsValid.Value).ToInt32();
-                }
-
-                return Ok(new
-                {
-                    StockInId = stockoutId,
-                    IsValid = isValid == 1
-                });
-            }
-            catch (OracleException ex)
-            {
-                return StatusCode(500, new { Message = "Oracle Error", ErrorCode = ex.Number, Error = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "General Error", Error = ex.Message });
-            }
-        }
+        
     }
 
 
@@ -606,10 +706,9 @@ namespace WebAPI.Areas.Admin.Controllers
         public string EmpUsername { get; set; }
         public string Note { get; set; }
         public DateTime InDate { get; set; }
-        public string PrivateKey { get; set; }
         public List<ImportItemDto> Items { get; set; }
-        // Optional: dùng GroupDocs (PFX + password) để ký PDF
+        // Required: PFX certificate từ CA để ký PDF
         public string CertificatePfxBase64 { get; set; }
         public string CertificatePassword { get; set; }
-    }
+        }
 }

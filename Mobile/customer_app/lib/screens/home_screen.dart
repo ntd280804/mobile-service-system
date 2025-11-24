@@ -6,6 +6,7 @@ import '../services/storage_service.dart';
 import 'appointment_list_screen.dart';
 import 'order_list_screen.dart';
 import 'employee_home_screen.dart';
+import 'customer_dashboard_screen.dart';
 import 'qr_web_login_sheet.dart';
 
 
@@ -49,17 +50,48 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleRemoteLogout() {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bạn đã đăng xuất từ thiết bị khác')),
+        const SnackBar(content: Text('Bạn đã đăng xuất')),
       );
       _logout();
     }
   }
 
+  Future<void> _showLogoutDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _logout();
+    }
+  }
+
   Future<void> _logout() async {
-    await _signalR.disconnect();
-    await _api.logout();
-    if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    try {
+      await _signalR.disconnect();
+      await _api.logout();
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đăng xuất thất bại: ${e.toString()}')),
+      );
+    }
   }
 
   void _openQrLoginSheet() {
@@ -166,13 +198,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Otherwise show customer home screen
     final pages = [
+      const CustomerDashboardScreen(),
       const OrderListScreen(),
       const AppointmentListScreen(),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mobile Service'),
+        title: const Text('HealthCare - Khách hàng'),
         actions: [
           IconButton(
             icon: const Icon(Icons.qr_code),
@@ -186,21 +219,31 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: _logout,
+            tooltip: 'Đăng xuất',
+            onPressed: _showLogoutDialog,
           ),
         ],
       ),
       body: pages[_index],
-
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(
-              icon: Icon(Icons.timeline_outlined), label: 'Tiến độ'),
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
           NavigationDestination(
-              icon: Icon(Icons.event_outlined), label: 'Lịch hẹn'),
+            icon: Icon(Icons.shopping_cart_outlined),
+            selectedIcon: Icon(Icons.shopping_cart),
+            label: 'Đơn hàng',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_today_outlined),
+            selectedIcon: Icon(Icons.calendar_today),
+            label: 'Lịch hẹn',
+          ),
         ],
       ),
     );

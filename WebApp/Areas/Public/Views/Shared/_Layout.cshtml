@@ -42,6 +42,10 @@
                                 <a class="nav-link" asp-area="Public" asp-controller="Order" asp-action="Index">Xem đơn hàng</a>
                             </li>
                         }
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="Public" asp-controller="Help" asp-action="Index">Trợ giúp</a>
+                        
+                        </li>
                     </ul>
 
                     <!-- Menu phải -->
@@ -77,6 +81,49 @@
     <main class="container pb-3">
         @RenderBody()
     </main>
+
+    <!-- Floating FAQ Chatbot Button -->
+    @{
+        var isHelpPage = ViewContext.RouteData.Values["controller"]?.ToString() == "Help";
+    }
+    @if (!isHelpPage)
+    {
+        <button id="faqToggleBtn" class="btn btn-info btn-lg rounded-circle shadow-lg position-fixed" 
+                style="bottom: 20px; right: 20px; width: 60px; height: 60px; z-index: 1050;"
+                onclick="toggleFaqModal()">
+            💡
+        </button>
+
+        <!-- FAQ Modal -->
+        <div id="faqModal" class="position-fixed shadow-lg" style="display: none; bottom: 90px; right: 20px; width: 380px; max-width: 90vw; z-index: 1050; background: white; border-radius: 10px; overflow: hidden;">
+            <div class="card border-0 h-100 d-flex flex-column" style="max-height: 600px;">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">💡 Trợ giúp nhanh</h5>
+                    <div>
+                        <button class="btn btn-sm btn-light" onclick="closeFaqModal()" title="Đóng">
+                            ×
+                        </button>
+                    </div>
+                </div>
+                <div id="faqModalBody" class="card-body flex-grow-1 d-flex flex-column" style="overflow: hidden;">
+                    <div class="mb-3">
+                        <input type="text" class="form-control form-control-sm" id="faqSearch" 
+                               placeholder="Tìm câu hỏi...">
+                    </div>
+                    <div id="faqList" class="flex-grow-1" style="overflow-y: auto; max-height: 400px;">
+                        <div class="text-center text-muted">
+                            <small>Đang tải...</small>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <a href="@Url.Action("Index", "Help", new { area = "Public" })" 
+                       class="btn btn-sm btn-outline-primary w-100">
+                        📧 Gửi yêu cầu trợ giúp
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
 
     <footer class="border-top text-muted py-3">
         <div class="container">
@@ -170,6 +217,149 @@
                 console.log('📡 Gửi login event sang các tab khác');
             });
         }
+
+        // FAQ Floating Modal Helper
+        let faqModalMinimized = false;
+        let faqModalVisible = false;
+
+        function toggleFaqModal() {
+            const modal = document.getElementById('faqModal');
+            if (!modal) return;
+            
+            if (faqModalVisible) {
+                closeFaqModal();
+            } else {
+                openFaqModal();
+            }
+        }
+
+        function openFaqModal() {
+            const modal = document.getElementById('faqModal');
+            const modalBody = document.getElementById('faqModalBody');
+            if (!modal || !modalBody) return;
+            
+            modal.style.display = 'block';
+            modalBody.style.display = 'flex';
+            faqModalMinimized = false;
+            faqModalVisible = true;
+            document.getElementById('minimizeIcon').textContent = '−';
+            
+            // Load FAQs if not already loaded
+            const faqList = document.getElementById('faqList');
+            if (faqList && (!window.faqLoaded || faqList.innerHTML.includes('Đang tải'))) {
+                window.loadFaqsIfNeeded();
+            }
+        }
+
+        function minimizeFaqModal() {
+            const modal = document.getElementById('faqModal');
+            const modalBody = document.getElementById('faqModalBody');
+            if (!modal || !modalBody) return;
+            
+            if (faqModalMinimized) {
+                // Maximize
+                modalBody.style.display = 'flex';
+                faqModalMinimized = false;
+                document.getElementById('minimizeIcon').textContent = '−';
+            } else {
+                // Minimize
+                modalBody.style.display = 'none';
+                faqModalMinimized = true;
+                document.getElementById('minimizeIcon').textContent = '+';
+            }
+        }
+
+        function closeFaqModal() {
+            const modal = document.getElementById('faqModal');
+            if (!modal) return;
+            
+            modal.style.display = 'none';
+            faqModalVisible = false;
+            faqModalMinimized = false;
+        }
+
+        // FAQ Auto Helper
+        (async function() {
+            const faqList = document.getElementById('faqList');
+            const faqSearch = document.getElementById('faqSearch');
+            let allFaqs = [];
+            window.faqLoaded = false;
+
+            async function loadFaqs() {
+                try {
+                    const response = await fetch('@Url.Action("GetFaqs", "Help", new { area = "Public" })');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    console.log('FAQ Data received:', data); // Debug log
+                    // Try both lowercase and uppercase property names
+                    allFaqs = data.faqs || data.Faqs || [];
+                    console.log('FAQ items loaded:', allFaqs.length); // Debug log
+                    renderFaqs(allFaqs);
+                    window.faqLoaded = true;
+                } catch (error) {
+                    console.error('Lỗi tải FAQ:', error);
+                    if (faqList) {
+                        faqList.innerHTML = '<div class="text-danger small">Không thể tải câu hỏi thường gặp: ' + error.message + '</div>';
+                    }
+                }
+            }
+
+            function renderFaqs(faqs) {
+                if (!faqList) return;
+                
+                if (faqs.length === 0) {
+                    faqList.innerHTML = '<div class="text-muted small">Không có câu hỏi nào.</div>';
+                    return;
+                }
+
+                // Generate unique IDs based on timestamp to avoid conflicts
+                const timestamp = Date.now();
+                faqList.innerHTML = faqs.map((faq, index) => {
+                    const faqId = `faq_${timestamp}_${index}`;
+                    return `
+                        <div class="mb-3">
+                            <button class="btn btn-link text-start p-0 w-100 text-decoration-none" 
+                                    type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#${faqId}" aria-expanded="false">
+                                <strong class="text-primary">❓ ${faq.question}</strong>
+                            </button>
+                            <div class="collapse" id="${faqId}">
+                                <div class="card card-body border-0 bg-light small mt-2">
+                                    ${faq.answer}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            if (faqSearch) {
+                faqSearch.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    if (searchTerm === '') {
+                        renderFaqs(allFaqs);
+                    } else {
+                        const filtered = allFaqs.filter(faq => 
+                            faq.question.toLowerCase().includes(searchTerm) ||
+                            faq.answer.toLowerCase().includes(searchTerm)
+                        );
+                        renderFaqs(filtered);
+                    }
+                });
+            }
+
+            // Make loadFaqs available globally
+            window.loadFaqsIfNeeded = async function() {
+                if (!window.faqLoaded) {
+                    await loadFaqs();
+                }
+            };
+            
+            // Auto load on page load
+            await loadFaqs();
+        })();
     </script>
 
 </body>

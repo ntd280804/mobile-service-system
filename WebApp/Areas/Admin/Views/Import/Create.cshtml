@@ -3,10 +3,12 @@
 @{
     ViewData["Title"] = "Import Stock";
     var username = HttpContextAccessor.HttpContext.Session.GetString("Username");
+    
     if (string.IsNullOrEmpty(Model.EmpUsername))
     {
         Model.EmpUsername = username;
     }
+
 }
 
 <div class="container mt-4">
@@ -23,7 +25,6 @@
 
     <form asp-action="Create" method="post">
         <input type="hidden" asp-for="EmpUsername" />
-
         <div class="row">
             <div class="col-md-6 mb-4">
                 <div class="card shadow">
@@ -36,10 +37,15 @@
                             <input asp-for="Note" class="form-control" placeholder="Nhập ghi chú (nếu có)" />
                         </div>
                         <div class="form-group mb-3">
-                            <label for="private-key-file">Private Key</label>
-                            <input type="file" id="private-key-file" class="form-control" accept=".txt" />
-                            <input type="hidden" id="PrivateKey" name="PrivateKey" />
-                            <small class="form-text text-muted">Chọn file .txt chứa private key</small>
+                            <label for="pfx-file">PFX Certificate (.pfx)</label>
+                            <input type="file" id="pfx-file" class="form-control" accept=".pfx,.p12" required />
+                            <input type="hidden" id="CertificatePfxBase64" name="CertificatePfxBase64" />
+                            <small class="form-text text-muted">Chọn file PFX certificate từ CA</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="pfx-password">Mật khẩu PFX</label>
+                            <input type="password" id="pfx-password" name="CertificatePassword" class="form-control" required placeholder="Nhập mật khẩu PFX" />
+                            <small class="form-text text-muted">Mật khẩu bảo vệ file PFX</small>
                         </div>
                     </div>
                 </div>
@@ -224,15 +230,19 @@
                 });
             }
         });
-                document.getElementById("private-key-file").addEventListener("change", function (e) {
+        
+        // Xử lý upload PFX file
+        document.getElementById("pfx-file").addEventListener("change", function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function () {
-                document.getElementById("PrivateKey").value = reader.result;
+                // Convert file to base64
+                const base64 = reader.result.split(',')[1] || reader.result;
+                document.getElementById("CertificatePfxBase64").value = base64;
             };
-            reader.readAsText(file, "UTF-16");
+            reader.readAsDataURL(file);
         });
 
     </script>

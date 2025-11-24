@@ -349,8 +349,46 @@ namespace WebApp.Areas.Admin.Controllers
                 return View(model);
             }
         }
-        
-        
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelOrder(int orderId)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                var response = await _httpClient.PostAsync($"api/Admin/Order/cancel/{orderId}", null);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+                    TempData["Message"] = result?["message"] ?? "Hủy đơn hàng thành công.";
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    var error = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+                    TempData["Error"] = error?["message"] ?? "Không thể hủy đơn hàng.";
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
+                    HttpContext.Session.Clear();
+                    return RedirectToAction("Login", "Employee", new { area = "Admin" });
+                }
+                else
+                {
+                    TempData["Error"] = "Lỗi khi hủy đơn hàng: " + response.ReasonPhrase;
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
 
     }
 }

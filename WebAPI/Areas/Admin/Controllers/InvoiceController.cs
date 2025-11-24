@@ -5,8 +5,13 @@ using Oracle.ManagedDataAccess.Types;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Services;
+using WebAPI.Models.Security;
+using WebAPI.Models;
 
 namespace WebAPI.Areas.Admin.Controllers
 {
@@ -16,13 +21,16 @@ namespace WebAPI.Areas.Admin.Controllers
     {
         private readonly OracleConnectionManager _connManager;
         private readonly OracleSessionHelper _oracleSessionHelper;
+        private readonly InvoicePdfService _invoicePdfService;
 
         public InvoiceController(
             OracleConnectionManager connManager,
-            OracleSessionHelper oracleSessionHelper)
+            OracleSessionHelper oracleSessionHelper,
+            InvoicePdfService invoicePdfService)
         {
             _connManager = connManager;
             _oracleSessionHelper = oracleSessionHelper;
+            _invoicePdfService = invoicePdfService;
         }
 
         [HttpGet]
@@ -129,101 +137,195 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Lỗi khi lấy PDF hóa đơn", detail = ex.Message });
             }
         }
-
-        [HttpGet("{invoiceId}/verify")]
+        [HttpPost("{invoiceId}/generate-pdf-secure-encrypted")]
         [Authorize]
-        public IActionResult VerifyInvoiceSignature(int invoiceId)
+        public ActionResult<ApiResponse<EncryptedPayload>> GenerateInvoicePdfSecureEncrypted(
+            [FromServices] RsaKeyService rsaKeyService,
+            int invoiceId,
+            [FromBody] EncryptedPayload payload)
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
+            if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
+                return BadRequest(ApiResponse<EncryptedPayload>.Fail("Invalid encrypted payload"));
 
             try
             {
-                // 1. lấy chữ ký từ INVOICE
-                string signature;
-                using (var cmdSig = conn.CreateCommand())
+                // Giải mã request từ client
+                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
+                byte[] aesKey = new byte[32];
+                byte[] iv = new byte[16];
+                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
+                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
+
+                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
+                string plaintext;
+                using (Aes aes = Aes.Create())
                 {
-                    cmdSig.CommandText = "APP.GET_INVOICE_SIGNATURE";
-                    cmdSig.CommandType = CommandType.StoredProcedure;
-                    cmdSig.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId;
-                    var pSignature = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
-                    cmdSig.Parameters.Add(pSignature);
-                    cmdSig.ExecuteNonQuery();
-
-                    if (pSignature.Value == DBNull.Value || pSignature.Value == null)
-                        return NotFound(new { message = $"Signature của Invoice ID {invoiceId} không tồn tại" });
-
-                    var clobSig = (OracleClob)pSignature.Value;
-                    signature = clobSig.Value;
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
+                    using (var ms = new MemoryStream(cipherBytes))
+                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                    using (var reader = new StreamReader(cs, Encoding.UTF8))
+                    {
+                        plaintext = reader.ReadToEnd();
+                    }
                 }
 
-                // 2. lấy EMP_ID từ INVOICE
-                int empId;
-                using (var cmd = conn.CreateCommand())
+                var dto = System.Text.Json.JsonSerializer.Deserialize<GenerateInvoicePdfDto>(plaintext);
+                if (dto == null)
+                    return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
+
+                if (dto.InvoiceId != invoiceId)
+                    return BadRequest(ApiResponse<EncryptedPayload>.Fail("Invoice ID mismatch"));
+
+                // Lấy clientId từ session headers
+                var username = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
+                var platform = HttpContext.Request.Headers["X-Oracle-Platform"].ToString();
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(platform))
+                    return StatusCode(500, ApiResponse<EncryptedPayload>.Fail("Cannot determine clientId from session headers"));
+                
+                // Sử dụng clientId với prefix "admin-" để lấy public key từ DB
+                string clientId = "admin-" + username;
+                
+                // Đảm bảo public key đã được load từ DB vào RsaKeyService
+                if (!rsaKeyService.TryGetClientPublicKey(clientId, out _))
                 {
-                    cmd.CommandText = "APP.GET_EMP_ID_FROM_INVOICE";
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId;
-                    var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
-                    cmd.Parameters.Add(pEmpId);
-                    cmd.ExecuteNonQuery();
+                    // Lấy public key từ DB và lưu vào RsaKeyService
+                    var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+                    if (conn != null)
+                    {
+                        try
+                        {
+                            using var cmd = new OracleCommand("APP.GET_PUBLICKEY_BY_USERNAME", conn);
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = username;
+                            var pPubKey = new OracleParameter("p_public_key", OracleDbType.Clob, ParameterDirection.Output);
+                            cmd.Parameters.Add(pPubKey);
+                            cmd.ExecuteNonQuery();
 
-                    if (pEmpId.Value == DBNull.Value || pEmpId.Value == null)
-                        return NotFound(new { message = $"Invoice ID {invoiceId} không tồn tại" });
-
-                    empId = ((OracleDecimal)pEmpId.Value).ToInt32();
+                            if (pPubKey.Value != DBNull.Value && pPubKey.Value != null)
+                            {
+                                var clobPubKey = (Oracle.ManagedDataAccess.Types.OracleClob)pPubKey.Value;
+                                string publicKeyFromDb = clobPubKey.Value?.Trim() ?? "";
+                                if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
+                                {
+                                    // Normalize public key: loại bỏ whitespace và kiểm tra format
+                                    string normalizedPublicKey = publicKeyFromDb
+                                        .Replace("\r", "")
+                                        .Replace("\n", "")
+                                        .Replace(" ", "")
+                                        .Replace("\t", "");
+                                    
+                                    // Nếu có PEM headers, extract Base64
+                                    if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
+                                    {
+                                        // Extract Base64 từ PEM format
+                                        int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
+                                        int endIdx = normalizedPublicKey.IndexOf("-----END");
+                                        if (startIdx >= 0 && endIdx > startIdx)
+                                        {
+                                            int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
+                                            if (beginEnd > startIdx)
+                                            {
+                                                normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
+                                                    .Replace("\r", "")
+                                                    .Replace("\n", "")
+                                                    .Replace(" ", "");
+                                            }
+                                        }
+                                    }
+                                    
+                                    rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error nhưng tiếp tục, sẽ throw error sau nếu không có public key
+                        }
+                    }
                 }
 
-                // 3. lấy public key của nhân viên
-                string publicKey;
-                using (var cmd = conn.CreateCommand())
+                // Generate PDF invoice
+                try
                 {
-                    cmd.CommandText = "APP.GET_EMPLOYEE_PUBLIC_KEY";
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = 1;
-                    var pPubKey = new OracleParameter("p_pub_key", OracleDbType.Clob, ParameterDirection.Output);
-                    cmd.Parameters.Add(pPubKey);
-                    cmd.ExecuteNonQuery();
+                    var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+                    if (conn == null)
+                    {
+                        // Mã hóa error message
+                        var errorObj = new { Success = false, Message = "Unauthorized" };
+                        string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
+                        var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
+                        return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                        {
+                            EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
+                            CipherDataBase64 = encryptedError.CipherDataBase64
+                        }));
+                    }
 
-                    if (pPubKey.Value == DBNull.Value || pPubKey.Value == null)
-                        return NotFound(new { message = $"Public key của Employee ID {empId} không tồn tại" });
+                    // Load invoice data
+                    var invoiceDto = InvoiceDataHelper.LoadInvoiceData(conn, invoiceId);
+                    if (invoiceDto == null)
+                    {
+                        var errorObj = new { Success = false, Message = $"Invoice {invoiceId} not found" };
+                        string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
+                        var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
+                        return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                        {
+                            EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
+                            CipherDataBase64 = encryptedError.CipherDataBase64
+                        }));
+                    }
 
-                    var clobKey = (OracleClob)pPubKey.Value;
-                    publicKey = clobKey.Value;
+                    byte[] pfxBytes = Convert.FromBase64String(dto.CertificatePfxBase64);
+                    string pfxPassword = dto.CertificatePassword;
+                    var signedInvoicePdf = _invoicePdfService.GenerateInvoicePdfAndSignWithCertificate(
+                        invoiceDto, pfxBytes, pfxPassword,
+                        cmd => cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId,
+                        null, null);
+
+                    // Tạo response object chứa PDF base64 và filename
+                    var responseObj = new
+                    {
+                        Success = true,
+                        Type = "pdf",
+                        PdfBase64 = Convert.ToBase64String(signedInvoicePdf),
+                        FileName = $"Invoice_{invoiceId}.pdf"
+                    };
+
+                    string responseJson = System.Text.Json.JsonSerializer.Serialize(responseObj);
+                    var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
+                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                    {
+                        EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
+                        CipherDataBase64 = encryptedResponse.CipherDataBase64
+                    }));
                 }
-
-                // 4. verify
-                int isValid;
-                using (var cmd = conn.CreateCommand())
+                catch (Exception ex)
                 {
-                    cmd.CommandText = "APP.VERIFY_INVOICE_SIGNATURE";
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId;
-                    cmd.Parameters.Add("p_public_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = publicKey;
-                    cmd.Parameters.Add("p_signature", OracleDbType.Clob, ParameterDirection.Input).Value = signature;
-                    var pIsValid = new OracleParameter("p_is_valid", OracleDbType.Int32, ParameterDirection.Output);
-                    cmd.Parameters.Add(pIsValid);
-                    cmd.ExecuteNonQuery();
-                    isValid = ((OracleDecimal)pIsValid.Value).ToInt32();
+                    // Nếu có lỗi, mã hóa error message
+                    var errorObj = new { Success = false, Message = ex.Message };
+                    string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
+                    var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
+                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                    {
+                        EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
+                        CipherDataBase64 = encryptedError.CipherDataBase64
+                    }));
                 }
-
-                return Ok(new
-                {
-                    InvoiceId = invoiceId,
-                    IsValid = isValid == 1
-                });
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Lỗi khi xác thực hóa đơn", detail = ex.Message });
+                return StatusCode(500, ApiResponse<EncryptedPayload>.Fail(ex.Message));
             }
         }
+    }
+
+    // DTOs
+    public class GenerateInvoicePdfDto
+    {
+        public int InvoiceId { get; set; }
+        // Required: PFX certificate từ CA để ký PDF
+        public string CertificatePfxBase64 { get; set; }
+        public string CertificatePassword { get; set; }
     }
 }
 

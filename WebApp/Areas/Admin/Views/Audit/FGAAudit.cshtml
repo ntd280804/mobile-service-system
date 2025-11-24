@@ -1,10 +1,43 @@
-﻿@model List<WebApp.Areas.Admin.Controllers.AuditController.FgaAuditLogDto>
+﻿@model WebApp.Areas.Admin.Controllers.FgaAuditViewModel
 
 @{
     ViewData["Title"] = "FGA Audit";
 }
 
 <h2>@ViewData["Title"]</h2>
+
+@* Hiển thị trạng thái *@
+@if (Model?.Status != null)
+{
+    var status = Model.Status;
+    <div class="alert @(status.Enabled ? "alert-success" : "alert-secondary") mb-3">
+        <strong>FGA Audit:</strong>
+        @if (status.Enabled)
+        {
+            <span class="badge bg-success">Đang bật (ENABLED)</span>
+        }
+        else
+        {
+            <span class="badge bg-secondary">Đang tắt (DISABLED)</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(status.Note))
+        {
+            <span class="ms-3">
+                <small>@status.Note</small>
+            </span>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mb-3">
+        <strong>FGA Audit:</strong>
+        <span class="badge bg-warning">Không thể lấy trạng thái</span>
+        <span class="ms-3">
+            <small>Vui lòng làm mới trang hoặc kiểm tra kết nối API</small>
+        </span>
+    </div>
+}
 
 <div class="mb-3 d-flex flex-wrap gap-2">
     <form asp-area="Admin" asp-controller="Audit" asp-action="EnableFgaAudit" method="post" class="d-inline">
@@ -35,7 +68,7 @@
     </div>
 }
 
-@if (Model != null && Model.Any())
+@if (Model?.Logs != null && Model.Logs.Any())
 {
     <div class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
         <table class="table table-bordered table-striped table-hover mt-3" style="font-size: 0.9em;">
@@ -55,7 +88,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var log in Model)
+                @foreach (var log in Model.Logs)
                 {
                     <tr>
                         <td>@(log.EventTs?.ToString("dd/MM/yyyy HH:mm:ss") ?? "")</td>

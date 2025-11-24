@@ -81,6 +81,16 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.AuditController",
+    "Method": "GetAuditStatus",
+    "RelativePath": "api/admin/Audit/status",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.AuditController",
     "Method": "GetAllAuditLog",
     "RelativePath": "api/admin/Audit/trigger",
     "HttpMethod": "GET",
@@ -225,8 +235,8 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
-    "Method": "ChangePasswordSecure",
-    "RelativePath": "api/Admin/Employee/change-password-secure",
+    "Method": "ChangePasswordSecureEncrypted",
+    "RelativePath": "api/Admin/Employee/change-password-secure-encrypted",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -239,7 +249,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "WebAPI.Models.ApiResponse\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -293,8 +303,8 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
-    "Method": "LoginSecure",
-    "RelativePath": "api/Admin/Employee/login-secure",
+    "Method": "LoginSecureEncrypted",
+    "RelativePath": "api/Admin/Employee/login-secure-encrypted",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -307,7 +317,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.EmployeeLoginResult, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -345,6 +355,32 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
+    "Method": "RegisterSecureEncrypted",
+    "RelativePath": "api/Admin/Employee/register-secure-encrypted",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "payload",
+        "Type": "WebAPI.Models.Security.EncryptedPayload",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.EmployeeController",
     "Method": "UnlockUser",
     "RelativePath": "api/Admin/Employee/unlock",
     "HttpMethod": "POST",
@@ -377,8 +413,8 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
-    "Method": "CreateExportFromOrderSecure",
-    "RelativePath": "api/admin/Export/create-secure",
+    "Method": "CreateExportFromOrderSecureEncrypted",
+    "RelativePath": "api/admin/Export/create-secure-encrypted",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -389,7 +425,17 @@
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
@@ -421,22 +467,6 @@
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
     "Method": "GetSignedExportInvoicePdf",
     "RelativePath": "api/admin/Export/invoice/{stockoutId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "stockoutId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
-    "Method": "VerifyStockInSignature",
-    "RelativePath": "api/admin/Export/verifysign/{stockoutId}",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -509,8 +539,8 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
-    "Method": "ImportStockSecure",
-    "RelativePath": "api/admin/Import/post-secure",
+    "Method": "ImportStockSecureEncrypted",
+    "RelativePath": "api/admin/Import/post-secure-encrypted",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -521,23 +551,17 @@
         "IsRequired": true
       }
     ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
-    "Method": "VerifyStockInSignature",
-    "RelativePath": "api/admin/Import/verifysign/{stockoutId}",
-    "HttpMethod": "GET",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
+    "ReturnTypes": [
       {
-        "Name": "stockoutId",
-        "Type": "System.Int32",
-        "IsRequired": true
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
       }
-    ],
-    "ReturnTypes": []
+    ]
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
@@ -567,9 +591,9 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
-    "Method": "GetInvoicePdf",
-    "RelativePath": "api/admin/Invoice/{invoiceId}/pdf",
-    "HttpMethod": "GET",
+    "Method": "GenerateInvoicePdfSecureEncrypted",
+    "RelativePath": "api/admin/Invoice/{invoiceId}/generate-pdf-secure-encrypted",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
@@ -577,14 +601,29 @@
         "Name": "invoiceId",
         "Type": "System.Int32",
         "IsRequired": true
+      },
+      {
+        "Name": "payload",
+        "Type": "WebAPI.Models.Security.EncryptedPayload",
+        "IsRequired": true
       }
     ],
-    "ReturnTypes": []
+    "ReturnTypes": [
+      {
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
-    "Method": "VerifyInvoiceSignature",
-    "RelativePath": "api/admin/Invoice/{invoiceId}/verify",
+    "Method": "GetInvoicePdf",
+    "RelativePath": "api/admin/Invoice/{invoiceId}/pdf",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -635,6 +674,22 @@
         "Name": "orderType",
         "Type": "System.String",
         "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.OrderController",
+    "Method": "CancelOrder",
+    "RelativePath": "api/Admin/Order/cancel/{orderId}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "orderId",
+        "Type": "System.Int32",
+        "IsRequired": true
       }
     ],
     "ReturnTypes": []
@@ -1118,8 +1173,8 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
-    "Method": "ChangePasswordSecure",
-    "RelativePath": "api/Public/Customer/change-password-secure",
+    "Method": "ChangePasswordSecureEncrypted",
+    "RelativePath": "api/Public/Customer/change-password-secure-encrypted",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1132,7 +1187,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "WebAPI.Models.ApiResponse\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1141,6 +1196,38 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
+    "Method": "GenerateOtpForForgotPassword",
+    "RelativePath": "api/Public/Customer/forgot-password/generate-otp",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Public.Controllers.CustomerController\u002BForgotPasswordGenerateOtpDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
+    "Method": "ResetPasswordWithOtp",
+    "RelativePath": "api/Public/Customer/forgot-password/reset",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "WebAPI.Areas.Public.Controllers.CustomerController\u002BForgotPasswordResetDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
@@ -1170,8 +1257,8 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
-    "Method": "LoginSecure",
-    "RelativePath": "api/Public/Customer/login-secure",
+    "Method": "LoginSecureEncrypted",
+    "RelativePath": "api/Public/Customer/login-secure-encrypted",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1184,7 +1271,7 @@
     ],
     "ReturnTypes": [
       {
-        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.CustomerLoginResult, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1215,6 +1302,22 @@
       {
         "Name": "dto",
         "Type": "WebAPI.Models.Auth.CustomerRegisterDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Public.Controllers.HelpController",
+    "Method": "SendHelpEmail",
+    "RelativePath": "api/Public/Help/send-help-email",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "WebAPI.Areas.Public.Controllers.HelpController\u002BSendHelpEmailRequest",
         "IsRequired": true
       }
     ],
@@ -1293,32 +1396,6 @@
     "ReturnTypes": [
       {
         "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Auth.QrLoginStatusResponse, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Public.Controllers.SecurityController",
-    "Method": "DecryptEcho",
-    "RelativePath": "api/Public/Security/decrypt-echo",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "payload",
-        "Type": "WebAPI.Areas.Public.Controllers.SecurityController\u002BEncryptedPayload",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Models.ApiResponse\u00601[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
         "MediaTypes": [
           "text/plain",
           "application/json",

@@ -349,9 +349,9 @@ namespace WebAPI.Services
 			);
 
 			// Persist the signed PDF as BLOB (parameter defaults to p_signature unless caller binds differently).
-			_pdfSigner.UpdateFinalSignature(
+			_pdfSigner.UpdateFinalPDF(
 				procedureName: "APP.UPDATE_STOCKIN_PDF",
-				finalSignature: signedPdfBytes,
+				PDF: signedPdfBytes,
 				configureParameters: configureUpdateProcedure
 			);
 
@@ -545,9 +545,9 @@ namespace WebAPI.Services
                 }
             );
 
-            _pdfSigner.UpdateFinalSignature(
+            _pdfSigner.UpdateFinalPDF(
                 procedureName: "APP.UPDATE_STOCKOUT_PDF",
-                finalSignature: signedPdfBytes,
+                PDF: signedPdfBytes,
                 configureParameters: configureUpdateProcedure
             );
 
@@ -849,9 +849,9 @@ namespace WebAPI.Services
                 }
             );
 
-            _pdfSigner.UpdateFinalSignature(
+            _pdfSigner.UpdateFinalPDF(
                 procedureName: "APP.UPDATE_INVOICE_PDF",
-                finalSignature: signedPdfBytes,
+                PDF: signedPdfBytes,
                 configureParameters: configureUpdateProcedure
             );
 

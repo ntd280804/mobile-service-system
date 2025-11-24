@@ -29,7 +29,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Danh sách đơn hàng')),
+      appBar: AppBar(
+        title: const Text('Đơn hàng'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshOrders,
+            tooltip: 'Làm mới',
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Order>>(
         future: _ordersFuture,
         builder: (context, snapshot) {
@@ -39,9 +48,23 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                'Lỗi: ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Lỗi: ${snapshot.error}',
+                    style: TextStyle(color: Colors.red[700], fontSize: 16),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _refreshOrders,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Thử lại'),
+                  ),
+                ],
               ),
             );
           }
@@ -49,17 +72,26 @@ class _OrderListScreenState extends State<OrderListScreen> {
           final orders = snapshot.data ?? [];
 
           if (orders.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'Chưa có đơn hàng',
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+            return RefreshIndicator(
+              onRefresh: _refreshOrders,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'Chưa có đơn hàng',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
             );
           }
@@ -67,7 +99,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
           return RefreshIndicator(
             onRefresh: _refreshOrders,
             child: ListView.separated(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               itemCount: orders.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
@@ -76,33 +108,76 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     ? order.receivedDate!.toLocal().toString().split(' ').first
                     : 'Không rõ ngày';
 
+                // Xác định icon và màu dựa trên trạng thái
+                IconData statusIcon;
+                Color statusColor;
+                if (order.status?.toUpperCase().contains('CANCELLED') == true ||
+                    order.status?.toUpperCase().contains('HỦY') == true) {
+                  statusIcon = Icons.cancel;
+                  statusColor = Colors.red;
+                } else if (order.status?.toUpperCase().contains('COMPLETED') == true ||
+                    order.status?.toUpperCase().contains('HOÀN THÀNH') == true) {
+                  statusIcon = Icons.check_circle;
+                  statusColor = Colors.green;
+                } else {
+                  statusIcon = Icons.schedule;
+                  statusColor = Colors.blue;
+                }
+
                 return Card(
                   elevation: 2,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.green,
-                        child: Text(order.orderId,
-                            style: const TextStyle(color: Colors.white)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.green,
+                      radius: 28,
+                      child: Text(
+                        order.orderId,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
-                      title: Text('Ngày nhận: $date',
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Column(
+                    ),
+                    title: Text(
+                      'Đơn hàng #${order.orderId}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 4),
-                          Text('Khách hàng: ${order.customerPhone}'),
-                          Text('Người nhận: ${order.receiverEmpName}'),
-                          Text('Người xử lý: ${order.handlerEmpName}'),
-                          Text('Loại đơn: ${order.orderType}'),
-                          Text('Trạng thái: ${order.status}'),
-                          Text('Mô tả: ${order.description}'),
+                          Text('Ngày nhận: $date'),
+                          if (order.customerPhone != null)
+                            Text('SĐT: ${order.customerPhone}'),
+                          if (order.receiverEmpName != null)
+                            Text('Người nhận: ${order.receiverEmpName}'),
+                          if (order.handlerEmpName != null)
+                            Text('Người xử lý: ${order.handlerEmpName}'),
+                          if (order.orderType != null)
+                            Text('Loại: ${order.orderType}'),
+                          if (order.status != null)
+                            Row(
+                              children: [
+                                Icon(statusIcon, size: 16, color: statusColor),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Trạng thái: ${order.status}',
+                                  style: TextStyle(color: statusColor),
+                                ),
+                              ],
+                            ),
                         ],
                       ),
                     ),
+                    isThreeLine: true,
                   ),
                 );
               },

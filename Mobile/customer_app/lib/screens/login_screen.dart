@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _handleWebQrLogin(String code) async {
+  Future<void> _handleWebQrLogin(String code, {VoidCallback? onSuccess}) async {
     final platform = 'MOBILE';
 
     try {
@@ -89,10 +89,26 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/home');
-    } catch (e) {
+      
+      // Đảm bảo token đã được lưu vào storage trước khi navigate
+      // Sử dụng một chút delay để đảm bảo mọi thứ đã hoàn tất
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Gọi callback để đóng bottom sheet trước khi navigate
+      onSuccess?.call();
+      
+      // Đợi một chút để bottom sheet đóng hoàn toàn
+      await Future.delayed(const Duration(milliseconds: 200));
+      
       if (!mounted) return;
-      _showSnack(e.toString());
+      
+      // Sử dụng pushNamedAndRemoveUntil để clear navigation stack và navigate đến home
+      // Điều này đảm bảo user không thể quay lại màn hình login
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+    } catch (e) {
+      // Re-throw để web_qr_login_sheet có thể hiển thị lỗi
+      // Không hiển thị lỗi ở đây để tránh duplicate
+      rethrow;
     }
   }
 
@@ -100,7 +116,18 @@ class _LoginScreenState extends State<LoginScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => WebQrLoginSheet(onSubmit: _handleWebQrLogin),
+      isDismissible: true,
+      builder: (sheetContext) => WebQrLoginSheet(
+        onSubmit: (code) async {
+          // Xử lý login
+          await _handleWebQrLogin(code, onSuccess: () {
+            // Đóng bottom sheet sau khi login thành công, trước khi navigate
+            if (sheetContext.mounted) {
+              Navigator.of(sheetContext).pop();
+            }
+          });
+        },
+      ),
     );
   }
 

@@ -436,6 +436,45 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Lỗi khi lấy danh sách username nhân viên", detail = ex.Message });
             }
         }
+        [HttpPost("cancel/{orderId}")]
+        [Authorize]
+        public IActionResult CancelOrder(int orderId)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+                using var cmd = new OracleCommand("APP.CANCEL_ORDER", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_order_id", OracleDbType.Int32, ParameterDirection.Input).Value = orderId;
+                var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
+                cmd.Parameters.Add(pResult);
+
+                cmd.ExecuteNonQuery();
+
+                string result = pResult.Value?.ToString() ?? "";
+                
+                if (result.Contains("Lỗi") || result.Contains("không tồn tại") || result.Contains("đã được hủy"))
+                {
+                    return BadRequest(new { message = result });
+                }
+
+                return Ok(new { message = result });
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi khi hủy đơn hàng", detail = ex.Message });
+            }
+        }
+
         public class CompleteOrderRequest
         {
             public int OrderId { get; set; }

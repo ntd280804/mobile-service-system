@@ -10,8 +10,12 @@
                           .ToList();
     bool HasRole(params string[] checkRoles) => roles.Intersect(checkRoles.Select(r => r.ToUpperInvariant())).Any();
     var sessionId = HttpContextAccessor.HttpContext.Session.GetString("SessionId");
-
     
+    // Kiểm tra xem có private key trong session không
+    var hasPrivateKey = HttpContextAccessor.HttpContext.Session.GetString("PrivateKeyBase64");
+    var showRequiredModal = TempData["ShowUploadPrivateKeyModal"] != null && TempData["ShowUploadPrivateKeyModal"].ToString() == "true";
+    // Hiển thị modal nếu TempData flag được set HOẶC nếu đã đăng nhập nhưng chưa có private key
+    var shouldShowRequiredModal = showRequiredModal || (!string.IsNullOrEmpty(username) && string.IsNullOrWhiteSpace(hasPrivateKey));
 }
 
 <!DOCTYPE html>
@@ -51,6 +55,9 @@
                 <li><a class="nav-link" asp-area="Admin" asp-controller="Home" asp-action="Index">Dashboard</a></li>
                 <li class="nav-item">
                     <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="ChangePassword">Đổi mật khẩu</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="MobileQrLogin">Tạo mã đăng nhập Mobile</a>
                 </li>
                 @* Quản lý nhân viên *@
                 @if (HasRole("ROLE_ADMIN"))
@@ -142,11 +149,16 @@
                 }
                 @if (HasRole("ROLE_ADMIN"))
                 {
-
-                    <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="TriggerAudit">TriggerAudit</a></li>
-                    <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="FGAAudit">FGAAudit</a></li>
-                    <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="StandardAudit">StandardAudit</a></li>
-
+                    <li>
+                        <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseAudit" role="button" aria-expanded="false" aria-controls="collapseAudit">
+                            Audit <span>▾</span>
+                        </a>
+                        <ul class="collapse nav flex-column ms-3" id="collapseAudit">
+                            <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="TriggerAudit">TriggerAudit</a></li>
+                            <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="FGAAudit">FGAAudit</a></li>
+                            <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="StandardAudit">StandardAudit</a></li>
+                        </ul>
+                    </li>
                 }
                 <li class="nav-item mt-3">
                     <form method="post" asp-area="Admin" asp-controller="Employee" asp-action="Logout">
@@ -179,8 +191,237 @@
     <footer class="border-top text-muted py-2 mt-auto">
         <div class="container text-center">&copy; 2025 - Admin Dashboard</div>
     </footer>
+    <!-- Modal Bắt Buộc Upload Private Key (Sau Login) -->
+    <div class="modal fade" id="requiredUploadPrivateKeyModal" tabindex="-1" aria-labelledby="requiredUploadPrivateKeyModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="requiredUploadPrivateKeyModalLabel">
+                        <strong>⚠️ BẮT BUỘC UPLOAD PRIVATE KEY</strong>
+                    </h5>
+                    <!-- Không có nút đóng - modal bắt buộc -->
+                </div>
+                <form id="requiredUploadPrivateKeyForm" method="post" asp-area="Admin" asp-controller="Employee" asp-action="UploadPrivateKey" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="alert alert-danger">
+                            <h6><strong>⚠️ Yêu cầu bắt buộc:</strong></h6>
+                            <p class="mb-0">Bạn <strong>PHẢI</strong> upload private key để có thể sử dụng các chức năng API secure trong hệ thống:</p>
+                            <ul class="mb-0 mt-2">
+                                <li>Nhập kho (Import Stock)</li>
+                                <li>Xuất kho (Export)</li>
+                                <li>Ký số PDF</li>
+                                <li>Và các chức năng bảo mật khác</li>
+                            </ul>
+                        </div>
+                        <div class="mb-3">
+                            <label for="requiredPrivateKeyFile" class="form-label fw-bold">
+                                Chọn file Private Key (.key, .pem hoặc .txt) 
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="file" class="form-control form-control-lg" id="requiredPrivateKeyFile" name="privateKeyFile" accept=".key,.pem,.txt" required />
+                            <small class="form-text text-muted">
+                                <i class="bi bi-info-circle"></i> File private key sẽ được lưu trong session để dùng cho mã hóa/giải mã API secure. 
+                                Private key này được tạo khi bạn đăng ký tài khoản.
+                            </small>
+                        </div>
+                        <div id="requiredUploadStatus" class="alert" style="display: none;"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <strong>📤 Upload Private Key & Tiếp Tục</strong>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
+    <script>
+        // SignalR connection cho Admin
+        @inject IConfiguration Configuration
+        const adminSessionId = '@(sessionId ?? "")';
+        console.log('👤 Admin sessionId:', adminSessionId);
+        
+        if (adminSessionId) {
+            // Tạo SignalR connection
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl('@Configuration["SignalR:NotificationHubUrl"]?sessionId=' + encodeURIComponent(adminSessionId))
+                .withAutomaticReconnect()
+                .build();
+            
+            const dashboardUrl = '@Url.Action("Index", "Home", new { area = "Admin" })';
+            const logoutUrl = '@Url.Action("Logout", "Employee", new { area = "Admin" })';
+            const loginUrl = '@Url.Action("Login", "Employee", new { area = "Admin" })';
+
+            // Lắng nghe ForceLogout từ server
+            connection.on('ForceLogout', async function(message) {
+                try {
+                    await fetch(logoutUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                        }
+                    });
+                } catch (err) {
+                    console.error('Logout request failed', err);
+                } finally {
+                    // Chuyển về login
+                    window.location.href = loginUrl;
+                }
+            });
+
+            // Start SignalR connection
+            async function startConnection() {
+                try {
+                    await connection.start();
+                    console.log('✅ SignalR connected (Admin)');
+                } catch (err) {
+                    console.error('⚠️ SignalR start error:', err);
+                    setTimeout(startConnection, 5000); // thử lại sau 5s
+                }
+            }
+
+            startConnection();
+
+            // 🔐 Đồng bộ login/logout đa tab
+            const channel = new BroadcastChannel('Admin_auth_channel');
+
+            channel.onmessage = (event) => {
+                console.log('📢 Nhận auth event từ tab khác:', event.data);
+                if (event.data === 'logout') {
+                    setTimeout(() => {
+                        window.location.href = loginUrl;
+                    }, 1000);
+                } else if (event.data === 'login') {
+                    setTimeout(() => {
+                        window.location.href = dashboardUrl;
+                    }, 1000);
+                }
+            };
+
+            // Gửi sự kiện logout từ form
+            const logoutForm = document.querySelector('form[action$="Logout"]');
+            if (logoutForm) {
+                logoutForm.addEventListener('submit', () => {
+                    channel.postMessage('logout');
+                    console.log('📡 Gửi logout event sang các tab khác');
+                });
+            }
+
+            const loginLink = document.querySelector('a[href*="Login"]');
+            if (loginLink) {
+                loginLink.addEventListener('click', () => {
+                    channel.postMessage('login');
+                    console.log('📡 Gửi login event sang các tab khác');
+                });
+            }
+        }
+    </script>
+    <script>
+        // Flag để cho phép đóng modal sau khi upload thành công (global scope)
+        let allowRequiredModalClose = false;
+        
+        // Hiển thị modal bắt buộc upload private key sau login
+        @if (shouldShowRequiredModal)
+        {
+            <text>
+            document.addEventListener('DOMContentLoaded', function() {
+                const requiredModalElement = document.getElementById('requiredUploadPrivateKeyModal');
+                const requiredModal = new bootstrap.Modal(requiredModalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                
+                // Ngăn chặn đóng modal bằng cách click bên ngoài hoặc ESC
+                requiredModalElement.addEventListener('hide.bs.modal', function(event) {
+                    // Chỉ cho phép đóng nếu đã upload thành công
+                    if (!allowRequiredModalClose) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return false;
+                    }
+                });
+                
+                requiredModal.show();
+            });
+            </text>
+        }
+
+        // Handle private key upload (optional modal)
+        document.getElementById('uploadPrivateKeyForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const statusDiv = document.getElementById('uploadStatus');
+            
+            try {
+                const response = await fetch('@Url.Action("UploadPrivateKey", "Employee", new { area = "Admin" })', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                statusDiv.style.display = 'block';
+                
+                if (result.success) {
+                    statusDiv.className = 'alert alert-success';
+                    statusDiv.textContent = result.message || 'Upload private key thành công!';
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('uploadPrivateKeyModal'));
+                        modal?.hide();
+                        statusDiv.style.display = 'none';
+                    }, 2000);
+                } else {
+                    statusDiv.className = 'alert alert-danger';
+                    statusDiv.textContent = result.message || 'Upload thất bại!';
+                }
+            } catch (error) {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.textContent = 'Lỗi: ' + error.message;
+            }
+        });
+
+        // Handle required private key upload (bắt buộc sau login)
+        document.getElementById('requiredUploadPrivateKeyForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const statusDiv = document.getElementById('requiredUploadStatus');
+            
+            try {
+                const response = await fetch('@Url.Action("UploadPrivateKey", "Employee", new { area = "Admin" })', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                statusDiv.style.display = 'block';
+                
+                if (result.success) {
+                    statusDiv.className = 'alert alert-success';
+                    statusDiv.textContent = result.message || 'Upload private key thành công!';
+                    // Cho phép đóng modal
+                    allowRequiredModalClose = true;
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('requiredUploadPrivateKeyModal'));
+                        modal?.hide();
+                        statusDiv.style.display = 'none';
+                        // Reload page để cập nhật trạng thái
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    statusDiv.className = 'alert alert-danger';
+                    statusDiv.textContent = result.message || 'Upload thất bại!';
+                }
+            } catch (error) {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.textContent = 'Lỗi: ' + error.message;
+            }
+        });
+    </script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

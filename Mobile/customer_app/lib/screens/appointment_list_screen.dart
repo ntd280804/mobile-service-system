@@ -18,10 +18,26 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
     _appointmentsFuture = _api.getAppointments();
   }
 
+  Future<void> _refreshAppointments() async {
+    setState(() {
+      _appointmentsFuture = _api.getAppointments();
+    });
+    await _appointmentsFuture;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Danh sách lịch hẹn')),
+      appBar: AppBar(
+        title: const Text('Lịch hẹn'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _refreshAppointments,
+            tooltip: 'Làm mới',
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _appointmentsFuture,
         builder: (context, snapshot) {
@@ -30,64 +46,163 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Text('Lỗi: ${snapshot.error}', style: const TextStyle(color: Colors.red)),
+            return RefreshIndicator(
+              onRefresh: _refreshAppointments,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Lỗi: ${snapshot.error}',
+                          style: TextStyle(color: Colors.red[700], fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _refreshAppointments,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             );
           }
 
           final appointments = snapshot.data ?? [];
 
           if (appointments.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.event_busy, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('Chưa có lịch hẹn', style: TextStyle(color: Colors.grey)),
-                ],
+            return RefreshIndicator(
+              onRefresh: _refreshAppointments,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.7,
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.event_busy, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'Chưa có lịch hẹn',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: appointments.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final appt = appointments[index];
-              final id = appt['id']?.toString() ?? '';
-              final date = appt['appointmentDate'] ??
-                  appt['date'] ??
-                  'Không rõ ngày';
-              final status = appt['status'] ?? '';
-              final desc = appt['description'] ?? appt['moTa'] ?? '';
+          return RefreshIndicator(
+            onRefresh: _refreshAppointments,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: appointments.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final appt = appointments[index];
+                final id = appt['id']?.toString() ?? '';
+                final date = appt['appointmentDate'] ??
+                    appt['date'] ??
+                    'Không rõ ngày';
+                final status = appt['status'] ?? '';
+                final desc = appt['description'] ?? appt['moTa'] ?? '';
 
-              return Card(
-                elevation: 2,
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blueAccent,
-                    child: Text(id, style: const TextStyle(color: Colors.white)),
+                // Xác định icon và màu dựa trên trạng thái
+                IconData statusIcon;
+                Color statusColor;
+                if (status.toUpperCase().contains('CANCELLED') ||
+                    status.toUpperCase().contains('HỦY')) {
+                  statusIcon = Icons.cancel;
+                  statusColor = Colors.red;
+                } else if (status.toUpperCase().contains('COMPLETED') ||
+                    status.toUpperCase().contains('HOÀN THÀNH')) {
+                  statusIcon = Icons.check_circle;
+                  statusColor = Colors.green;
+                } else {
+                  statusIcon = Icons.schedule;
+                  statusColor = Colors.blue;
+                }
+
+                return Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  title: Text('Ngày hẹn: $date'),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Trạng thái: $status'),
-                      Text('Mô tả: $desc'),
-                    ],
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue,
+                      radius: 28,
+                      child: Text(
+                        id.isNotEmpty ? id : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      'Lịch hẹn #$id',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Ngày hẹn: $date'),
+                          if (status.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Row(
+                                children: [
+                                  Icon(statusIcon, size: 16, color: statusColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Trạng thái: $status',
+                                    style: TextStyle(color: statusColor),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (desc.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Mô tả: $desc',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    isThreeLine: true,
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: _openCreateAppointmentSheet,
         tooltip: 'Đặt lịch hẹn',
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.add),
+        label: const Text('Đặt lịch'),
       ),
     );
   }

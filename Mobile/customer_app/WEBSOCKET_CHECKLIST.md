@@ -47,7 +47,7 @@ _connection!.on('ForceLogout', _handleLogout);
 - **Home Screen** (`lib/screens/home_screen.dart`):
   - Setup callback trong `initState()`
   - `_handleRemoteLogout()`:
-    - Hiện SnackBar: "Bạn đã đăng xuất từ thiết bị khác"
+    - Hiện SnackBar: "Bạn đã đăng xuất"
     - Gọi `_logout()` để clear session
     - Navigate về Login screen
 
@@ -114,7 +114,7 @@ flutter run
 ### Test scenario:
 1. **Login trên Mobile** với SĐT: `0123456789`
 2. **Login trên WebApp** (`https://10.147.20.199:5131`) với CÙNG SĐT
-3. **Expected:** Mobile hiện SnackBar "Bạn đã đăng xuất từ thiết bị khác" và tự động logout
+3. **Expected:** Mobile hiện SnackBar "Bạn đã đăng xuất" và tự động logout
 
 ### Debug logs (kDebugMode):
 ```

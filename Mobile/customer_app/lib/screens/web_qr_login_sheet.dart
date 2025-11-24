@@ -30,11 +30,13 @@ class _WebQrLoginSheetState extends State<WebQrLoginSheet> {
 
     setState(() => _isSubmitting = true);
     try {
+      // onSubmit sẽ tự đóng bottom sheet và xử lý navigation
       await widget.onSubmit(code);
-      if (!mounted) return;
-      Navigator.of(context).pop();
     } catch (e) {
-      _showSnack(e.toString());
+      // Nếu có lỗi, giữ sheet mở để hiển thị lỗi
+      if (mounted) {
+        _showSnack(e.toString());
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

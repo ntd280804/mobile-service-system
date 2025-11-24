@@ -128,6 +128,7 @@ builder.Services.AddSingleton<InvoicePdfService>(sp => new InvoicePdfService(
     sp.GetRequiredService<IHostEnvironment>()
 ));
 builder.Services.AddSingleton<RsaKeyService>();
+builder.Services.AddSingleton<EmailService>();
 // Add SignalR
 builder.Services.AddSignalR();
 builder.WebHost.ConfigureKestrel(options =>

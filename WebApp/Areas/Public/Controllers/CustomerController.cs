@@ -52,8 +52,38 @@ namespace WebApp.Areas.Public.Controllers
                     Password = password,
                     Platform = platform
                 };
-                await _securityClient.InitializeAsync(HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!, "public-web");
-                var apiResult = await _securityClient.PostEncryptedAsync<object, LoginResultEnvelope>("api/Public/Customer/login-secure", loginData);
+                
+                string client_id = "public-web";
+                
+                // Kiểm tra xem có private key trong session không
+                string? existingPrivateKeyPem = null;
+                var privateKeyBase64 = HttpContext.Session.GetString("CPrivateKeyBase64");
+                if (!string.IsNullOrWhiteSpace(privateKeyBase64))
+                {
+                    // Decode từ Base64 về PEM
+                    existingPrivateKeyPem = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(privateKeyBase64));
+                }
+                
+                // Login: sử dụng private key từ session nếu có, nếu không thì generate mới
+                await _securityClient.InitializeAsync(
+                    HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!, 
+                    client_id, 
+                    existingPrivateKeyPem);
+                
+                // Lưu private key vào session nếu chưa có (để dùng cho các request sau)
+                if (string.IsNullOrWhiteSpace(privateKeyBase64))
+                {
+                    var newPrivateKeyPem = _securityClient.GetPrivateKeyPem();
+                    if (!string.IsNullOrWhiteSpace(newPrivateKeyPem))
+                    {
+                        // Lưu private key PEM vào session (encode Base64)
+                        HttpContext.Session.SetString("CPrivateKeyBase64", Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(newPrivateKeyPem)));
+                    }
+                }
+                
+                // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
+                var apiResult = await _securityClient.PostEncryptedAndGetEncryptedAsync<object, LoginResultEnvelope>(
+                    "api/Public/Customer/login-secure-encrypted", loginData);
 
                 if (apiResult.Result == "SUCCESS")
                 {
@@ -173,6 +203,58 @@ namespace WebApp.Areas.Public.Controllers
         }
 
         [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateOtp([FromBody] ForgotPasswordGenerateOtpDto dto)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect, false))
+                return redirect;
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/forgot-password/generate-otp", dto);
+                var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<ForgotPasswordOtpResponse>>();
+                
+                if (payload == null)
+                    return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+
+                return Json(payload);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, Json(new { success = false, error = ex.Message }));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordResetDto dto)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect, false))
+                return redirect;
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/forgot-password/reset", dto);
+                var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<string>>();
+                
+                if (payload == null)
+                    return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+
+                return Json(payload);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, Json(new { success = false, error = ex.Message }));
+            }
+        }
+
+        [HttpGet]
         public IActionResult ChangePassword()
         {
             var token = HttpContext.Session.GetString("CJwtToken");
@@ -197,12 +279,40 @@ namespace WebApp.Areas.Public.Controllers
 
             try
             {
-                var keyResp = await _httpClient.GetFromJsonAsync<WebApiResponse<string>>("api/public/security/server-public-key");
-                if (keyResp == null || !keyResp.Success || string.IsNullOrWhiteSpace(keyResp.Data))
+                // Lấy thông tin từ session
+                var username = HttpContext.Session.GetString("CUsername");
+                var platform = HttpContext.Session.GetString("CPlatform") ?? "WEB";
+                if (string.IsNullOrWhiteSpace(username))
                 {
-                    ModelState.AddModelError(string.Empty, "Không thể lấy khóa công khai của máy chủ.");
+                    ModelState.AddModelError(string.Empty, "Vui lòng đăng nhập trước.");
                     return View(model);
                 }
+
+                string client_id = "public-web";
+
+                // Lấy private key từ session
+                string? existingPrivateKeyPem = null;
+                var privateKeyBase64 = HttpContext.Session.GetString("CPrivateKeyBase64");
+                if (!string.IsNullOrWhiteSpace(privateKeyBase64))
+                {
+                    existingPrivateKeyPem = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(privateKeyBase64));
+                }
+
+                // Initialize SecurityClient với private key từ session
+                await _securityClient.InitializeAsync(
+                    HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!,
+                    client_id,
+                    existingPrivateKeyPem);
+
+                // Set headers cho authenticated request
+                var token = HttpContext.Session.GetString("CJwtToken");
+                var sessionId = HttpContext.Session.GetString("CSessionId");
+                if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(sessionId))
+                {
+                    ModelState.AddModelError(string.Empty, "Vui lòng đăng nhập trước.");
+                    return View(model);
+                }
+                _securityClient.SetHeaders(token, username, platform, sessionId);
 
                 var payload = new
                 {
@@ -210,25 +320,13 @@ namespace WebApp.Areas.Public.Controllers
                     NewPassword = model.NewPassword
                 };
 
-                var json = JsonSerializer.Serialize(payload);
-                var encrypted = EncryptHelper.HybridEncrypt(json, keyResp.Data);
+                // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
+                // PostEncryptedAndGetEncryptedAsync sẽ tự động giải mã và trả về Data từ ApiResponse
+                await _securityClient.PostEncryptedAndGetEncryptedAsync<object, string>(
+                    "api/Public/Customer/change-password-secure-encrypted", payload);
 
-                var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/change-password-secure", new
-                {
-                    encryptedKeyBlockBase64 = encrypted.EncryptedKeyBlock,
-                    cipherDataBase64 = encrypted.CipherData
-                });
-
-                var apiResult = await response.Content.ReadFromJsonAsync<WebApiResponse<string>>();
-                if (response.IsSuccessStatusCode && apiResult?.Success == true)
-                {
-                    TempData["Message"] = "Đổi mật khẩu thành công.";
-                    return RedirectToAction("Index", "Home", new { area = "Public" });
-                }
-
-                var errorMsg = apiResult?.Error ?? await response.Content.ReadAsStringAsync();
-                ModelState.AddModelError(string.Empty, $"Đổi mật khẩu thất bại: {errorMsg}");
-                return View(model);
+                TempData["Message"] = "Đổi mật khẩu thành công.";
+                return RedirectToAction("Index", "Home", new { area = "Public" });
             }
             catch (Exception ex)
             {
@@ -269,9 +367,22 @@ namespace WebApp.Areas.Public.Controllers
 
 
         // --- DTOs ---
+        public class ForgotPasswordGenerateOtpDto
+        {
+            public string Phone { get; set; } = string.Empty;
+        }
 
-        
-        
+        public class ForgotPasswordResetDto
+        {
+            public string Phone { get; set; } = string.Empty;
+            public string Otp { get; set; } = string.Empty;
+            public string NewPassword { get; set; } = string.Empty;
+        }
 
+        public class ForgotPasswordOtpResponse
+        {
+            public string Otp { get; set; } = string.Empty;
+            public string Message { get; set; } = string.Empty;
+        }
     }
 }

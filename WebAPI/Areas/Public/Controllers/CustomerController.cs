@@ -23,18 +23,21 @@ namespace WebAPI.Areas.Public.Controllers
         private readonly JwtHelper _jwtHelper;
         private readonly OracleSessionHelper _oracleSessionHelper;
         private readonly CustomerQrLoginService _customerQrLoginService;
+        private readonly EmailService _emailService;
 
         public CustomerController(
                                   OracleConnectionManager connManager,
                                   JwtHelper jwtHelper,
                                   OracleSessionHelper oracleSessionHelper,
-                                  CustomerQrLoginService customerQrLoginService)
+                                  CustomerQrLoginService customerQrLoginService,
+                                  EmailService emailService)
         {
             
             _connManager = connManager;
             _jwtHelper = jwtHelper;
             _oracleSessionHelper = oracleSessionHelper;
             _customerQrLoginService = customerQrLoginService;
+            _emailService = emailService;
         }
         [HttpPost("login")]
         public ActionResult<ApiResponse<CustomerLoginResult>> Login([FromBody] CustomerLoginDto dto)
@@ -131,15 +134,15 @@ namespace WebAPI.Areas.Public.Controllers
             }
         }
 
-
-        [HttpPost("login-secure")]
-        public ActionResult<ApiResponse<CustomerLoginResult>> LoginSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        [HttpPost("login-secure-encrypted")]
+        public ActionResult<ApiResponse<EncryptedPayload>> LoginSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {
             if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
-                return BadRequest(ApiResponse<CustomerLoginResult>.Fail("Invalid encrypted payload"));
+                return BadRequest(ApiResponse<EncryptedPayload>.Fail("Invalid encrypted payload"));
 
             try
             {
+                // Giải mã request từ client
                 byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
                 byte[] aesKey = new byte[32];
                 byte[] iv = new byte[16];
@@ -147,6 +150,7 @@ namespace WebAPI.Areas.Public.Controllers
                 Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
 
                 byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
+                string plaintext;
                 using (Aes aes = Aes.Create())
                 {
                     ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
@@ -154,17 +158,79 @@ namespace WebAPI.Areas.Public.Controllers
                     using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
                     using (var reader = new StreamReader(cs, Encoding.UTF8))
                     {
-                        string plaintext = reader.ReadToEnd();
-                        var dto = System.Text.Json.JsonSerializer.Deserialize<CustomerLoginDto>(plaintext);
-                        if (dto == null)
-                            return BadRequest(ApiResponse<CustomerLoginResult>.Fail("Cannot parse payload"));
-                        return Login(dto);
+                        plaintext = reader.ReadToEnd();
                     }
                 }
+
+                var dto = System.Text.Json.JsonSerializer.Deserialize<CustomerLoginDto>(plaintext);
+                if (dto == null)
+                    return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
+
+                // Xử lý login
+                var loginResult = Login(dto);
+                ApiResponse<CustomerLoginResult> apiResp;
+                
+                if (loginResult.Result is ObjectResult objResult && objResult.Value is ApiResponse<CustomerLoginResult> resp)
+                {
+                    apiResp = resp;
+                }
+                else if (loginResult.Result is UnauthorizedObjectResult unauthorizedObj)
+                {
+                    // Xử lý UnauthorizedObjectResult có thể chứa ApiResponse hoặc anonymous object
+                    if (unauthorizedObj.Value is ApiResponse<CustomerLoginResult> unauthResp)
+                    {
+                        apiResp = unauthResp;
+                    }
+                    else if (unauthorizedObj.Value != null)
+                    {
+                        // Thử deserialize anonymous object để lấy message
+                        try
+                        {
+                            var json = System.Text.Json.JsonSerializer.Serialize(unauthorizedObj.Value);
+                            var anonObj = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+                            string message = "Unauthorized";
+                            if (anonObj.TryGetProperty("message", out var msgProp))
+                                message = msgProp.GetString() ?? message;
+                            else if (anonObj.TryGetProperty("Message", out var msgProp2))
+                                message = msgProp2.GetString() ?? message;
+                            apiResp = ApiResponse<CustomerLoginResult>.Fail(message);
+                        }
+                        catch
+                        {
+                            apiResp = ApiResponse<CustomerLoginResult>.Fail("Sai số điện thoại hoặc mật khẩu.");
+                        }
+                    }
+                    else
+                    {
+                        apiResp = ApiResponse<CustomerLoginResult>.Fail("Sai số điện thoại hoặc mật khẩu.");
+                    }
+                }
+                else if (loginResult.Result is StatusCodeResult statusCodeResult)
+                {
+                    string errorMsg = "Login failed";
+                    if (statusCodeResult.StatusCode == 401)
+                        errorMsg = "Sai số điện thoại hoặc mật khẩu.";
+                    apiResp = ApiResponse<CustomerLoginResult>.Fail(errorMsg);
+                }
+                else
+                {
+                    apiResp = ApiResponse<CustomerLoginResult>.Fail("Unexpected response format");
+                }
+
+                // Mã hóa response (cả success và error đều được mã hóa)
+                // Customer dùng clientId là "public-web" (fixed)
+                string responseJson = System.Text.Json.JsonSerializer.Serialize(apiResp);
+                string clientId = "public-web";
+                var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
+                return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                {
+                    EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
+                    CipherDataBase64 = encryptedResponse.CipherDataBase64
+                }));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<CustomerLoginResult>.Fail(ex.Message));
+                return StatusCode(500, ApiResponse<EncryptedPayload>.Fail(ex.Message));
             }
         }
 
@@ -251,16 +317,16 @@ namespace WebAPI.Areas.Public.Controllers
                 return StatusCode(500, ApiResponse<string>.Fail(ex.Message));
             }
         }
-
-        [HttpPost("change-password-secure")]
+        [HttpPost("change-password-secure-encrypted")]
         [Authorize]
-        public ActionResult<ApiResponse<string>> ChangePasswordSecure([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        public ActionResult<ApiResponse<EncryptedPayload>> ChangePasswordSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {
             if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
-                return BadRequest(ApiResponse<string>.Fail("Invalid encrypted payload"));
+                return BadRequest(ApiResponse<EncryptedPayload>.Fail("Invalid encrypted payload"));
 
             try
             {
+                // Giải mã request từ client
                 byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
                 byte[] aesKey = new byte[32];
                 byte[] iv = new byte[16];
@@ -268,6 +334,7 @@ namespace WebAPI.Areas.Public.Controllers
                 Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
 
                 byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
+                string plaintext;
                 using (Aes aes = Aes.Create())
                 {
                     ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
@@ -275,20 +342,184 @@ namespace WebAPI.Areas.Public.Controllers
                     using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
                     using (var reader = new StreamReader(cs, Encoding.UTF8))
                     {
-                        string plaintext = reader.ReadToEnd();
-                        var dto = System.Text.Json.JsonSerializer.Deserialize<changePasswordDto>(plaintext);
-                        if (dto == null)
-                            return BadRequest(ApiResponse<string>.Fail("Cannot parse payload"));
-                        return ChangePassword(dto);
+                        plaintext = reader.ReadToEnd();
                     }
                 }
+
+                var dto = System.Text.Json.JsonSerializer.Deserialize<changePasswordDto>(plaintext);
+                if (dto == null)
+                    return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
+
+                // Xử lý change password
+                var changePasswordResult = ChangePassword(dto);
+                ApiResponse<string> apiResp;
+                
+                if (changePasswordResult.Result is ObjectResult objResult && objResult.Value is ApiResponse<string> resp)
+                {
+                    apiResp = resp;
+                }
+                else if (changePasswordResult.Result is BadRequestObjectResult badRequestObj && badRequestObj.Value is ApiResponse<string> badResp)
+                {
+                    // Lấy error message từ BadRequestObjectResult
+                    apiResp = badResp;
+                }
+                else if (changePasswordResult.Result is UnauthorizedObjectResult unauthorizedObj && unauthorizedObj.Value is ApiResponse<string> unauthResp)
+                {
+                    // Lấy error message từ UnauthorizedObjectResult
+                    apiResp = unauthResp;
+                }
+                else if (changePasswordResult.Result is StatusCodeResult statusCodeResult)
+                {
+                    string errorMsg = "Change password failed";
+                    if (statusCodeResult.StatusCode == 400)
+                        errorMsg = "Bad request";
+                    else if (statusCodeResult.StatusCode == 401)
+                        errorMsg = "Unauthorized";
+                    apiResp = ApiResponse<string>.Fail(errorMsg);
+                }
+                else
+                {
+                    apiResp = ApiResponse<string>.Fail("Unexpected response format");
+                }
+
+                // Mã hóa response
+                string responseJson = System.Text.Json.JsonSerializer.Serialize(apiResp);
+                
+                // Customer dùng clientId là "public-web" (fixed)
+                string clientId = "public-web";
+                var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
+                return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                {
+                    EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
+                    CipherDataBase64 = encryptedResponse.CipherDataBase64
+                }));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<string>.Fail(ex.Message));
+                return StatusCode(500, ApiResponse<EncryptedPayload>.Fail(ex.Message));
+            }
+        }
+
+        [HttpPost("forgot-password/generate-otp")]
+        public async Task<IActionResult> GenerateOtpForForgotPassword([FromBody] ForgotPasswordGenerateOtpDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Phone))
+            {
+                return BadRequest(ApiResponse<string>.Fail("Số điện thoại không được để trống."));
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Email))
+            {
+                return BadRequest(ApiResponse<string>.Fail("Email không được để trống."));
+            }
+
+            try
+            {
+                var conn = _connManager.CreateDefaultConnection();
+                using var cmd = new OracleCommand("APP.GENERATE_OTP_CUSTOMER", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
+                var pOtp = new OracleParameter("p_otp", OracleDbType.Varchar2, 10, null, ParameterDirection.Output);
+                var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
+                cmd.Parameters.Add(pOtp);
+                cmd.Parameters.Add(pResult);
+
+                cmd.ExecuteNonQuery();
+
+                string result = pResult.Value?.ToString() ?? "";
+                string otp = pOtp.Value?.ToString() ?? "";
+
+                if (result.Contains("Lỗi") || result.Contains("không tồn tại"))
+                {
+                    return BadRequest(ApiResponse<string>.Fail(result));
+                }
+
+                // Gửi OTP qua email
+                bool emailSent = await _emailService.SendOtpEmailAsync(dto.Email, otp, dto.Phone);
+                
+                if (!emailSent)
+                {
+                    return StatusCode(500, ApiResponse<string>.Fail("Không thể gửi email OTP. Vui lòng thử lại sau."));
+                }
+
+                // Không trả về OTP trong response (bảo mật)
+                return Ok(ApiResponse<ForgotPasswordOtpResponse>.Ok(new ForgotPasswordOtpResponse
+                {
+                    Otp = "", // Không trả về OTP
+                    Message = "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư."
+                }));
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                return Unauthorized(ApiResponse<string>.Fail("Phiên Oracle đã bị kill. Vui lòng thử lại."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.Fail("Lỗi khi tạo OTP: " + ex.Message));
+            }
+        }
+
+        [HttpPost("forgot-password/reset")]
+        public IActionResult ResetPasswordWithOtp([FromBody] ForgotPasswordResetDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Phone) || 
+                string.IsNullOrWhiteSpace(dto.Otp) || string.IsNullOrWhiteSpace(dto.NewPassword))
+            {
+                return BadRequest(ApiResponse<string>.Fail("Vui lòng nhập đầy đủ thông tin."));
+            }
+
+            try
+            {
+                var conn = _connManager.CreateDefaultConnection();
+                using var cmd = new OracleCommand("APP.RESET_PASSWORD_CUSTOMER", conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
+                cmd.Parameters.Add("p_otp", OracleDbType.Varchar2).Value = dto.Otp;
+                cmd.Parameters.Add("p_new_password", OracleDbType.Varchar2).Value = dto.NewPassword;
+                var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
+                cmd.Parameters.Add(pResult);
+
+                cmd.ExecuteNonQuery();
+
+                string result = pResult.Value?.ToString() ?? "";
+
+                if (result.Contains("Lỗi") || result.Contains("không hợp lệ") || result.Contains("không tồn tại"))
+                {
+                    return BadRequest(ApiResponse<string>.Fail(result));
+                }
+
+                return Ok(ApiResponse<string>.Ok(result));
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                return Unauthorized(ApiResponse<string>.Fail("Phiên Oracle đã bị kill. Vui lòng thử lại."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.Fail("Lỗi khi đặt lại mật khẩu: " + ex.Message));
             }
         }
 
         // DTO
+        public class ForgotPasswordGenerateOtpDto
+        {
+            public string Phone { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+        }
+
+        public class ForgotPasswordResetDto
+        {
+            public string Phone { get; set; } = string.Empty;
+            public string Otp { get; set; } = string.Empty;
+            public string NewPassword { get; set; } = string.Empty;
+        }
+
+        public class ForgotPasswordOtpResponse
+        {
+            public string Otp { get; set; } = string.Empty;
+            public string Message { get; set; } = string.Empty;
+        }
     }
 }

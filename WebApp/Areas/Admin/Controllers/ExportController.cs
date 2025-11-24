@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using NuGet.Common;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json.Serialization;
 using WebApp.Helpers;
 using WebApp.Models.Part;
+using WebApp.Services;
 namespace WebApp.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -12,11 +15,13 @@ namespace WebApp.Areas.Admin.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly OracleClientHelper _OracleClientHelper;
+        private readonly SecurityClient _securityClient;
 
-        public ExportController(IHttpClientFactory httpClientFactory, OracleClientHelper _oracleClientHelper)
+        public ExportController(IHttpClientFactory httpClientFactory, OracleClientHelper _oracleClientHelper, SecurityClient securityClient)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
             _OracleClientHelper = _oracleClientHelper;
+            _securityClient = securityClient;
         }
 
         // DTOs moved to WebApp.Models
@@ -83,92 +88,129 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
 
-
+        // GET: /Admin/Export/Create
+        // Export được tạo từ Order, không phải từ form riêng
+        [HttpGet]
+        public IActionResult Create()
+        {
+            // Redirect về Order Index vì Export luôn được tạo từ Order
+            return RedirectToAction("Index", "Order", new { area = "Admin" });
+        }
 
         // POST: /Admin/Export/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ExportStockDto model)
         {
-            // Decode URL-encoded private key if present
-            if (!string.IsNullOrEmpty(model.PrivateKey))
+            // Debug: Log model state
+            if (!ModelState.IsValid)
             {
-                try { model.PrivateKey = Uri.UnescapeDataString(model.PrivateKey); } catch { }
-            }
-
-            if (string.IsNullOrEmpty(model.PrivateKey))
-            {
-                TempData["Error"] = "Vui lòng cung cấp private key để hoàn tất và xuất kho.";
+                var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                TempData["Error"] = $"Model validation failed: {errors}. Model: orderid={model?.orderid}, HasPfx={!string.IsNullOrEmpty(model?.CertificatePfxBase64)}, HasPassword={!string.IsNullOrEmpty(model?.CertificatePassword)}";
                 return RedirectToAction("Index", "Order", new { area = "Admin" });
             }
 
-            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
-                return redirect;
+            if (model == null)
+            {
+                TempData["Error"] = "Model is null. Please check form submission.";
+                return RedirectToAction("Index", "Order", new { area = "Admin" });
+            }
+
+            if (model.orderid <= 0)
+            {
+                TempData["Error"] = "Order ID is missing or invalid.";
+                return RedirectToAction("Index", "Order", new { area = "Admin" });
+            }
+
+            if (string.IsNullOrEmpty(model.CertificatePfxBase64) || string.IsNullOrEmpty(model.CertificatePassword))
+            {
+                TempData["Error"] = "Vui lòng cung cấp PFX certificate và mật khẩu để ký số PDF.";
+                return RedirectToAction("Index", "Order", new { area = "Admin" });
+            }
 
             try
             {
-                // Get current admin username from session headers
-                if (!_OracleClientHelper.TryGetSession(out var token, out var username, out var platform, out var sessionId, isAdmin: true))
+                // Lấy thông tin từ session
+                var username = HttpContext.Session.GetString("Username");
+                var platform = HttpContext.Session.GetString("Platform") ?? "WEB";
+                if (string.IsNullOrWhiteSpace(username))
                 {
-                    return new RedirectToActionResult("Login", "Employee", new { area = "Admin" });
-                }
-
-                // Encrypt payload using server public key
-                var keyResp = await _httpClient.GetFromJsonAsync<WebApp.Services.ApiResponse<string>>("api/public/security/server-public-key");
-                if (keyResp == null || !keyResp.Success || string.IsNullOrWhiteSpace(keyResp.Data))
-                {
-                    TempData["Error"] = "Không thể lấy khóa công khai của server.";
+                    TempData["Error"] = "Vui lòng đăng nhập trước.";
                     return RedirectToAction("Index", "Order", new { area = "Admin" });
                 }
+                string client_id = "admin-" + username + platform;
 
-                var plainDto = new
+                // Lấy private key từ session
+                string? existingPrivateKeyPem = null;
+                var privateKeyBase64 = HttpContext.Session.GetString("PrivateKeyBase64");
+                if (string.IsNullOrWhiteSpace(privateKeyBase64))
+                {
+                    TempData["Error"] = "Vui lòng upload private key trước khi sử dụng chức năng này.";
+                    return RedirectToAction("Index", "Order", new { area = "Admin" });
+                }
+                existingPrivateKeyPem = Encoding.UTF8.GetString(Convert.FromBase64String(privateKeyBase64));
+
+                // Initialize SecurityClient với private key từ session
+                await _securityClient.InitializeAsync(
+                    HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!,
+                    client_id,
+                    existingPrivateKeyPem);
+
+                // Set headers cho authenticated request
+                var token = HttpContext.Session.GetString("JwtToken");
+                var sessionId = HttpContext.Session.GetString("SessionId");
+                if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(sessionId))
+                {
+                    TempData["Error"] = "Vui lòng đăng nhập trước.";
+                    return RedirectToAction("Index", "Order", new { area = "Admin" });
+                }
+                _securityClient.SetHeaders(token, username, platform, sessionId);
+
+                // Tạo DTO để gửi
+                var createExportDto = new
                 {
                     EmpUsername = username,
                     OrderId = (int)model.orderid,
-                    PrivateKey = model.PrivateKey
+                    CertificatePfxBase64 = model.CertificatePfxBase64,
+                    CertificatePassword = model.CertificatePassword
                 };
 
-                var json = System.Text.Json.JsonSerializer.Serialize(plainDto);
-                var encrypted = WebApp.Helpers.EncryptHelper.HybridEncrypt(json, keyResp.Data);
+                // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
+                var responseObj = await _securityClient.PostEncryptedAndGetEncryptedAsync<object, ExportSecureResponse>(
+                    "api/admin/export/create-secure-encrypted", createExportDto);
 
-                var response = await _httpClient.PostAsJsonAsync("api/Admin/export/create-secure", new
+                // Xử lý response
+                if (responseObj != null)
                 {
-                    encryptedKeyBlockBase64 = encrypted.EncryptedKeyBlock,
-                    cipherDataBase64 = encrypted.CipherData
-                });
-
-                if (response.IsSuccessStatusCode)
-                {
-                    var mediaType = response.Content.Headers.ContentType?.MediaType ?? "";
-                    if (string.Equals(mediaType, "application/pdf", StringComparison.OrdinalIgnoreCase))
+                    if (responseObj.Type == "pdf")
                     {
-                        var stream = await response.Content.ReadAsStreamAsync();
-                        // Try to parse stockInId from Content-Disposition filename if present; otherwise fallback to timestamp
-                        var fileName = "ExportInvoice.pdf";
-                        if (response.Content.Headers.ContentDisposition != null && !string.IsNullOrWhiteSpace(response.Content.Headers.ContentDisposition.FileNameStar))
-                            fileName = response.Content.Headers.ContentDisposition.FileNameStar;
-                        else if (response.Content.Headers.ContentDisposition != null && !string.IsNullOrWhiteSpace(response.Content.Headers.ContentDisposition.FileName))
-                            fileName = response.Content.Headers.ContentDisposition.FileName.Trim('\"');
-                        return File(stream, "application/pdf", fileName);
+                        // Ưu tiên trả về Invoice PDF nếu có, nếu không thì Export PDF
+                        if (!string.IsNullOrWhiteSpace(responseObj.InvoicePdfBase64))
+                        {
+                            byte[] pdfBytes = Convert.FromBase64String(responseObj.InvoicePdfBase64);
+                            string fileName = responseObj.InvoiceFileName ?? $"Invoice_{responseObj.InvoiceId}.pdf";
+                            TempData["Success"] = $"Đã tạo export và invoice thành công. Invoice ID: {responseObj.InvoiceId}";
+                            return File(pdfBytes, "application/pdf", fileName);
+                        }
+                        else if (!string.IsNullOrWhiteSpace(responseObj.ExportPdfBase64))
+                        {
+                            byte[] pdfBytes = Convert.FromBase64String(responseObj.ExportPdfBase64);
+                            string fileName = responseObj.ExportFileName ?? $"ExportInvoice_{responseObj.StockOutId}.pdf";
+                            TempData["Success"] = $"Đã tạo export thành công. StockOut ID: {responseObj.StockOutId}";
+                            return File(pdfBytes, "application/pdf", fileName);
+                        }
                     }
-                    else
+                    
+                    if (responseObj.Success)
                     {
                         TempData["Success"] = "Export thành công";
-                        return RedirectToAction(nameof(Index));
+                        return RedirectToAction("Index", "Order", new { area = "Admin" });
                     }
                 }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-                {
-                    TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
-                    HttpContext.Session.Clear();
-                    return RedirectToAction("Login", "Employee", new { area = "Admin" });
-                }
-                else
-                {
-                    var err = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = "Không thể hoàn tất đơn hàng: " + response.ReasonPhrase + " - " + err;
-                    return RedirectToAction("Index", "Order", new { area = "Admin" });
-                }
+
+                // Nếu có error message
+                TempData["Error"] = $"Không thể hoàn tất đơn hàng: {responseObj?.Message ?? "Response không hợp lệ"}";
+                return RedirectToAction("Index", "Order", new { area = "Admin" });
             }
             catch (Exception ex)
             {
@@ -176,52 +218,7 @@ namespace WebApp.Areas.Admin.Controllers
                 return RedirectToAction("Index", "Order", new { area = "Admin" });
             }
         }
-        // GET: /Admin/Export/Verifysign/5
-        [HttpGet]
-        public async Task<IActionResult> Verifysign(int id)
-        {
-            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
-                return redirect;
-
-            try
-            {
-                // Gọi WebAPI endpoint verify chữ ký
-                var response = await _httpClient.GetAsync($"api/admin/export/verifysign/{id}");
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorMsg = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = $"Xác thực thất bại: {response.ReasonPhrase} - {errorMsg}";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                // Giả sử API trả về JSON { "StockInId": 14, "IsValid": true }
-                var result = await response.Content.ReadFromJsonAsync<VerifySignResult>();
-
-                if (result == null)
-                {
-                    TempData["Error"] = "Không nhận được kết quả từ API";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                // Thông báo kết quả
-                if (result.IsValid)
-                {
-                    TempData["Success"] = $"Chữ ký StockOut ID {result.StockInId} là hợp lệ ✅";
-                }
-                else
-                {
-                    TempData["Error"] = $"Chữ ký StockOut ID {result.StockInId} không hợp lệ ❌";
-                }
-
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return RedirectToAction(nameof(Index));
-            }
-        }
-
+        
         // GET: /Admin/Export/Invoice/5
         [HttpGet]
         public async Task<IActionResult> Invoice(int id)
@@ -250,6 +247,18 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
 
-        
+        // DTOs for encrypted response
+        public class ExportSecureResponse
+        {
+            public bool Success { get; set; }
+            public string? Type { get; set; } // "pdf" or null
+            public string? ExportPdfBase64 { get; set; }
+            public string? ExportFileName { get; set; }
+            public string? InvoicePdfBase64 { get; set; }
+            public string? InvoiceFileName { get; set; }
+            public int? InvoiceId { get; set; }
+            public int? StockOutId { get; set; }
+            public string? Message { get; set; }
+        }
     }
 }

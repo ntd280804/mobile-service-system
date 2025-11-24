@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -6,6 +7,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
+using System.Text;
 using WebApp.Helpers;
 using WebApp.Services;
 using WebApp.Models.Auth;
@@ -52,12 +55,40 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var keyResp = await _httpClient.GetFromJsonAsync<WebApiResponse<string>>("api/public/security/server-public-key");
-                if (keyResp == null || !keyResp.Success || string.IsNullOrWhiteSpace(keyResp.Data))
+                // Lấy thông tin từ session
+                var username = HttpContext.Session.GetString("Username");
+                var platform = HttpContext.Session.GetString("Platform") ?? "WEB";
+                if (string.IsNullOrWhiteSpace(username))
                 {
-                    ModelState.AddModelError(string.Empty, "Không thể lấy khóa công khai của máy chủ.");
+                    ModelState.AddModelError(string.Empty, "Vui lòng đăng nhập trước.");
                     return View(model);
                 }
+
+                string client_id = "admin-"+username + platform;
+
+                // Lấy private key từ session
+                string? existingPrivateKeyPem = null;
+                var privateKeyBase64 = HttpContext.Session.GetString("PrivateKeyBase64");
+                if (!string.IsNullOrWhiteSpace(privateKeyBase64))
+                {
+                    existingPrivateKeyPem = Encoding.UTF8.GetString(Convert.FromBase64String(privateKeyBase64));
+                }
+
+                // Initialize SecurityClient với private key từ session
+                await _securityClient.InitializeAsync(
+                    HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!,
+                    client_id,
+                    existingPrivateKeyPem);
+
+                // Set headers cho authenticated request
+                var token = HttpContext.Session.GetString("JwtToken");
+                var sessionId = HttpContext.Session.GetString("SessionId");
+                if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(sessionId))
+                {
+                    ModelState.AddModelError(string.Empty, "Vui lòng đăng nhập trước.");
+                    return View(model);
+                }
+                _securityClient.SetHeaders(token, username, platform, sessionId);
 
                 var payload = new
                 {
@@ -65,25 +96,13 @@ namespace WebApp.Areas.Admin.Controllers
                     NewPassword = model.NewPassword
                 };
 
-                var json = JsonSerializer.Serialize(payload);
-                var encrypted = EncryptHelper.HybridEncrypt(json, keyResp.Data);
+                // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
+                // PostEncryptedAndGetEncryptedAsync sẽ tự động giải mã và trả về Data từ ApiResponse
+                await _securityClient.PostEncryptedAndGetEncryptedAsync<object, string>(
+                    "api/Admin/Employee/change-password-secure-encrypted", payload);
 
-                var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/change-password-secure", new
-                {
-                    encryptedKeyBlockBase64 = encrypted.EncryptedKeyBlock,
-                    cipherDataBase64 = encrypted.CipherData
-                });
-
-                var apiResult = await response.Content.ReadFromJsonAsync<WebApiResponse<string>>();
-                if (response.IsSuccessStatusCode && apiResult?.Success == true)
-                {
-                    TempData["Message"] = "Đổi mật khẩu thành công.";
-                    return RedirectToAction("Index", "Home", new { area = "Public" });
-                }
-
-                var errorMsg = apiResult?.Error ?? await response.Content.ReadAsStringAsync();
-                ModelState.AddModelError(string.Empty, $"Đổi mật khẩu thất bại: {errorMsg}");
-                return View(model);
+                TempData["Message"] = "Đổi mật khẩu thành công.";
+                return RedirectToAction("Index", "Home", new { area = "Admin" });
             }
             catch (Exception ex)
             {
@@ -159,9 +178,26 @@ namespace WebApp.Areas.Admin.Controllers
                     Password = password,
                     Platform = platform
                 };
+                string client_id = username + platform;
 
-                await _securityClient.InitializeAsync(HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!, "admin-web");
-                var apiResult = await _securityClient.PostEncryptedAsync<object, LoginResultEnvelope>("api/Admin/Employee/login-secure", loginData);
+                // Kiểm tra xem có private key trong session không
+                string? existingPrivateKeyPem = null;
+                var privateKeyBase64 = HttpContext.Session.GetString("PrivateKeyBase64");
+                if (!string.IsNullOrWhiteSpace(privateKeyBase64))
+                {
+                    // Decode từ Base64 về PEM
+                    existingPrivateKeyPem = Encoding.UTF8.GetString(Convert.FromBase64String(privateKeyBase64));
+                }
+                
+                // Login: sử dụng private key từ session nếu có, nếu không thì generate mới
+                await _securityClient.InitializeAsync(
+                    HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!, 
+                    client_id, 
+                    existingPrivateKeyPem);
+                
+                // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
+                var apiResult = await _securityClient.PostEncryptedAndGetEncryptedAsync<object, LoginResultEnvelope>(
+                    "api/Admin/Employee/login-secure-encrypted", loginData);
 
                 if (apiResult.Result == "SUCCESS")
                 {
@@ -170,6 +206,21 @@ namespace WebApp.Areas.Admin.Controllers
                     HttpContext.Session.SetString("Role", apiResult.Roles ?? "");
                     HttpContext.Session.SetString("Platform", platform);
                     HttpContext.Session.SetString("SessionId", apiResult.SessionId ?? "");
+                    
+                    // Kiểm tra xem đã có private key chưa, nếu chưa thì set flag để hiển thị modal bắt buộc
+                    var hasPrivateKey = HttpContext.Session.GetString("PrivateKeyBase64");
+                    if (string.IsNullOrWhiteSpace(hasPrivateKey))
+                    {
+                        // Lưu private key đã generate tạm thời vào session (để dùng cho request này)
+                        // Nhưng vẫn yêu cầu user upload private key chính thức
+                        var tempPrivateKeyPem = _securityClient.GetPrivateKeyPem();
+                        if (!string.IsNullOrWhiteSpace(tempPrivateKeyPem))
+                        {
+                            HttpContext.Session.SetString("PrivateKeyBase64", Convert.ToBase64String(Encoding.UTF8.GetBytes(tempPrivateKeyPem)));
+                        }
+                        // Set flag để hiển thị modal bắt buộc
+                        TempData["ShowUploadPrivateKeyModal"] = "true";
+                    }
 
                     TempData["Message"] = $"Login thành công! ({apiResult.Roles})";
                     return RedirectToAction("Index", "Home", new { area = "Admin" });
@@ -282,27 +333,70 @@ namespace WebApp.Areas.Admin.Controllers
         public async Task<IActionResult> Register(EmployeeRegisterDto dto)
         {
             if (!ModelState.IsValid) return View(dto);
-            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
-                return redirect;
+
             try
             {
-                // Gửi POST request
-                var response = await _httpClient.PostAsJsonAsync("api/Admin/Employee/register", dto);
-
-                if (response.IsSuccessStatusCode)
+                // Lấy thông tin từ session
+                var username = HttpContext.Session.GetString("Username");
+                var platform = HttpContext.Session.GetString("Platform") ?? "WEB";
+                if (string.IsNullOrWhiteSpace(username))
                 {
-                    // ✅ Đọc file stream từ API
-                    var fileStream = await response.Content.ReadAsStreamAsync();
-                    var contentDisposition = response.Content.Headers.ContentDisposition;
-                    var fileName = contentDisposition?.FileName?.Trim('"') ?? $"{dto.Username}_private_key.txt";
+                    ModelState.AddModelError("", "Vui lòng đăng nhập trước.");
+                    return View(dto);
+                }
+                string client_id = "admin-" + username + platform;
 
-                    // Trả file cho user tải về
-                    return File(fileStream, "text/plain", fileName);
+                // Lấy private key từ session
+                string? existingPrivateKeyPem = null;
+                var privateKeyBase64 = HttpContext.Session.GetString("PrivateKeyBase64");
+                if (string.IsNullOrWhiteSpace(privateKeyBase64))
+                {
+                    ModelState.AddModelError("", "Vui lòng upload private key trước khi sử dụng chức năng này.");
+                    return View(dto);
+                }
+                existingPrivateKeyPem = Encoding.UTF8.GetString(Convert.FromBase64String(privateKeyBase64));
+
+                // Initialize SecurityClient với private key từ session
+                await _securityClient.InitializeAsync(
+                    HttpContext.RequestServices.GetService<IConfiguration>()!["WebApi:BaseUrl"]!,
+                    client_id,
+                    existingPrivateKeyPem);
+
+                // Set headers cho authenticated request
+                var token = HttpContext.Session.GetString("JwtToken");
+                var sessionId = HttpContext.Session.GetString("SessionId");
+                if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(sessionId))
+                {
+                    ModelState.AddModelError("", "Vui lòng đăng nhập trước.");
+                    return View(dto);
+                }
+                _securityClient.SetHeaders(token, username, platform, sessionId);
+
+                // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
+                var responseObj = await _securityClient.PostEncryptedAndGetEncryptedAsync<EmployeeRegisterDto, RegisterSecureResponse>(
+                    "api/admin/employee/register-secure-encrypted", dto);
+
+                // Xử lý response
+                if (responseObj != null && responseObj.Success)
+                {
+                    if (responseObj.Type == "file" && !string.IsNullOrWhiteSpace(responseObj.PrivateKeyBase64))
+                    {
+                        // Giải mã private key từ base64
+                        byte[] privateKeyBytes = Convert.FromBase64String(responseObj.PrivateKeyBase64);
+                        string fileName = responseObj.FileName ?? $"{dto.Username}_private_key.txt";
+
+                        // Trả file cho user tải về
+                        return File(privateKeyBytes, "text/plain", fileName);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", $"Đăng ký thành công nhưng không nhận được private key: {responseObj?.Message ?? "Response không hợp lệ"}");
+                        return View(dto);
+                    }
                 }
                 else
                 {
-                    var error = await response.Content.ReadAsStringAsync();
-                    ModelState.AddModelError("", $"Đăng ký thất bại: {error}");
+                    ModelState.AddModelError("", $"Đăng ký thất bại: {responseObj?.Message ?? "Response không hợp lệ"}");
                     return View(dto);
                 }
             }
@@ -380,7 +474,175 @@ namespace WebApp.Areas.Admin.Controllers
             return RedirectToAction("Index");
         }
 
+        // --- Upload Private Key ---
+        [HttpPost]
+        public async Task<IActionResult> UploadPrivateKey(IFormFile privateKeyFile)
+        {
+            try
+            {
+                if (privateKeyFile == null || privateKeyFile.Length == 0)
+                {
+                    return Json(new { success = false, message = "Vui lòng chọn file private key." });
+                }
+
+                // Đọc nội dung file - phát hiện encoding tự động
+                string privateKeyContent;
+                byte[] fileBytes;
+                using (var ms = new MemoryStream())
+                {
+                    await privateKeyFile.CopyToAsync(ms);
+                    fileBytes = ms.ToArray();
+                }
+
+                // Thử detect encoding: UTF-8 hoặc UTF-16
+                // Nếu có BOM UTF-16, dùng UTF-16, ngược lại thử UTF-8 trước
+                if (fileBytes.Length >= 2 && fileBytes[0] == 0xFF && fileBytes[1] == 0xFE)
+                {
+                    // UTF-16 LE BOM
+                    privateKeyContent = Encoding.Unicode.GetString(fileBytes, 2, fileBytes.Length - 2);
+                }
+                else if (fileBytes.Length >= 2 && fileBytes[0] == 0xFE && fileBytes[1] == 0xFF)
+                {
+                    // UTF-16 BE BOM
+                    privateKeyContent = Encoding.BigEndianUnicode.GetString(fileBytes, 2, fileBytes.Length - 2);
+                }
+                else if (fileBytes.Length >= 3 && fileBytes[0] == 0xEF && fileBytes[1] == 0xBB && fileBytes[2] == 0xBF)
+                {
+                    // UTF-8 BOM
+                    privateKeyContent = Encoding.UTF8.GetString(fileBytes, 3, fileBytes.Length - 3);
+                }
+                else
+                {
+                    // Không có BOM, thử UTF-8 trước
+                    try
+                    {
+                        privateKeyContent = Encoding.UTF8.GetString(fileBytes);
+                        // Kiểm tra xem có ký tự null (\0) không - nếu có thì có thể là UTF-16
+                        if (privateKeyContent.Contains('\0'))
+                        {
+                            // Có thể là UTF-16 không có BOM
+                            privateKeyContent = Encoding.Unicode.GetString(fileBytes);
+                        }
+                    }
+                    catch
+                    {
+                        // Fallback: thử UTF-16
+                        privateKeyContent = Encoding.Unicode.GetString(fileBytes);
+                    }
+                }
+
+                string normalizedPrivateKey = privateKeyContent.Trim();
+                string privateKeyBase64;
+
+                // Kiểm tra xem là PEM format hay Base64 thuần
+                if (normalizedPrivateKey.Contains("BEGIN") || normalizedPrivateKey.Contains("END"))
+                {
+                    // Đã là PEM format
+                    // Validate private key format (kiểm tra có thể đọc được không)
+                    try
+                    {
+                        using (var rsa = RSA.Create())
+                        {
+                            rsa.ImportFromPem(normalizedPrivateKey);
+                            // Chỉ validate, không extract public key
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return Json(new { success = false, message = $"Không thể đọc private key PEM: {ex.Message}" });
+                    }
+                    // Lưu PEM vào session (encode Base64)
+                    privateKeyBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(normalizedPrivateKey));
+                }
+                else
+                {
+                    // Là Base64 thuần, cần làm sạch và convert sang PEM format
+                    // Loại bỏ whitespace, newlines, và các ký tự không hợp lệ
+                    string cleanedBase64 = normalizedPrivateKey
+                        .Replace("\r", "")
+                        .Replace("\n", "")
+                        .Replace(" ", "")
+                        .Replace("\t", "");
+                    
+                    // Kiểm tra Base64 hợp lệ
+                    if (string.IsNullOrWhiteSpace(cleanedBase64))
+                    {
+                        return Json(new { success = false, message = "Private key không hợp lệ (rỗng sau khi làm sạch)." });
+                    }
+
+                    try
+                    {
+                        byte[] keyBytes = Convert.FromBase64String(cleanedBase64);
+                        
+                        // Thử import dưới dạng PKCS8
+                        using (var rsa = RSA.Create())
+                        {
+                            rsa.ImportPkcs8PrivateKey(keyBytes, out _);
+                            // Nếu thành công, export lại dưới dạng PEM
+                            byte[] pkcs8Bytes = rsa.ExportPkcs8PrivateKey();
+                            normalizedPrivateKey = "-----BEGIN PRIVATE KEY-----\n" + 
+                                Convert.ToBase64String(pkcs8Bytes) + 
+                                "\n-----END PRIVATE KEY-----";
+                        }
+                    }
+                    catch
+                    {
+                        // Nếu không phải PKCS8, thử RSAPrivateKey format
+                        try
+                        {
+                            byte[] keyBytes = Convert.FromBase64String(cleanedBase64);
+                            using (var rsa = RSA.Create())
+                            {
+                                rsa.ImportRSAPrivateKey(keyBytes, out _);
+                                // Export lại dưới dạng PEM PKCS8
+                                byte[] pkcs8Bytes = rsa.ExportPkcs8PrivateKey();
+                                normalizedPrivateKey = "-----BEGIN PRIVATE KEY-----\n" + 
+                                    Convert.ToBase64String(pkcs8Bytes) + 
+                                    "\n-----END PRIVATE KEY-----";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            return Json(new { success = false, message = $"Không thể đọc private key Base64: {ex.Message}. Vui lòng kiểm tra format. (Đã làm sạch: {cleanedBase64.Substring(0, Math.Min(50, cleanedBase64.Length))}...)" });
+                        }
+                    }
+                    
+                    // Validate lại sau khi convert
+                    try
+                    {
+                        using (var rsa = RSA.Create())
+                        {
+                            rsa.ImportFromPem(normalizedPrivateKey);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return Json(new { success = false, message = $"Không thể validate private key sau khi convert: {ex.Message}" });
+                    }
+                    
+                    // Lưu PEM vào session (encode Base64)
+                    privateKeyBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(normalizedPrivateKey));
+                }
+
+                // Lưu private key vào session (Base64)
+                HttpContext.Session.SetString("PrivateKeyBase64", privateKeyBase64);
+
+                return Json(new { success = true, message = "Upload private key thành công! Private key đã được lưu vào session." });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Lỗi: {ex.Message}" });
+            }
+        }
+
         // --- DTOs ---
-        
+        public class RegisterSecureResponse
+        {
+            public bool Success { get; set; }
+            public string? Type { get; set; } // "file" or null
+            public string? PrivateKeyBase64 { get; set; }
+            public string? FileName { get; set; }
+            public string? Message { get; set; }
+        }
     }
 }

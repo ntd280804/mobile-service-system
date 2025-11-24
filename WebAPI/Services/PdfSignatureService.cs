@@ -30,44 +30,15 @@ namespace MobileServiceSystem.Signing
 			_connectionManager = connectionManager ?? throw new ArgumentNullException(nameof(connectionManager));
 			_httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
 		}
-
-		/// <summary>
-		/// Splits input PDF bytes into 20KB blocks, signs each via SIGN_PDF, and concatenates signatures.
-		/// Returns the concatenated signature bytes.
-		/// </summary>
-		public byte[] SignPdf(byte[] pdfBytes, string privateKey, CancellationToken cancellationToken = default)
-		{
-			if (pdfBytes == null) throw new ArgumentNullException(nameof(pdfBytes));
-			if (privateKey == null) throw new ArgumentNullException(nameof(privateKey));
-
-			var concatenatedSignatureStream = new MemoryStream(capacity: Math.Max(64 * 1024, pdfBytes.Length / 2));
-
-			var connection = GetCurrentUserConnection();
-			if (connection == null)
-			{
-				throw new InvalidOperationException("Oracle session not available for current user.");
-			}
-
-			foreach (var block in EnumerateBlocks(pdfBytes, DefaultBlockSizeBytes))
-			{
-				cancellationToken.ThrowIfCancellationRequested();
-
-				var blockSignature = SignBlock(connection, block, privateKey);
-				concatenatedSignatureStream.Write(blockSignature, 0, blockSignature.Length);
-			}
-
-			return concatenatedSignatureStream.ToArray();
-		}
-
 		/// <summary>
 		/// Calls a custom procedure (e.g., to persist the final signature) with user-bound parameters plus :p_signature BLOB.
 		/// You supply additional parameter bindings through the configureParameters action.
 		/// The procedure must accept a BLOB parameter named p_signature (adjust via configureParameters if different).
 		/// </summary>
-		public void UpdateFinalSignature(string procedureName, byte[] finalSignature, Action<OracleCommand> configureParameters, CancellationToken cancellationToken = default)
+		public void UpdateFinalPDF(string procedureName, byte[] PDF, Action<OracleCommand> configureParameters, CancellationToken cancellationToken = default)
 		{
 			if (string.IsNullOrWhiteSpace(procedureName)) throw new ArgumentException("Procedure name is required.", nameof(procedureName));
-			if (finalSignature == null) throw new ArgumentNullException(nameof(finalSignature));
+			if (PDF == null) throw new ArgumentNullException(nameof(PDF));
 			if (configureParameters == null) throw new ArgumentNullException(nameof(configureParameters));
 
 			var connection = GetCurrentUserConnection();
@@ -91,7 +62,7 @@ namespace MobileServiceSystem.Signing
 
 				// Bind signature as BLOB
 				var signatureParam = cmd.Parameters["p_signature"];
-				signatureParam.Value = finalSignature;
+				signatureParam.Value = PDF;
 
 				// Execute non-query
 				cmd.ExecuteNonQuery();
@@ -198,61 +169,6 @@ namespace MobileServiceSystem.Signing
 
 				// Export as PFX with private key
 				return cert.Export(X509ContentType.Pkcs12, pfxPassword);
-			}
-		}
-
-		private static IEnumerable<byte[]> EnumerateBlocks(byte[] data, int blockSizeBytes)
-		{
-			if (blockSizeBytes <= 0) throw new ArgumentOutOfRangeException(nameof(blockSizeBytes));
-
-			var offset = 0;
-			while (offset < data.Length)
-			{
-				var count = Math.Min(blockSizeBytes, data.Length - offset);
-				var buffer = new byte[count];
-				Buffer.BlockCopy(data, offset, buffer, 0, count);
-				yield return buffer;
-				offset += count;
-			}
-		}
-
-		/// <summary>
-		/// Executes SIGN_PDF(p_block RAW, p_private_key VARCHAR2, p_signature OUT BLOB) and returns signature bytes for a block.
-		/// </summary>
-		private static byte[] SignBlock(OracleConnection connection, byte[] blockBytes, string privateKey)
-		{
-			using (var cmd = new OracleCommand("APP.SIGN_PDF", connection))
-			{
-				cmd.CommandType = CommandType.StoredProcedure;
-
-				// p_block IN RAW (<= 32KB)
-				var pBlock = cmd.Parameters.Add("p_block", OracleDbType.Raw, ParameterDirection.Input);
-				pBlock.Value = blockBytes;
-
-				// p_private_key IN VARCHAR2
-				var pPrivateKey = cmd.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input);
-				pPrivateKey.Value = privateKey;
-
-				// p_signature OUT BLOB
-				var pSignature = cmd.Parameters.Add("p_signature", OracleDbType.Blob, ParameterDirection.Output);
-
-				cmd.ExecuteNonQuery();
-
-				// Read BLOB value
-				if (pSignature.Value == null || pSignature.Value is DBNull)
-				{
-					throw new InvalidOperationException("SIGN_PDF returned null signature.");
-				}
-
-				using (var signatureBlob = (OracleBlob)pSignature.Value)
-				{
-					if (signatureBlob == null || !signatureBlob.IsNull)
-					{
-						return signatureBlob.Value;
-					}
-				}
-
-				throw new InvalidOperationException("SIGN_PDF returned empty signature BLOB.");
 			}
 		}
 

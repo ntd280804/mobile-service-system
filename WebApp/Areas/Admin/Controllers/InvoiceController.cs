@@ -105,44 +105,7 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Verify(int id)
-        {
-            if (!_oracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
-                return redirect;
-
-            try
-            {
-                var response = await _httpClient.GetAsync($"api/admin/invoice/{id}/verify");
-                if (!response.IsSuccessStatusCode)
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = $"Xác thực thất bại: {response.ReasonPhrase} - {error}";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                var result = await response.Content.ReadFromJsonAsync<VerifyInvoiceResultViewModel>();
-                if (result == null)
-                {
-                    TempData["Error"] = "Không nhận được kết quả xác thực";
-                }
-                else if (result.IsValid)
-                {
-                    TempData["Success"] = $"Chữ ký hóa đơn #{result.InvoiceId} hợp lệ ✅";
-                }
-                else
-                {
-                    TempData["Error"] = $"Chữ ký hóa đơn #{result.InvoiceId} không hợp lệ ❌";
-                }
-
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return RedirectToAction(nameof(Index));
-            }
-        }
+        
     }
 }
 

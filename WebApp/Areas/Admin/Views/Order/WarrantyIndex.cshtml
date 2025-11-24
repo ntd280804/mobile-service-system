@@ -67,16 +67,22 @@
                                     <form id="exportForm-@order.OrderId" method="post" asp-area="Admin" asp-controller="Export" asp-action="Create">
 
                                         <div class="modal-body">
-                                            <p>Để hoàn thành đơn hàng, bạn cần cung cấp private key để ký vào phiếu xuất kho.</p>
+                                            <p>Để hoàn thành đơn hàng, bạn cần cung cấp PFX certificate để ký số PDF.</p>
 
-                                            <input type="hidden" name="orderId" value="@order.OrderId" />
+                                            <input type="hidden" name="orderid" value="@order.OrderId" />
 
                                             <div class="mb-3">
-                                                <label for="privateKeyFile-@order.OrderId" class="form-label">Chọn file Private Key (.txt):</label>
-                                                <input class="form-control" type="file" id="privateKeyFile-@order.OrderId" required accept=".txt">
+                                                <label for="pfxFile-@order.OrderId" class="form-label">Chọn file PFX Certificate (.pfx, .p12):</label>
+                                                <input class="form-control" type="file" id="pfxFile-@order.OrderId" required accept=".pfx,.p12">
+                                                <small class="form-text text-muted">File PFX certificate từ CA</small>
                                             </div>
 
-                                            <input type="hidden" id="privateKeyContent-@order.OrderId" name="PrivateKey" required />
+                                            <div class="mb-3">
+                                                <label for="pfxPassword-@order.OrderId" class="form-label">Mật khẩu PFX:</label>
+                                                <input class="form-control" type="password" id="pfxPassword-@order.OrderId" name="CertificatePassword" required placeholder="Nhập mật khẩu PFX">
+                                            </div>
+
+                                            <input type="hidden" id="pfxContent-@order.OrderId" name="CertificatePfxBase64" required />
 
                                         </div>
                                         <div class="modal-footer">
@@ -87,39 +93,38 @@
 
                                     <script>
                                         function processKeyAndSubmit(orderId) {
-                                            const fileInput = document.getElementById(`privateKeyFile-${orderId}`);
-                                            const contentInput = document.getElementById(`privateKeyContent-${orderId}`); // input hidden
+                                            const fileInput = document.getElementById(`pfxFile-${orderId}`);
+                                            const passwordInput = document.getElementById(`pfxPassword-${orderId}`);
+                                            const contentInput = document.getElementById(`pfxContent-${orderId}`); // input hidden
                                             const form = document.getElementById(`exportForm-${orderId}`);
 
                                             const file = fileInput.files[0];
                                             if (!file) {
-                                                alert("Vui lòng chọn file Private Key.");
+                                                alert("Vui lòng chọn file PFX Certificate.");
+                                                return;
+                                            }
+
+                                            if (!passwordInput.value.trim()) {
+                                                alert("Vui lòng nhập mật khẩu PFX.");
                                                 return;
                                             }
 
                                             const reader = new FileReader();
 
                                             reader.onload = function(e) {
-                                                let privateKeyContent = e.target.result;
+                                                // Convert file to base64
+                                                const base64 = e.target.result.split(',')[1] || e.target.result;
+                                                contentInput.value = base64;
 
-                                                // 1. Loại bỏ các ký tự xuống dòng và khoảng trắng dư thừa
-                                                // Điều này giảm kích thước chuỗi và giúp server xử lý dễ hơn
-                                                privateKeyContent = privateKeyContent.trim().replace(/(\r\n|\n|\r)/gm, "");
-
-                                                // 2. RẤT QUAN TRỌNG: URL Encode nội dung key
-                                                // Ngăn chặn lỗi HTTP 400 (Bad Request) do các ký tự đặc biệt/chuỗi dài
-                                                contentInput.value = encodeURIComponent(privateKeyContent);
-
-                                                // 3. Submit form SAU KHI ĐỌC VÀ GÁN HOÀN TẤT
+                                                // Submit form SAU KHI ĐỌC VÀ GÁN HOÀN TẤT
                                                 form.submit();
                                             };
 
                                             reader.onerror = function() {
-                                                alert("Lỗi khi đọc file.");
+                                                alert("Lỗi khi đọc file PFX.");
                                             };
 
-                                            // Bắt đầu đọc file (sử dụng UTF-8 mặc định)
-                                            reader.readAsText(file);
+                                            reader.readAsDataURL(file);
                                         }
                                     </script>
                                 </div>

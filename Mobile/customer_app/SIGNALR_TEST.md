@@ -34,7 +34,7 @@ flutter run
 ### 4. Kiểm tra kết quả mong đợi
 
 #### Trên Mobile App:
-- **SnackBar hiện lên** với nội dung: `"Bạn đã đăng xuất từ thiết bị khác"`
+- **SnackBar hiện lên** với nội dung: `"Bạn đã đăng xuất"`
 - App **tự động chuyển về Login screen**
 - Token và sessionId bị xóa
 

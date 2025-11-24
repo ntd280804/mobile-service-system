@@ -1,4 +1,4 @@
-@model List<WebApp.Areas.Admin.Controllers.AuditController.TriggerAuditLogDto>
+@model WebApp.Areas.Admin.Controllers.TriggerAuditViewModel
 
 @{
     ViewData["Title"] = "Trigger Audit";
@@ -6,16 +6,68 @@
 
 <h2>@ViewData["Title"]</h2>
 
+@* Debug: Hiển thị thông tin Model *@
+@if (Model != null)
+{
+    <div class="alert alert-info">
+        <strong>Debug:</strong> Model is not null. Status is @(Model.Status != null ? "not null" : "NULL")
+        @if (Model.Status != null)
+        {
+            <div>Enabled: @Model.Status.Enabled, Count: @Model.Status.Count, Expected: @Model.Status.ExpectedCount</div>
+        }
+    </div>
+}
+
+@* Hiển thị trạng thái *@
+@if (Model?.Status != null)
+{
+    var status = Model.Status;
+    <div class="alert @(status.Enabled ? "alert-success" : "alert-danger") mb-3">
+        <strong>Trigger Audit:</strong>
+        @if (status.Enabled)
+        {
+            <span class="badge bg-success">Đang bật (ENABLED)</span>
+        }
+        else
+        {
+            <span class="badge bg-danger">Đang tắt (DISABLED)</span>
+        }
+        <span class="ms-3">
+            <strong>Số lượng:</strong> @status.Count / @status.ExpectedCount triggers đang enabled
+        </span>
+        @if (status.ExpectedCount > 0)
+        {
+            <div class="progress mt-2" style="height: 20px;">
+                <div class="progress-bar @(status.Enabled ? "bg-success" : "bg-danger")" 
+                     role="progressbar" 
+                     style="width: @((status.Count * 100.0 / status.ExpectedCount))%">
+                    @status.Count / @status.ExpectedCount
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-warning mb-3">
+        <strong>Trigger Audit:</strong>
+        <span class="badge bg-warning">Không thể lấy trạng thái</span>
+        <span class="ms-3">
+            <small>Vui lòng làm mới trang hoặc kiểm tra kết nối API</small>
+        </span>
+    </div>
+}
+
 <div class="mb-3 d-flex flex-wrap gap-2">
     <form asp-area="Admin" asp-controller="Audit" asp-action="EnableTriggerAudit" method="post" class="d-inline">
         @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-success">
+        <button type="submit" class="btn btn-success" @(Model?.Status?.Enabled == true ? "disabled" : "")>
             Bật Trigger Audit
         </button>
     </form>
     <form asp-area="Admin" asp-controller="Audit" asp-action="DisableTriggerAudit" method="post" class="d-inline">
         @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-outline-danger">
+        <button type="submit" class="btn btn-outline-danger" @(Model?.Status?.Enabled == false ? "disabled" : "")>
             Tắt Trigger Audit
         </button>
     </form>
@@ -35,7 +87,14 @@
     </div>
 }
 
-@if (Model != null && Model.Any())
+@if (TempData["Warning"] != null)
+{
+    <div class="alert alert-warning">
+        @TempData["Warning"]
+    </div>
+}
+
+@if (Model?.Logs != null && Model.Logs.Any())
 {
     <div class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
         <table class="table table-bordered table-striped table-hover mt-3" style="font-size: 0.9em;">
@@ -59,7 +118,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var log in Model)
+                @foreach (var log in Model.Logs)
                 {
                     <tr>
                         <td>@log.LogId</td>
