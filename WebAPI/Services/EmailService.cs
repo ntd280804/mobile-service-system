@@ -14,7 +14,7 @@ namespace WebAPI.Services
             _logger = logger;
         }
 
-        public async Task<bool> SendOtpEmailAsync(string recipientEmail, string otp, string phone)
+        public async Task<bool> SendOtpEmailAsync(string recipientEmail, string otp)
         {
             try
             {
@@ -50,7 +50,7 @@ namespace WebAPI.Services
                             <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>
                                 <h2 style='color: #007bff;'>Đặt lại mật khẩu</h2>
                                 <p>Xin chào,</p>
-                                <p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản số điện thoại: <strong>{phone}</strong></p>
+                                <p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản có mail: <strong>{recipientEmail}</strong></p>
                                 <p>Mã OTP của bạn là:</p>
                                 <div style='background-color: #f8f9fa; padding: 20px; text-align: center; border-radius: 5px; margin: 20px 0;'>
                                     <h1 style='color: #007bff; font-size: 32px; letter-spacing: 5px; margin: 0;'>{otp}</h1>

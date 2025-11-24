@@ -403,12 +403,7 @@ namespace WebAPI.Areas.Public.Controllers
         [HttpPost("forgot-password/generate-otp")]
         public async Task<IActionResult> GenerateOtpForForgotPassword([FromBody] ForgotPasswordGenerateOtpDto dto)
         {
-            if (dto == null || string.IsNullOrWhiteSpace(dto.Phone))
-            {
-                return BadRequest(ApiResponse<string>.Fail("Số điện thoại không được để trống."));
-            }
-
-            if (string.IsNullOrWhiteSpace(dto.Email))
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email))
             {
                 return BadRequest(ApiResponse<string>.Fail("Email không được để trống."));
             }
@@ -416,10 +411,15 @@ namespace WebAPI.Areas.Public.Controllers
             try
             {
                 var conn = _connManager.CreateDefaultConnection();
+                using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
+                {
+                    setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = "ROLE_VERIFY";
+                    setRoleCmd.ExecuteNonQuery();
+                }
                 using var cmd = new OracleCommand("APP.GENERATE_OTP_CUSTOMER", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
+                cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
                 var pOtp = new OracleParameter("p_otp", OracleDbType.Varchar2, 10, null, ParameterDirection.Output);
                 var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
                 cmd.Parameters.Add(pOtp);
@@ -436,7 +436,7 @@ namespace WebAPI.Areas.Public.Controllers
                 }
 
                 // Gửi OTP qua email
-                bool emailSent = await _emailService.SendOtpEmailAsync(dto.Email, otp, dto.Phone);
+                bool emailSent = await _emailService.SendOtpEmailAsync(dto.Email, otp);
                 
                 if (!emailSent)
                 {
@@ -463,7 +463,7 @@ namespace WebAPI.Areas.Public.Controllers
         [HttpPost("forgot-password/reset")]
         public IActionResult ResetPasswordWithOtp([FromBody] ForgotPasswordResetDto dto)
         {
-            if (dto == null || string.IsNullOrWhiteSpace(dto.Phone) || 
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Email) || 
                 string.IsNullOrWhiteSpace(dto.Otp) || string.IsNullOrWhiteSpace(dto.NewPassword))
             {
                 return BadRequest(ApiResponse<string>.Fail("Vui lòng nhập đầy đủ thông tin."));
@@ -472,10 +472,15 @@ namespace WebAPI.Areas.Public.Controllers
             try
             {
                 var conn = _connManager.CreateDefaultConnection();
+                using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
+                {
+                    setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = "ROLE_VERIFY";
+                    setRoleCmd.ExecuteNonQuery();
+                }
                 using var cmd = new OracleCommand("APP.RESET_PASSWORD_CUSTOMER", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
+                cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
                 cmd.Parameters.Add("p_otp", OracleDbType.Varchar2).Value = dto.Otp;
                 cmd.Parameters.Add("p_new_password", OracleDbType.Varchar2).Value = dto.NewPassword;
                 var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
@@ -505,13 +510,12 @@ namespace WebAPI.Areas.Public.Controllers
         // DTO
         public class ForgotPasswordGenerateOtpDto
         {
-            public string Phone { get; set; } = string.Empty;
             public string Email { get; set; } = string.Empty;
         }
 
         public class ForgotPasswordResetDto
         {
-            public string Phone { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
             public string Otp { get; set; } = string.Empty;
             public string NewPassword { get; set; } = string.Empty;
         }

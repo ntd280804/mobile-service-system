@@ -2964,10 +2964,6 @@
       "ForgotPasswordGenerateOtpDto": {
         "type": "object",
         "properties": {
-          "phone": {
-            "type": "string",
-            "nullable": true
-          },
           "email": {
             "type": "string",
             "nullable": true
@@ -2978,7 +2974,7 @@
       "ForgotPasswordResetDto": {
         "type": "object",
         "properties": {
-          "phone": {
+          "email": {
             "type": "string",
             "nullable": true
           },

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using WebApp.Helpers;
 using WebApp.Models;
 
 namespace WebApp.Areas.Public.Controllers
@@ -11,13 +10,11 @@ namespace WebApp.Areas.Public.Controllers
     public class HelpController : Controller
     {
         private readonly HttpClient _httpClient;
-        private readonly OracleClientHelper _oracleClientHelper;
         private readonly ILogger<HelpController> _logger;
 
-        public HelpController(IHttpClientFactory httpClientFactory, OracleClientHelper oracleClientHelper, ILogger<HelpController> logger)
+        public HelpController(IHttpClientFactory httpClientFactory, ILogger<HelpController> logger)
         {
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
-            _oracleClientHelper = oracleClientHelper;
             _logger = logger;
         }
 
@@ -39,9 +36,6 @@ namespace WebApp.Areas.Public.Controllers
 
             try
             {
-                if (!_oracleClientHelper.TrySetHeaders(_httpClient, out var redirect, false))
-                    return redirect;
-
                 var request = new
                 {
                     Email = email,

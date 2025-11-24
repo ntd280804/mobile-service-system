@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.Models;
 using WebAPI.Services;
@@ -20,6 +21,7 @@ namespace WebAPI.Areas.Public.Controllers
             _logger = logger;
         }
 
+        [AllowAnonymous]
         [HttpPost("send-help-email")]
         public async Task<IActionResult> SendHelpEmail([FromBody] SendHelpEmailRequest request)
         {

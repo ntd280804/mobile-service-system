@@ -203,55 +203,123 @@ namespace WebApp.Areas.Public.Controllers
         }
 
         [HttpGet]
+        [HttpGet]
         public IActionResult ForgotPassword()
         {
-            return View();
+            return View(new ForgotPasswordViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> GenerateOtp([FromBody] ForgotPasswordGenerateOtpDto dto)
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model, string actionType)
         {
-            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect, false))
-                return redirect;
+            ViewBag.OtpStatus = null;
 
-            try
+            if (string.Equals(actionType, "SendOtp", StringComparison.OrdinalIgnoreCase))
             {
-                var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/forgot-password/generate-otp", dto);
-                var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<ForgotPasswordOtpResponse>>();
-                
-                if (payload == null)
-                    return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                if (string.IsNullOrWhiteSpace(model.Email))
+                    ModelState.AddModelError(nameof(model.Email), "Vui lòng nhập email nhận OTP.");
 
-                return Json(payload);
+                if (!ModelState.IsValid)
+                    return View(model);
+
+                try
+                {
+                    var request = new ForgotPasswordGenerateOtpDto
+                    {
+                        
+                        Email = model.Email.Trim()
+                    };
+
+                    var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/forgot-password/generate-otp", request);
+                    var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<ForgotPasswordOtpResponse>>();
+
+                    if (payload == null)
+                    {
+                        ModelState.AddModelError(string.Empty, "Không thể gửi OTP. Vui lòng thử lại sau.");
+                        return View(model);
+                    }
+
+                    if (payload.Success)
+                    {
+                        model.OtpSent = true;
+                        model.OtpStatusMessage = payload.Data?.Message ?? "Đã gửi OTP. Vui lòng kiểm tra email.";
+                        ViewBag.OtpStatus = model.OtpStatusMessage;
+                        ModelState.Clear();
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, payload.Error ?? "Không thể gửi OTP.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError(string.Empty, "Lỗi kết nối API: " + ex.Message);
+                }
+
+                return View(model);
             }
-            catch (Exception ex)
+
+            if (string.Equals(actionType, "ResetPassword", StringComparison.OrdinalIgnoreCase))
             {
-                return StatusCode(500, Json(new { success = false, error = ex.Message }));
-            }
-        }
+                if (string.IsNullOrWhiteSpace(model.Email))
+                    ModelState.AddModelError(nameof(model.Email), "Vui lòng nhập email nhận OTP.");
+                if (string.IsNullOrWhiteSpace(model.Otp))
+                    ModelState.AddModelError(nameof(model.Otp), "Vui lòng nhập mã OTP.");
+                if (string.IsNullOrWhiteSpace(model.NewPassword))
+                    ModelState.AddModelError(nameof(model.NewPassword), "Vui lòng nhập mật khẩu mới.");
+                if (string.IsNullOrWhiteSpace(model.ConfirmPassword))
+                    ModelState.AddModelError(nameof(model.ConfirmPassword), "Vui lòng xác nhận mật khẩu mới.");
+                if (!string.Equals(model.NewPassword, model.ConfirmPassword))
+                    ModelState.AddModelError(nameof(model.ConfirmPassword), "Mật khẩu xác nhận không khớp.");
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetPassword([FromBody] ForgotPasswordResetDto dto)
-        {
-            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect, false))
-                return redirect;
+                if (!ModelState.IsValid)
+                {
+                    model.OtpSent = true;
+                    ViewBag.OtpStatus = model.OtpStatusMessage;
+                    return View(model);
+                }
 
-            try
-            {
-                var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/forgot-password/reset", dto);
-                var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<string>>();
-                
-                if (payload == null)
-                    return StatusCode((int)response.StatusCode, await response.Content.ReadAsStringAsync());
+                try
+                {
+                    var request = new ForgotPasswordResetDto
+                    {
+                        Email = model.Email?.Trim() ?? string.Empty,
+                        Otp = model.Otp.Trim(),
+                        NewPassword = model.NewPassword
+                    };
 
-                return Json(payload);
+                    var response = await _httpClient.PostAsJsonAsync("api/Public/Customer/forgot-password/reset", request);
+                    var payload = await response.Content.ReadFromJsonAsync<WebApiResponse<string>>();
+
+                    if (payload == null)
+                    {
+                        ModelState.AddModelError(string.Empty, "Không thể đặt lại mật khẩu. Vui lòng thử lại sau.");
+                        model.OtpSent = true;
+                        return View(model);
+                    }
+
+                    if (payload.Success)
+                    {
+                        TempData["Message"] = payload.Data ?? "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.";
+                        return RedirectToAction("Login");
+                    }
+
+                    ModelState.AddModelError(string.Empty, payload.Error ?? "Không thể đặt lại mật khẩu.");
+                    model.OtpSent = true;
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError(string.Empty, "Lỗi kết nối API: " + ex.Message);
+                    model.OtpSent = true;
+                }
+
+                ViewBag.OtpStatus = model.OtpStatusMessage;
+                return View(model);
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, Json(new { success = false, error = ex.Message }));
-            }
+
+            ModelState.AddModelError(string.Empty, "Hành động không hợp lệ.");
+            return View(model);
         }
 
         [HttpGet]
@@ -369,12 +437,12 @@ namespace WebApp.Areas.Public.Controllers
         // --- DTOs ---
         public class ForgotPasswordGenerateOtpDto
         {
-            public string Phone { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
         }
 
         public class ForgotPasswordResetDto
         {
-            public string Phone { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
             public string Otp { get; set; } = string.Empty;
             public string NewPassword { get; set; } = string.Empty;
         }
