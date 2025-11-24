@@ -58,6 +58,7 @@
                                 <td class="d-flex gap-2">
                                     <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@invoice.InvoiceId">Chi tiết</a>
                                     <a class="btn btn-sm btn-outline-success" asp-action="DownloadPdf" asp-route-id="@invoice.InvoiceId">Tải PDF</a>
+                                    <a class="btn btn-sm btn-outline-warning" asp-action="Verify" asp-route-id="@invoice.InvoiceId">Xác thực</a>
                                 </td>
                             </tr>
                         }

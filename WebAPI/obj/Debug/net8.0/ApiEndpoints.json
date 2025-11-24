@@ -480,6 +480,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
+    "Method": "VerifyStockInSignature",
+    "RelativePath": "api/admin/Export/verifysign/{stockoutId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "stockoutId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
     "Method": "GetImportDetails",
     "RelativePath": "api/admin/Import/details/{stockinid}",
@@ -564,6 +580,22 @@
     ]
   },
   {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.ImportController",
+    "Method": "VerifyStockInSignature",
+    "RelativePath": "api/admin/Import/verifysign/{stockinId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "stockinId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
     "Method": "GetAllInvoices",
     "RelativePath": "api/admin/Invoice",
@@ -624,6 +656,22 @@
     "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
     "Method": "GetInvoicePdf",
     "RelativePath": "api/admin/Invoice/{invoiceId}/pdf",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "invoiceId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
+    "Method": "VerifyInvoiceSignature",
+    "RelativePath": "api/admin/Invoice/{invoiceId}/verify",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,

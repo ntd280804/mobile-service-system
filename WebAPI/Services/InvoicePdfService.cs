@@ -329,9 +329,10 @@ namespace WebAPI.Services
 			byte[]? qrPngBytes,
 			string? verifyUrl)
 		{
-			var pdfBytes = GenerateImportInvoicePdf(dto, signature: string.Empty, qrPngBytes: qrPngBytes, verifyUrl: verifyUrl);
-
 			if (_pdfSigner == null) throw new InvalidOperationException("PdfSignatureService is not configured.");
+			_pdfSigner.ValidateCertificate(certificatePfxBytes, certificatePassword);
+
+			var pdfBytes = GenerateImportInvoicePdf(dto, signature: string.Empty, qrPngBytes: qrPngBytes, verifyUrl: verifyUrl);
 
 			// Calculate signature position below "Chữ ký số:" text
 			var (left, top) = CalculateSignaturePosition("Import", dto.Items?.Count ?? 0);
@@ -526,9 +527,10 @@ namespace WebAPI.Services
             byte[]? qrPngBytes,
             string? verifyUrl)
         {
-            var pdfBytes = GenerateExportInvoicePdf(dto, signature: string.Empty, qrPngBytes: qrPngBytes, verifyUrl: verifyUrl);
-
             if (_pdfSigner == null) throw new InvalidOperationException("PdfSignatureService is not configured.");
+            _pdfSigner.ValidateCertificate(certificatePfxBytes, certificatePassword);
+
+            var pdfBytes = GenerateExportInvoicePdf(dto, signature: string.Empty, qrPngBytes: qrPngBytes, verifyUrl: verifyUrl);
 
             // Calculate signature position below "Chữ ký số:" text
             var (left, top) = CalculateSignaturePosition("Export", dto.Items?.Count ?? 0);
@@ -830,9 +832,10 @@ namespace WebAPI.Services
             byte[]? qrPngBytes,
             string? verifyUrl)
         {
-            var pdfBytes = GenerateInvoicePdf(dto, signature: string.Empty, qrPngBytes: qrPngBytes, verifyUrl: verifyUrl);
-
             if (_pdfSigner == null) throw new InvalidOperationException("PdfSignatureService is not configured.");
+            _pdfSigner.ValidateCertificate(certificatePfxBytes, certificatePassword);
+
+            var pdfBytes = GenerateInvoicePdf(dto, signature: string.Empty, qrPngBytes: qrPngBytes, verifyUrl: verifyUrl);
 
             // Calculate signature position below "Chữ ký số:" text
             var (left, top) = CalculateSignaturePosition("Invoice", dto.Items?.Count ?? 0, dto.Services?.Count ?? 0);

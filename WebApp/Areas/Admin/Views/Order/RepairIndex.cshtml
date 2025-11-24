@@ -65,6 +65,7 @@
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <form id="exportForm-@order.OrderId" method="post" asp-area="Admin" asp-controller="Export" asp-action="Create">
+                                        @Html.AntiForgeryToken()
 
                                         <div class="modal-body">
                                             <p>Để hoàn thành đơn hàng, bạn cần cung cấp PFX certificate để ký số PDF.</p>
@@ -92,39 +93,60 @@
                                     </form>
 
                                     <script>
-                                        function processKeyAndSubmit(orderId) {
-                                            const fileInput = document.getElementById(`pfxFile-${orderId}`);
-                                            const passwordInput = document.getElementById(`pfxPassword-${orderId}`);
-                                            const contentInput = document.getElementById(`pfxContent-${orderId}`); // input hidden
-                                            const form = document.getElementById(`exportForm-${orderId}`);
-
-                                            const file = fileInput.files[0];
-                                            if (!file) {
-                                                alert("Vui lòng chọn file PFX Certificate.");
+                                        (function () {
+                                            var orderId = @order.OrderId;
+                                            var fileInput = document.getElementById('pfxFile-' + orderId);
+                                            var contentInput = document.getElementById('pfxContent-' + orderId);
+                                            if (!fileInput || !contentInput) {
                                                 return;
                                             }
 
-                                            if (!passwordInput.value.trim()) {
-                                                alert("Vui lòng nhập mật khẩu PFX.");
-                                                return;
-                                            }
+                                            fileInput.addEventListener('change', function (e) {
+                                                var file = e.target.files && e.target.files[0];
+                                                if (!file) {
+                                                    contentInput.value = "";
+                                                    return;
+                                                }
 
-                                            const reader = new FileReader();
+                                                var reader = new FileReader();
+                                                reader.onload = function (evt) {
+                                                    var result = evt.target.result || "";
+                                                    var base64 = result.split(',')[1] || result;
+                                                    contentInput.value = base64;
+                                                };
+                                                reader.onerror = function () {
+                                                    contentInput.value = "";
+                                                    alert("Lỗi khi đọc file PFX.");
+                                                };
+                                                reader.readAsDataURL(file);
+                                            });
+                                        })();
 
-                                            reader.onload = function(e) {
-                                                // Convert file to base64
-                                                const base64 = e.target.result.split(',')[1] || e.target.result;
-                                                contentInput.value = base64;
+                                        if (typeof window.processKeyAndSubmit !== "function") {
+                                            window.processKeyAndSubmit = function (orderId) {
+                                                var passwordInput = document.getElementById('pfxPassword-' + orderId);
+                                                var contentInput = document.getElementById('pfxContent-' + orderId);
+                                                var form = document.getElementById('exportForm-' + orderId);
 
-                                                // Submit form SAU KHI ĐỌC VÀ GÁN HOÀN TẤT
+                                                if (!contentInput || !passwordInput || !form) {
+                                                    alert("Không thể đọc dữ liệu chứng thư. Vui lòng tải lại trang.");
+                                                    return;
+                                                }
+
+                                                passwordInput.value = (passwordInput.value || "").trim();
+
+                                                if (!contentInput.value) {
+                                                    alert("Vui lòng chọn file PFX Certificate.");
+                                                    return;
+                                                }
+
+                                                if (!passwordInput.value) {
+                                                    alert("Vui lòng nhập mật khẩu PFX.");
+                                                    return;
+                                                }
+
                                                 form.submit();
                                             };
-
-                                            reader.onerror = function() {
-                                                alert("Lỗi khi đọc file PFX.");
-                                            };
-
-                                            reader.readAsDataURL(file);
                                         }
                                     </script>
                                 </div>

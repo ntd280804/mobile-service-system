@@ -70,6 +70,34 @@ namespace MobileServiceSystem.Signing
 		}
 
 		/// <summary>
+		/// Validates that the supplied PFX bytes and password can be opened and contain a private key.
+		/// </summary>
+		public void ValidateCertificate(byte[] certificatePfxBytes, string certificatePassword)
+		{
+			if (certificatePfxBytes == null || certificatePfxBytes.Length == 0)
+				throw new ArgumentException("Certificate PFX bytes are required.", nameof(certificatePfxBytes));
+			if (string.IsNullOrWhiteSpace(certificatePassword))
+				throw new ArgumentException("Certificate password is required.", nameof(certificatePassword));
+
+			try
+			{
+				using var cert = new X509Certificate2(
+					certificatePfxBytes,
+					certificatePassword,
+					X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
+
+				if (!cert.HasPrivateKey)
+				{
+					throw new InvalidOperationException("Certificate PFX does not contain a private key suitable for signing.");
+				}
+			}
+			catch (CryptographicException ex)
+			{
+				throw new InvalidOperationException("Không thể mở PFX certificate. Vui lòng kiểm tra lại mật khẩu hoặc định dạng tập tin.", ex);
+			}
+		}
+
+		/// <summary>
 		/// Signs the input PDF bytes using a PFX certificate via GroupDocs.Signature and returns the signed PDF bytes.
 		/// The visual appearance can be customized via the optional configureAppearance action.
 		/// </summary>
@@ -91,13 +119,14 @@ namespace MobileServiceSystem.Signing
 					Location = "Việt Nam",
 					AllPages = false,
 					// Prefer signing on the last page to keep signature near totals/footer
-					PagesSetup = new PagesSetup { LastPage = true },
+					PagesSetup = new PagesSetup { FirstPage = true },
 					// Fixed size of the visual box
 					Width = 170,
 					Height = 90,
 					// Use relative alignment so it adapts to any page size or content length
 					HorizontalAlignment = HorizontalAlignment.Right,
-					VerticalAlignment = VerticalAlignment.Bottom,
+					VerticalAlignment = VerticalAlignment.Top,
+					
 					Margin = new Padding(20),
 					Border = new Border()
 					{
@@ -112,7 +141,8 @@ namespace MobileServiceSystem.Signing
 						LocationLabel = "Địa điểm",
 						DigitalSignedLabel = "Ký bởi",
 						DateSignedAtLabel = "Ngày",
-					}
+					},
+					
 				};
 
 				// Allow caller to customize appearance/placement if needed

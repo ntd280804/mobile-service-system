@@ -219,7 +219,14 @@ namespace WebApp.Services
             }
             
             if (!apiResponse.Success)
-                throw new InvalidOperationException(apiResponse.Error ?? "Request failed");
+            {
+                var detailedMessage = apiResponse.Error;
+                if (string.IsNullOrWhiteSpace(detailedMessage))
+                {
+                    detailedMessage = TryExtractMessage(decryptedJson);
+                }
+                throw new InvalidOperationException(detailedMessage ?? "Request failed");
+            }
             
             if (apiResponse.Data == null)
             {
@@ -239,6 +246,33 @@ namespace WebApp.Services
             }
             
             return apiResponse.Data;
+        }
+
+        private static string? TryExtractMessage(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                if (root.TryGetProperty("Error", out var errorProp) && errorProp.ValueKind == JsonValueKind.String)
+                    return errorProp.GetString();
+
+                if (root.TryGetProperty("Message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String)
+                    return messageProp.GetString();
+
+                if (root.TryGetProperty("Errors", out var errorsProp))
+                    return errorsProp.ToString();
+            }
+            catch
+            {
+                // ignore parsing errors
+            }
+
+            return null;
         }
 
         public class Envelope

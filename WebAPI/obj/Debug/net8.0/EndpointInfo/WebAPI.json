@@ -1025,6 +1025,29 @@
         }
       }
     },
+    "/api/admin/Export/verifysign/{stockoutId}": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "parameters": [
+          {
+            "name": "stockoutId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/admin/Export/create": {
       "post": {
         "tags": [
@@ -1139,6 +1162,29 @@
       "get": {
         "tags": [
           "Import"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/Import/verifysign/{stockinId}": {
+      "get": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "stockinId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
         ],
         "responses": {
           "200": {
@@ -1268,6 +1314,29 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/admin/Invoice/{invoiceId}/verify": {
+      "get": {
+        "tags": [
+          "Invoice"
+        ],
+        "parameters": [
+          {
+            "name": "invoiceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -2607,6 +2676,10 @@
           "certificatePassword": {
             "type": "string",
             "nullable": true
+          },
+          "privateKey": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3042,6 +3115,10 @@
             "nullable": true
           },
           "certificatePassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "privateKey": {
             "type": "string",
             "nullable": true
           }

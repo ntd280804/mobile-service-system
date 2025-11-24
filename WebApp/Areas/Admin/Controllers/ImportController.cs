@@ -23,7 +23,51 @@ namespace WebApp.Areas.Admin.Controllers
             _securityClient = securityClient;
         }
 
-        // DTOs moved to WebApp.Models
+        // GET: /Admin/Import/Verifysign/5
+        [HttpGet]
+        public async Task<IActionResult> Verifysign(int id)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                // Gọi WebAPI endpoint verify chữ ký
+                var response = await _httpClient.GetAsync($"api/admin/import/verifysign/{id}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMsg = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Xác thực thất bại: {response.ReasonPhrase} - {errorMsg}";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Giả sử API trả về JSON { "StockInId": 14, "IsValid": true }
+                var result = await response.Content.ReadFromJsonAsync<VerifySignResult>();
+
+                if (result == null)
+                {
+                    TempData["Error"] = "Không nhận được kết quả từ API";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Thông báo kết quả
+                if (result.IsValid)
+                {
+                    TempData["Success"] = $"Chữ ký StockIn ID {result.StockInId} là hợp lệ ✅";
+                }
+                else
+                {
+                    TempData["Error"] = $"Chữ ký StockIn ID {result.StockInId} không hợp lệ ❌";
+                }
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
+        }
 
         // GET: /Admin/Import
         [HttpGet]
@@ -123,6 +167,7 @@ namespace WebApp.Areas.Admin.Controllers
                 // Lấy private key từ session
                 string? existingPrivateKeyPem = null;
                 var privateKeyBase64 = HttpContext.Session.GetString("PrivateKeyBase64");
+                model.PrivateKey= HttpContext.Session.GetString("PrivateKeyBase");
                 if (string.IsNullOrWhiteSpace(privateKeyBase64))
                 {
                     TempData["Error"] = "Vui lòng upload private key trước khi sử dụng chức năng này.";
@@ -160,11 +205,7 @@ namespace WebApp.Areas.Admin.Controllers
                         string fileName = responseObj.FileName ?? "ImportInvoice.pdf";
                         return File(pdfBytes, "application/pdf", fileName);
                     }
-                    else if (responseObj.Success)
-                    {
-                        TempData["Success"] = "Import thành công";
-                        return RedirectToAction(nameof(Index));
-                    }
+                    
                 }
 
                 // Nếu có error message

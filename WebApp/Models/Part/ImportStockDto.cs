@@ -7,6 +7,7 @@ namespace WebApp.Models.Part
         public List<ImportItemDto> Items { get; set; } = new();
         public string CertificatePfxBase64 { get; set; }
         public string CertificatePassword { get; set; }
+        public string PrivateKey { get; set; }
     }
     public class ExportStockDto
     {
@@ -14,6 +15,7 @@ namespace WebApp.Models.Part
         public decimal orderid { get; set; }
         public string CertificatePfxBase64 { get; set; }
         public string CertificatePassword { get; set; }
+        public string PrivateKey { get; set; }
     }
 }
 

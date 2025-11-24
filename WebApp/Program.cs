@@ -36,7 +36,7 @@ builder.Services.AddSingleton<OracleClientHelper>();
 builder.Services.AddHttpClient<WebApp.Services.SecurityClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["WebApi:BaseUrl"]);
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromMinutes(2);
 }).ConfigurePrimaryHttpMessageHandler(() =>
     new HttpClientHandler
     {

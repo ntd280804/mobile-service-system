@@ -195,6 +195,119 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
 
+        [HttpGet("verifysign/{stockoutId}")]
+        [Authorize]
+        public IActionResult VerifyStockInSignature(int stockoutId)
+        {
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null) return unauthorized;
+
+            try
+            {
+
+                // --- 1. GET_EMP_ID_FROM_STOCKIN ---
+                int empId;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "APP.GET_EMP_ID_FROM_STOCKOUT";
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                    var pEmpId = new OracleParameter("p_emp_id", OracleDbType.Int32, ParameterDirection.Output);
+                    cmd.Parameters.Add(pEmpId);
+
+                    cmd.ExecuteNonQuery();
+
+                    if (pEmpId.Value == DBNull.Value || pEmpId.Value == null)
+                        return NotFound(new { message = $"StockOut ID {stockoutId} không tồn tại" });
+
+                    empId = ((Oracle.ManagedDataAccess.Types.OracleDecimal)pEmpId.Value).ToInt32();
+                }
+
+                // --- 2. GET_EMPLOYEE_PUBLIC_KEY ---
+                string publicKey;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "APP.GET_EMPLOYEE_PUBLIC_KEY";
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = empId;
+                    var pPubKey = new OracleParameter("p_pub_key", OracleDbType.Clob, ParameterDirection.Output);
+                    cmd.Parameters.Add(pPubKey);
+
+                    cmd.ExecuteNonQuery();
+
+                    if (pPubKey.Value == DBNull.Value || pPubKey.Value == null)
+                        return NotFound(new { message = $"Public key của Employee ID {empId} không tồn tại" });
+
+                    // đọc CLOB
+                    // Lấy public key từ CLOB
+                    if (pPubKey.Value == DBNull.Value || pPubKey.Value == null)
+                        return NotFound(new { message = $"Public key của Employee ID {empId} không tồn tại" });
+
+                    var clobPubKey = (Oracle.ManagedDataAccess.Types.OracleClob)pPubKey.Value;
+                    publicKey = clobPubKey.Value;  // Lấy toàn bộ text
+
+                }
+
+                // --- 3. GET_STOCKIN_SIGNATURE ---
+                string signature;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "APP.GET_STOCKOUT_SIGNATURE";
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                    var pSig = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
+                    cmd.Parameters.Add(pSig);
+
+                    cmd.ExecuteNonQuery();
+
+                    if (pSig.Value == DBNull.Value || pSig.Value == null)
+                        return NotFound(new { message = $"Signature của StockOut ID {stockoutId} không tồn tại" });
+
+                    // Lấy signature từ CLOB
+                    if (pSig.Value == DBNull.Value || pSig.Value == null)
+                        return NotFound(new { message = $"Signature của StockOut ID {stockoutId} không tồn tại" });
+
+                    var clobSig = (Oracle.ManagedDataAccess.Types.OracleClob)pSig.Value;
+                    signature = clobSig.Value;  // Lấy toàn bộ text
+
+                }
+
+                // --- 4. VERIFY_STOCKIN_SIGNATURE ---
+                int isValid;
+                using (var cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = "APP.VERIFY_STOCKOUT_SIGNATURE";
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockoutId;
+                    cmd.Parameters.Add("p_public_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = publicKey;
+                    cmd.Parameters.Add("p_signature", OracleDbType.Clob, ParameterDirection.Input).Value = signature;
+
+                    var pIsValid = new OracleParameter("p_is_valid", OracleDbType.Int32, ParameterDirection.Output);
+                    cmd.Parameters.Add(pIsValid);
+
+                    cmd.ExecuteNonQuery();
+                    isValid = ((Oracle.ManagedDataAccess.Types.OracleDecimal)pIsValid.Value).ToInt32();
+                }
+
+                return Ok(new
+                {
+                    StockInId = stockoutId,
+                    IsValid = isValid == 1
+                });
+            }
+            catch (OracleException ex)
+            {
+                return StatusCode(500, new { Message = "Oracle Error", ErrorCode = ex.Number, Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "General Error", Error = ex.Message });
+            }
+        }
 
 
         [HttpPost("create")]
@@ -364,6 +477,11 @@ namespace WebAPI.Areas.Admin.Controllers
                     return File(signedExportPdf, "application/pdf", fileNameOut);
                 }
             }
+            catch (InvalidOperationException ex)
+            {
+                transaction.Rollback();
+                return BadRequest(new { Message = ex.Message, Error = ex.Message });
+            }
             catch (OracleException ex)
             {
                 transaction.Rollback();
@@ -497,9 +615,10 @@ namespace WebAPI.Areas.Admin.Controllers
                     // Execute export và get stockOutId, invoiceId
                     int stockOutId = 0;
                     int invoiceId = 0;
-                    using var transaction = conn.BeginTransaction();
+                    OracleTransaction? transaction = null;
                     try
                     {
+                        transaction = conn.BeginTransaction();
                         int empId;
                         using (var cmdEmp = conn.CreateCommand())
                         {
@@ -530,7 +649,30 @@ namespace WebAPI.Areas.Admin.Controllers
                         }
 
                         stockOutId = Convert.ToInt32(stockOutIdParam.Value.ToString());
+                        // Generate signature based on created stockout and its items
+                        string generatedSignature;
+                        using (var cmdSign = conn.CreateCommand())
+                        {
+                            cmdSign.CommandText = "APP.SIGN_STOCKOUT";
+                            cmdSign.CommandType = CommandType.StoredProcedure;
+                            cmdSign.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockOutId;
+                            cmdSign.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.PrivateKey;
+                            var outSignature = new OracleParameter("p_signature", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
+                            cmdSign.Parameters.Add(outSignature);
+                            cmdSign.ExecuteNonQuery();
+                            generatedSignature = outSignature.Value?.ToString() ?? "";
+                        }
 
+                        // Update stockout signature
+                        using (var cmdUpd = conn.CreateCommand())
+                        {
+                            cmdUpd.CommandText = "APP.UPDATE_STOCKOUT_SIGNATURE";
+                            cmdUpd.CommandType = CommandType.StoredProcedure;
+                            cmdUpd.Transaction = transaction;
+                            cmdUpd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockOutId;
+                            cmdUpd.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = generatedSignature ?? "";
+                            cmdUpd.ExecuteNonQuery();
+                        }
                         // Create invoice from stockout
                         using (var cmdInvoice = conn.CreateCommand())
                         {
@@ -543,12 +685,38 @@ namespace WebAPI.Areas.Admin.Controllers
                             cmdInvoice.ExecuteNonQuery();
                             invoiceId = Convert.ToInt32(pInvoiceId.Value.ToString());
                         }
+                        string invoiceSignature;
+                        using (var cmdSignInvoice = conn.CreateCommand())
+                        {
+                            cmdSignInvoice.CommandText = "APP.SIGN_INVOICE";
+                            cmdSignInvoice.CommandType = CommandType.StoredProcedure;
+                            cmdSignInvoice.Transaction = transaction;
+                            cmdSignInvoice.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId;
+                            cmdSignInvoice.Parameters.Add("p_private_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.PrivateKey;
+                            var outInvoiceSignature = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
+                            cmdSignInvoice.Parameters.Add(outInvoiceSignature);
+                            cmdSignInvoice.ExecuteNonQuery();
+                            var clobInvoiceSig = (Oracle.ManagedDataAccess.Types.OracleClob)outInvoiceSignature.Value;
+                            invoiceSignature = clobInvoiceSig?.Value ?? "";
+                        }
 
-                        transaction.Commit();
+                        // Update invoice signature
+                        using (var cmdUpdInvoiceSig = conn.CreateCommand())
+                        {
+                            cmdUpdInvoiceSig.CommandText = "APP.UPDATE_INVOICE_SIGNATURE";
+                            cmdUpdInvoiceSig.CommandType = CommandType.StoredProcedure;
+                            cmdUpdInvoiceSig.Transaction = transaction;
+                            cmdUpdInvoiceSig.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId;
+                            cmdUpdInvoiceSig.Parameters.Add("p_signature", OracleDbType.Varchar2, ParameterDirection.Input).Value = invoiceSignature;
+                            cmdUpdInvoiceSig.ExecuteNonQuery();
+                        }
+
                     }
                     catch
                     {
-                        transaction.Rollback();
+                        transaction?.Rollback();
+                        transaction?.Dispose();
+                        transaction = null;
                         throw;
                     }
 
@@ -594,41 +762,67 @@ namespace WebAPI.Areas.Admin.Controllers
 
                     byte[] pfxBytes = Convert.FromBase64String(dto.CertificatePfxBase64);
                     string pfxPassword = dto.CertificatePassword;
-                    var signedExportPdf = _invoicePdfService.GenerateExportInvoicePdfAndSignWithCertificate(
-                        pdfDto, pfxBytes, pfxPassword,
-                        cmd => cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockOutId,
-                        null, null);
-
-                    // Load invoice data and generate invoice PDF
-                    var invoiceDto = InvoiceDataHelper.LoadInvoiceData(conn, invoiceId);
-                    byte[] signedInvoicePdf = null;
-                    if (invoiceDto != null)
+                    try
                     {
-                        signedInvoicePdf = _invoicePdfService.GenerateInvoicePdfAndSignWithCertificate(
-                            invoiceDto, pfxBytes, pfxPassword,
-                            cmd => cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId,
+                        var signedExportPdf = _invoicePdfService.GenerateExportInvoicePdfAndSignWithCertificate(
+                            pdfDto, pfxBytes, pfxPassword,
+                            cmd => cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockOutId,
                             null, null);
+
+                        // Load invoice data and generate invoice PDF
+                        var invoiceDto = InvoiceDataHelper.LoadInvoiceData(conn, invoiceId);
+                        byte[] signedInvoicePdf = null;
+                        if (invoiceDto != null)
+                        {
+                            signedInvoicePdf = _invoicePdfService.GenerateInvoicePdfAndSignWithCertificate(
+                                invoiceDto, pfxBytes, pfxPassword,
+                                cmd => cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId,
+                                null, null);
+                        }
+
+                        // Tạo response object chứa PDF base64 và filename
+                        var responseObj = new
+                        {
+                            Success = true,
+                            Type = "pdf",
+                            ExportPdfBase64 = Convert.ToBase64String(signedExportPdf),
+                            ExportFileName = $"ExportInvoice_{stockOutId}.pdf",
+                            InvoicePdfBase64 = signedInvoicePdf != null ? Convert.ToBase64String(signedInvoicePdf) : null,
+                            InvoiceFileName = signedInvoicePdf != null ? $"Invoice_{invoiceId}.pdf" : null,
+                            InvoiceId = invoiceId,
+                            StockOutId = stockOutId
+                        };
+
+                        string responseJson = System.Text.Json.JsonSerializer.Serialize(responseObj);
+                        var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
+
+                        transaction?.Commit();
+                        transaction?.Dispose();
+                        transaction = null;
+
+                        return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                        {
+                            EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
+                            CipherDataBase64 = encryptedResponse.CipherDataBase64
+                        }));
                     }
-
-                    // Tạo response object chứa PDF base64 và filename
-                    var responseObj = new
+                    catch
                     {
-                        Success = true,
-                        Type = "pdf",
-                        ExportPdfBase64 = Convert.ToBase64String(signedExportPdf),
-                        ExportFileName = $"ExportInvoice_{stockOutId}.pdf",
-                        InvoicePdfBase64 = signedInvoicePdf != null ? Convert.ToBase64String(signedInvoicePdf) : null,
-                        InvoiceFileName = signedInvoicePdf != null ? $"Invoice_{invoiceId}.pdf" : null,
-                        InvoiceId = invoiceId,
-                        StockOutId = stockOutId
-                    };
-
-                    string responseJson = System.Text.Json.JsonSerializer.Serialize(responseObj);
-                    var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
+                        transaction?.Rollback();
+                        transaction?.Dispose();
+                        transaction = null;
+                        throw;
+                    }
+                }
+                catch (InvalidOperationException ex)
+                {
+                    var errorObj = new { Success = false, Message = ex.Message };
+                    string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
+                    var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
                     return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
                     {
-                        EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
-                        CipherDataBase64 = encryptedResponse.CipherDataBase64
+                        EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
+                        CipherDataBase64 = encryptedError.CipherDataBase64
                     }));
                 }
                 catch (Exception ex)
@@ -676,6 +870,7 @@ namespace WebAPI.Areas.Admin.Controllers
         // Required: PFX certificate từ CA để ký PDF
         public string CertificatePfxBase64 { get; set; }
         public string CertificatePassword { get; set; }
+        public string PrivateKey { get; set; }
     }
     
 }

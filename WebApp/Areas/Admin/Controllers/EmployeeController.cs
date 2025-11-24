@@ -626,6 +626,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 // Lưu private key vào session (Base64)
                 HttpContext.Session.SetString("PrivateKeyBase64", privateKeyBase64);
+                HttpContext.Session.SetString("PrivateKeyBase", privateKeyContent);
 
                 return Json(new { success = true, message = "Upload private key thành công! Private key đã được lưu vào session." });
             }
