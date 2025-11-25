@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart' as qr;
 
 import '../services/api_service.dart';
 import '../services/signalr_service.dart';
 import 'web_qr_login_sheet.dart';
+import 'qr_scan_screen.dart';
 
 enum LoginType { customer, employee }
 
@@ -92,19 +90,19 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (!mounted) return;
-      
+
       // Đảm bảo token đã được lưu vào storage trước khi navigate
       // Sử dụng một chút delay để đảm bảo mọi thứ đã hoàn tất
       await Future.delayed(const Duration(milliseconds: 100));
-      
+
       // Gọi callback để đóng bottom sheet trước khi navigate
       onSuccess?.call();
-      
+
       // Đợi một chút để bottom sheet đóng hoàn toàn
       await Future.delayed(const Duration(milliseconds: 200));
-      
+
       if (!mounted) return;
-      
+
       // Sử dụng pushNamedAndRemoveUntil để clear navigation stack và navigate đến home
       // Điều này đảm bảo user không thể quay lại màn hình login
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
@@ -134,32 +132,22 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
+  Future<void> _openQrScanner() async {
+    if (_isLoading) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => QrScanScreen(
+          submitButtonLabel: 'Đăng nhập bằng mã QR',
+          successMessage: 'Đăng nhập thành công. Đang chuyển hướng...',
+          onSubmit: (code) => _handleWebQrLogin(code),
+        ),
+      ),
     );
   }
 
-  void _openQrScanner() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => FractionallySizedBox(
-        heightFactor: 0.85,
-        child: _QrScannerSheet(
-          onCodeDetected: (code) async {
-            await _handleWebQrLogin(
-              code,
-              onSuccess: () {
-                if (sheetContext.mounted) {
-                  Navigator.of(sheetContext).pop();
-                }
-              },
-            );
-          },
-          onError: _showSnack,
-        ),
-      ),
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
     );
   }
 
@@ -276,15 +264,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _isLoading ? null : _handleLogin,
                   child: _isLoading
                       ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : Text(
-                    _loginType == LoginType.customer
-                        ? 'Đăng nhập'
-                        : 'Đăng nhập nhân viên',
-                  ),
+                          _loginType == LoginType.customer
+                              ? 'Đăng nhập'
+                              : 'Đăng nhập nhân viên',
+                        ),
                 ),
               ),
 
@@ -300,229 +288,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text('Đăng ký'),
                   ),
                 ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: _isLoading ? null : _openWebQrLoginSheet,
-                    child: const Text('Đăng nhập bằng mã từ Web'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _openQrScanner,
-                    icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('Quét QR đăng nhập'),
-                  ),
-                ),
               ],
-
-              // --- Employee extra buttons ---
-              if (_loginType == LoginType.employee) ...[
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: _isLoading ? null : _openWebQrLoginSheet,
-                    child: const Text('Đăng nhập nhân viên bằng mã Web'),
-                  ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _isLoading ? null : _openQrScanner,
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Quét mã QR bằng camera'),
                 ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _openQrScanner,
-                    icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('Quét QR nhân viên'),
-                  ),
-                ),
-              ],
+              ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _QrScannerSheet extends StatefulWidget {
-  const _QrScannerSheet({
-    required this.onCodeDetected,
-    required this.onError,
-  });
-
-  final Future<void> Function(String code) onCodeDetected;
-  final void Function(String message) onError;
-
-  @override
-  State<_QrScannerSheet> createState() => _QrScannerSheetState();
-}
-
-class _QrScannerSheetState extends State<_QrScannerSheet> {
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-  qr.QRViewController? _controller;
-
-  bool _isProcessing = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      _controller?.pauseCamera();
-    } else if (Platform.isIOS) {
-      _controller?.resumeCamera();
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  void _onQRViewCreated(qr.QRViewController controller) {
-    _controller = controller;
-    controller.scannedDataStream.listen(_handleDetection);
-  }
-
-  Future<void> _handleDetection(qr.Barcode capture) async {
-    if (_isProcessing) return;
-
-    final code = capture.code?.trim();
-
-    if (code == null) return;
-
-    setState(() => _isProcessing = true);
-    try {
-      await widget.onCodeDetected(code);
-    } catch (e) {
-      widget.onError(e.toString());
-      if (mounted) {
-        setState(() => _isProcessing = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                const Expanded(
-                  child: Text(
-                    'Quét QR từ Web',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Bật/Tắt đèn',
-                  onPressed: _controller == null
-                      ? null
-                      : () async {
-                          await _controller?.toggleFlash();
-                          setState(() {});
-                        },
-                  icon: FutureBuilder<bool?>(
-                    future: _controller?.getFlashStatus(),
-                    builder: (context, snapshot) {
-                      final isOn = snapshot.data ?? false;
-                      return Icon(
-                        isOn ? Icons.flash_on : Icons.flash_off,
-                        color: isOn ? Colors.amber : Colors.white,
-                      );
-                    },
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Đổi camera',
-                  onPressed: _controller == null
-                      ? null
-                      : () async {
-                          await _controller?.flipCamera();
-                          setState(() {});
-                        },
-                  icon: FutureBuilder<qr.CameraFacing?>(
-                    future: _controller?.getCameraInfo(),
-                    builder: (context, snapshot) {
-                      final facing = snapshot.data ?? qr.CameraFacing.back;
-                      final isBack = facing == qr.CameraFacing.back;
-                      return Icon(
-                        isBack ? Icons.camera_rear : Icons.camera_front,
-                        color: Colors.white,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              'Đưa mã QR từ website vào khung camera để đăng nhập.',
-              textAlign: TextAlign.center,
-            ),
-          ),
-          Expanded(
-            child: Stack(
-              children: [
-                qr.QRView(
-                  key: qrKey,
-                  onQRViewCreated: _onQRViewCreated,
-                  overlay: qr.QrScannerOverlayShape(
-                    borderColor: Colors.white,
-                    borderRadius: 12,
-                    borderLength: 30,
-                    borderWidth: 6,
-                    cutOutSize: 240,
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 220,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.8),
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-                if (_isProcessing)
-                  Container(
-                    color: Colors.black45,
-                    child: const Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
       ),
     );
   }

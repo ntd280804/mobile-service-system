@@ -8,6 +8,7 @@ import 'order_list_screen.dart';
 import 'employee_home_screen.dart';
 import 'customer_dashboard_screen.dart';
 import 'qr_web_login_sheet.dart';
+import 'qr_scan_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -96,6 +97,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openQrLoginSheet() {
     showQrLoginSheet(context);
+  }
+
+  Future<void> _openQrScanner() async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const QrScanScreen()),
+    );
+    if (!mounted || code == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Đã xử lý mã: $code')),
+    );
   }
 
   // ================= Change Password =================
@@ -207,6 +218,11 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('HealthCare - Khách hàng'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Quét QR đăng nhập Web',
+            onPressed: _openQrScanner,
+          ),
           IconButton(
             icon: const Icon(Icons.qr_code),
             tooltip: 'Đăng nhập Web (nhập mã từ trình duyệt)',
