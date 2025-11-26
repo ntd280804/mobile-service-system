@@ -4,7 +4,7 @@ namespace WebApp.Models.Part
     {
         public int StockInId { get; set; }
         public string EmpUsername { get; set; }
-        public DateTime OutDate { get; set; }
+        public DateTime InDate { get; set; }
         public string Note { get; set; }
         public List<ImportItemDto> Items { get; set; } = new();
     }

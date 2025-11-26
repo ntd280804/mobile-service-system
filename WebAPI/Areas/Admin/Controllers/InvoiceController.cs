@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
@@ -11,8 +11,8 @@ using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Services;
 using WebAPI.Models.Security;
+using WebAPI.Models.Invoice;
 using WebAPI.Models;
-
 namespace WebAPI.Areas.Admin.Controllers
 {
     [Route("api/admin/[controller]")]
@@ -274,10 +274,10 @@ namespace WebAPI.Areas.Admin.Controllers
                 var platform = HttpContext.Request.Headers["X-Oracle-Platform"].ToString();
                 if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(platform))
                     return StatusCode(500, ApiResponse<EncryptedPayload>.Fail("Cannot determine clientId from session headers"));
-                
+
                 // Sử dụng clientId với prefix "admin-" để lấy public key từ DB
                 string clientId = "admin-" + username;
-                
+
                 // Đảm bảo public key đã được load từ DB vào RsaKeyService
                 if (!rsaKeyService.TryGetClientPublicKey(clientId, out _))
                 {
@@ -306,7 +306,7 @@ namespace WebAPI.Areas.Admin.Controllers
                                         .Replace("\n", "")
                                         .Replace(" ", "")
                                         .Replace("\t", "");
-                                    
+
                                     // Nếu có PEM headers, extract Base64
                                     if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
                                     {
@@ -325,7 +325,7 @@ namespace WebAPI.Areas.Admin.Controllers
                                             }
                                         }
                                     }
-                                    
+
                                     rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                                 }
                             }
@@ -422,14 +422,4 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
     }
-
-    // DTOs
-    public class GenerateInvoicePdfDto
-    {
-        public int InvoiceId { get; set; }
-        // Required: PFX certificate từ CA để ký PDF
-        public string CertificatePfxBase64 { get; set; }
-        public string CertificatePassword { get; set; }
-    }
 }
-

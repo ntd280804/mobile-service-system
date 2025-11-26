@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
+using WebAPI.Models.Auth;
 using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Services;
@@ -105,10 +106,6 @@ namespace WebAPI.Areas.Admin.Controllers
             {
                 return StatusCode(500, new { message = ex.Message });
             }
-        }
-        public class UnlockCustomerDto
-        {
-            public string Phone { get; set; }
         }
 
         [HttpPost("lock")]

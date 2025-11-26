@@ -283,7 +283,7 @@ namespace WebAPI.Areas.Public.Controllers
 
         [HttpPost("change-password")]
         [Authorize]
-        public ActionResult<ApiResponse<string>> ChangePassword([FromBody] changePasswordDto dto)
+        public ActionResult<ApiResponse<string>> ChangePassword([FromBody] ChangePasswordDto dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.OldPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
                 return BadRequest(ApiResponse<string>.Fail("Thiếu mật khẩu cũ hoặc mật khẩu mới."));
@@ -346,7 +346,7 @@ namespace WebAPI.Areas.Public.Controllers
                     }
                 }
 
-                var dto = System.Text.Json.JsonSerializer.Deserialize<changePasswordDto>(plaintext);
+                var dto = System.Text.Json.JsonSerializer.Deserialize<ChangePasswordDto>(plaintext);
                 if (dto == null)
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
@@ -505,25 +505,6 @@ namespace WebAPI.Areas.Public.Controllers
             {
                 return StatusCode(500, ApiResponse<string>.Fail("Lỗi khi đặt lại mật khẩu: " + ex.Message));
             }
-        }
-
-        // DTO
-        public class ForgotPasswordGenerateOtpDto
-        {
-            public string Email { get; set; } = string.Empty;
-        }
-
-        public class ForgotPasswordResetDto
-        {
-            public string Email { get; set; } = string.Empty;
-            public string Otp { get; set; } = string.Empty;
-            public string NewPassword { get; set; } = string.Empty;
-        }
-
-        public class ForgotPasswordOtpResponse
-        {
-            public string Otp { get; set; } = string.Empty;
-            public string Message { get; set; } = string.Empty;
         }
     }
 }

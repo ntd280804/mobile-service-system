@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using UglyToad.PdfPig;
 using WebAPI.Models;
+using WebAPI.Models.Public;
 using WebAPI.Services;
 
 namespace WebAPI.Areas.Public.Controllers
@@ -128,12 +129,6 @@ namespace WebAPI.Areas.Public.Controllers
 
             return null;
         }
-    }
-
-    public class VerifyInvoiceRequest
-    {
-        public IFormFile? File { get; set; }
-        public decimal InvoiceId { get; set; }
     }
 }
 

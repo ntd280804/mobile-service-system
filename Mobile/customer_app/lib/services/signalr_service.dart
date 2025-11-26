@@ -40,6 +40,10 @@ class SignalRService {
       // Connection state listeners
       _connection!.onclose(({error}) {
         if (kDebugMode) debugPrint('SignalR connection closed: $error');
+        // BUGFIX: Notify UI to log out if SignalR is disconnected (server closed or lost connection)
+        if (onLogoutReceived != null) {
+          onLogoutReceived!();
+        }
       });
 
       _connection!.onreconnecting(({error}) {

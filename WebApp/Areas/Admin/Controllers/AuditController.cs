@@ -3,88 +3,10 @@ using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using WebApp.Helpers;
+using WebApp.Models.Audit;
 
 namespace WebApp.Areas.Admin.Controllers
 {
-    // DTOs for Audit
-    public class TriggerAuditLogDto
-    {
-        public long LogId { get; set; }
-        public DateTime? EventTs { get; set; }
-        public string? DbUser { get; set; }
-        public string? OsUser { get; set; }
-        public string? Machine { get; set; }
-        public string? Module { get; set; }
-        public string? AppRole { get; set; }
-        public string? EmpId { get; set; }
-        public string? CustomerPhone { get; set; }
-        public string? ObjectName { get; set; }
-        public string? Note { get; set; }
-        public string? DmlType { get; set; }
-        public string? ChangedColumns { get; set; }
-        public string? OldValues { get; set; }
-        public string? NewValues { get; set; }
-    }
-
-    public class StandardAuditLogDto
-    {
-        public DateTime? EventTs { get; set; }
-        public string? DbUser { get; set; }
-        public string? ObjectSchema { get; set; }
-        public string? ObjectName { get; set; }
-        public string? Action { get; set; }
-        public string? Note { get; set; }
-    }
-
-    public class FgaAuditLogDto
-    {
-        public DateTime? EventTs { get; set; }
-        public string? DbUser { get; set; }
-        public string? OsUser { get; set; }
-        public string? UserHost { get; set; }
-        public string? ObjectSchema { get; set; }
-        public string? ObjectName { get; set; }
-        public string? PolicyName { get; set; }
-        public string? StatementType { get; set; }
-        public long? Scn { get; set; }
-        public string? SqlText { get; set; }
-        public string? SqlBind { get; set; }
-    }
-
-    public class AuditStatusDto
-    {
-        public AuditTypeStatus? StandardAudit { get; set; }
-        public AuditTypeStatus? TriggerAudit { get; set; }
-        public AuditTypeStatus? FgaAudit { get; set; }
-    }
-
-    public class AuditTypeStatus
-    {
-        public bool Enabled { get; set; }
-        public int Count { get; set; }
-        public int ExpectedCount { get; set; }
-        public string? Note { get; set; }
-    }
-
-    // ViewModels for views with status
-    public class TriggerAuditViewModel
-    {
-        public List<TriggerAuditLogDto> Logs { get; set; } = new();
-        public AuditTypeStatus? Status { get; set; }
-    }
-
-    public class StandardAuditViewModel
-    {
-        public List<StandardAuditLogDto> Logs { get; set; } = new();
-        public AuditTypeStatus? Status { get; set; }
-    }
-
-    public class FgaAuditViewModel
-    {
-        public List<FgaAuditLogDto> Logs { get; set; } = new();
-        public AuditTypeStatus? Status { get; set; }
-    }
-
     [Area("Admin")]
     public class AuditController : Controller
     {
@@ -100,7 +22,6 @@ namespace WebApp.Areas.Admin.Controllers
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
             _oracleClientHelper = oracleClientHelper;
         }
-
 
         public async Task<IActionResult> TriggerAudit()
         {
@@ -118,23 +39,17 @@ namespace WebApp.Areas.Admin.Controllers
                     if (statusResponse.IsSuccessStatusCode)
                     {
                         var statusContent = await statusResponse.Content.ReadAsStringAsync();
-                        System.Diagnostics.Debug.WriteLine($"Status API Response: {statusContent}");
                         var auditStatus = JsonSerializer.Deserialize<AuditStatusDto>(statusContent, _jsonOptions);
                         viewModel.Status = auditStatus?.TriggerAudit;
-                        System.Diagnostics.Debug.WriteLine($"TriggerAudit Status: Enabled={viewModel.Status?.Enabled}, Count={viewModel.Status?.Count}");
                     }
                     else
                     {
-                        // Nếu không lấy được status, vẫn tiếp tục nhưng log lỗi
                         var errorContent = await statusResponse.Content.ReadAsStringAsync();
-                        System.Diagnostics.Debug.WriteLine($"Failed to get audit status: {statusResponse.StatusCode} - {errorContent}");
-                        TempData["Warning"] = $"Không thể lấy trạng thái audit: {statusResponse.StatusCode}";
+                        TempData["Warning"] = $"Không thể lấy trạng thái audit: {statusResponse.StatusCode} - {errorContent}";
                     }
                 }
                 catch (Exception statusEx)
                 {
-                    // Nếu lỗi khi lấy status, vẫn tiếp tục lấy logs
-                    System.Diagnostics.Debug.WriteLine($"Error getting audit status: {statusEx.Message}");
                     TempData["Warning"] = $"Lỗi khi lấy trạng thái: {statusEx.Message}";
                 }
 
@@ -162,7 +77,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 var content = await response.Content.ReadAsStringAsync();
                 viewModel.Logs = JsonSerializer.Deserialize<List<TriggerAuditLogDto>>(content, _jsonOptions)
-                                ?? new List<TriggerAuditLogDto>();
+                                  ?? new List<TriggerAuditLogDto>();
 
                 return View(viewModel);
             }
@@ -195,12 +110,12 @@ namespace WebApp.Areas.Admin.Controllers
                     else
                     {
                         var errorContent = await statusResponse.Content.ReadAsStringAsync();
-                        System.Diagnostics.Debug.WriteLine($"Failed to get audit status: {statusResponse.StatusCode} - {errorContent}");
+                        TempData["Warning"] = $"Failed to get audit status: {statusResponse.StatusCode} - {errorContent}";
                     }
                 }
                 catch (Exception statusEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error getting audit status: {statusEx.Message}");
+                    TempData["Warning"] = $"Error getting audit status: {statusEx.Message}";
                 }
 
                 // Lấy audit logs
@@ -227,7 +142,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 var content = await response.Content.ReadAsStringAsync();
                 viewModel.Logs = JsonSerializer.Deserialize<List<StandardAuditLogDto>>(content, _jsonOptions)
-                                ?? new List<StandardAuditLogDto>();
+                                  ?? new List<StandardAuditLogDto>();
 
                 return View(viewModel);
             }
@@ -260,12 +175,12 @@ namespace WebApp.Areas.Admin.Controllers
                     else
                     {
                         var errorContent = await statusResponse.Content.ReadAsStringAsync();
-                        System.Diagnostics.Debug.WriteLine($"Failed to get audit status: {statusResponse.StatusCode} - {errorContent}");
+                        TempData["Warning"] = $"Failed to get audit status: {statusResponse.StatusCode} - {errorContent}";
                     }
                 }
                 catch (Exception statusEx)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error getting audit status: {statusEx.Message}");
+                    TempData["Warning"] = $"Error getting audit status: {statusEx.Message}";
                 }
 
                 // Lấy audit logs
@@ -292,7 +207,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 var content = await response.Content.ReadAsStringAsync();
                 viewModel.Logs = JsonSerializer.Deserialize<List<FgaAuditLogDto>>(content, _jsonOptions)
-                                ?? new List<FgaAuditLogDto>();
+                                  ?? new List<FgaAuditLogDto>();
 
                 return View(viewModel);
             }

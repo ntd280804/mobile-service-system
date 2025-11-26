@@ -5,8 +5,7 @@ import 'employee_order_list_screen.dart';
 import 'employee_import_list_screen.dart';
 import 'employee_export_list_screen.dart';
 import 'employee_invoice_list_screen.dart';
-import 'qr_web_login_sheet.dart';
-
+import 'qr_scan_screen.dart';
 class EmployeeHomeScreen extends StatefulWidget {
   const EmployeeHomeScreen({super.key});
 
@@ -25,9 +24,14 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     const EmployeeExportListScreen(),
     const EmployeeInvoiceListScreen(),
   ];
-
-  void _openQrLoginSheet() {
-    showQrLoginSheet(context);
+  Future<void> _openQrScanner() async {
+    final code = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const QrScanScreen()),
+    );
+    if (!mounted || code == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Đã xử lý mã: $code')),
+    );
   }
 
   @override
@@ -37,9 +41,9 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
         title: const Text('Health Care - Nhân viên'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.qr_code),
-            tooltip: 'Đăng nhập Web Admin (nhập mã từ trình duyệt)',
-            onPressed: _openQrLoginSheet,
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Quét QR đăng nhập Web',
+            onPressed: _openQrScanner,
           ),
         ],
       ),

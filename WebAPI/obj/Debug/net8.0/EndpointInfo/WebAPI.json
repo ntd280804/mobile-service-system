@@ -364,17 +364,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/changePasswordDto"
+                "$ref": "#/components/schemas/ChangePasswordDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/changePasswordDto"
+                "$ref": "#/components/schemas/ChangePasswordDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/changePasswordDto"
+                "$ref": "#/components/schemas/ChangePasswordDto"
               }
             }
           }
@@ -608,17 +608,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/changePasswordDto"
+                "$ref": "#/components/schemas/ChangePasswordDto"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/changePasswordDto"
+                "$ref": "#/components/schemas/ChangePasswordDto"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/changePasswordDto"
+                "$ref": "#/components/schemas/ChangePasswordDto"
               }
             }
           }
@@ -2640,6 +2640,20 @@
         },
         "additionalProperties": false
       },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "oldPassword": {
+            "type": "string",
+            "nullable": true
+          },
+          "newPassword": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CreateAppointmentDto": {
         "type": "object",
         "properties": {
@@ -3494,20 +3508,6 @@
             "$ref": "#/components/schemas/WebToMobileQrStatusResponse"
           },
           "error": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "changePasswordDto": {
-        "type": "object",
-        "properties": {
-          "oldPassword": {
-            "type": "string",
-            "nullable": true
-          },
-          "newPassword": {
             "type": "string",
             "nullable": true
           }

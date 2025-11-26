@@ -88,7 +88,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
         [HttpPost("change-password")]
         [Authorize]
-        public ActionResult<ApiResponse<string>> ChangePassword([FromBody] changePasswordDto dto)
+        public ActionResult<ApiResponse<string>> ChangePassword([FromBody] ChangePasswordDto dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.OldPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
                 return BadRequest(ApiResponse<string>.Fail("Thiếu mật khẩu cũ hoặc mật khẩu mới."));
@@ -151,7 +151,7 @@ namespace WebAPI.Areas.Admin.Controllers
                     }
                 }
 
-                var dto = System.Text.Json.JsonSerializer.Deserialize<changePasswordDto>(plaintext);
+                var dto = System.Text.Json.JsonSerializer.Deserialize<ChangePasswordDto>(plaintext);
                 if (dto == null)
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
@@ -890,11 +890,5 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-        // DTOs
-        public class UpdatePublicKeyDto
-        {
-            public string? Username { get; set; }
-            public string? PublicKeyBase64 { get; set; }
-        }
     }
 }

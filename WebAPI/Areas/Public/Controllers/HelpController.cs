@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebAPI.Models;
+using WebAPI.Models.Public;
 using WebAPI.Services;
 
 namespace WebAPI.Areas.Public.Controllers
@@ -75,12 +76,6 @@ namespace WebAPI.Areas.Public.Controllers
                 _logger.LogError(ex, "Lỗi khi gửi email trợ giúp");
                 return StatusCode(500, ApiResponse<string>.Fail($"Lỗi khi gửi email: {ex.Message}"));
             }
-        }
-
-        public class SendHelpEmailRequest
-        {
-            public string Email { get; set; } = string.Empty;
-            public string Content { get; set; } = string.Empty;
         }
     }
 }

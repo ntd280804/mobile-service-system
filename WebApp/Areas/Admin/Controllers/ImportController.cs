@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using WebApp.Helpers;
 using WebApp.Models.Part;
+using WebApp.Models.Import;
 using WebApp.Services;
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -249,15 +250,5 @@ namespace WebApp.Areas.Admin.Controllers
         }
 
         // GET: /Admin/Import/Invoice/5 - PDF đã được lưu trong DB, không cần certificate
-
-        // DTOs for encrypted response
-        public class ImportSecureResponse
-        {
-            public bool Success { get; set; }
-            public string? Type { get; set; } // "pdf" or null
-            public string? PdfBase64 { get; set; }
-            public string? FileName { get; set; }
-            public string? Message { get; set; }
-        }
     }
 }

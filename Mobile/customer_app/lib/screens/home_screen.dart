@@ -7,7 +7,6 @@ import 'appointment_list_screen.dart';
 import 'order_list_screen.dart';
 import 'employee_home_screen.dart';
 import 'customer_dashboard_screen.dart';
-import 'qr_web_login_sheet.dart';
 import 'qr_scan_screen.dart';
 
 
@@ -93,10 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
         SnackBar(content: Text('Đăng xuất thất bại: ${e.toString()}')),
       );
     }
-  }
-
-  void _openQrLoginSheet() {
-    showQrLoginSheet(context);
   }
 
   Future<void> _openQrScanner() async {
@@ -222,11 +217,6 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.qr_code_scanner),
             tooltip: 'Quét QR đăng nhập Web',
             onPressed: _openQrScanner,
-          ),
-          IconButton(
-            icon: const Icon(Icons.qr_code),
-            tooltip: 'Đăng nhập Web (nhập mã từ trình duyệt)',
-            onPressed: _openQrLoginSheet,
           ),
           IconButton(
             icon: const Icon(Icons.lock_outline),

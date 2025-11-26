@@ -6,12 +6,16 @@ using System.Linq;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using WebAPI.Areas.Admin.Controllers;
+using WebAPI.Models.Export;
+using WebAPI.Models.Import;
+using WebAPI.Models.Invoice;
 using Oracle.ManagedDataAccess.Client;
 using MobileServiceSystem.Signing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using GroupDocs.Signature.Domain;
+using WebAPI.Models.Export;
+using WebAPI.Models.Import;
 
 namespace WebAPI.Services
 {
@@ -866,37 +870,6 @@ namespace WebAPI.Services
             if (string.IsNullOrEmpty(text) || text.Length <= max) return text ?? string.Empty;
             return text.Substring(0, Math.Max(0, max - 3)) + "...";
         }
-    }
-
-    // DTOs for Invoice
-    public class InvoiceDto
-    {
-        public int InvoiceId { get; set; }
-        public int StockOutId { get; set; }
-        public string CustomerPhone { get; set; }
-        public string EmpUsername { get; set; }
-        public DateTime InvoiceDate { get; set; }
-        public decimal TotalAmount { get; set; }
-        public string Status { get; set; }
-        public List<InvoiceItemDto> Items { get; set; }
-        public List<InvoiceServiceDto> Services { get; set; }
-    }
-
-    public class InvoiceItemDto
-    {
-        public int PartId { get; set; }
-        public string PartName { get; set; }
-        public string Manufacturer { get; set; }
-        public string Serial { get; set; }
-        public decimal Price { get; set; }
-    }
-
-    public class InvoiceServiceDto
-    {
-        public int ServiceId { get; set; }
-        public string ServiceName { get; set; }
-        public int Quantity { get; set; }
-        public decimal Price { get; set; }
     }
 }
 

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using System.Collections.Generic;
@@ -172,16 +172,6 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-        public class CreateProfileRequest
-        {
-            public string ProfileName { get; set; } = string.Empty;
-            public string IdleTime { get; set; } = "UNLIMITED";
-            public string ConnectTime { get; set; } = "UNLIMITED";
-            public string FailedLogin { get; set; } = "UNLIMITED";
-            public string LockTime { get; set; } = "UNLIMITED";
-            public string InactiveAccountTime { get; set; } = "UNLIMITED";
-        }
-
         [HttpPost]
         [Authorize]
         public IActionResult CreateProfile([FromBody] CreateProfileRequest request)
@@ -243,11 +233,6 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         }
 
-        public class AssignProfileRequest
-        {
-            public string Username { get; set; } = string.Empty;
-            public string ProfileName { get; set; } = string.Empty;
-        }
 
         [HttpPost("assign")]
         [Authorize]
@@ -297,7 +282,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 cmd.CommandType = System.Data.CommandType.StoredProcedure;
 
                 cmd.Parameters.Add("p_profile_name", OracleDbType.Varchar2, profileName.Trim().ToUpper(), System.Data.ParameterDirection.Input);
-                
+
                 var idleTimeParam = new OracleParameter("p_idle_time", OracleDbType.Varchar2);
                 idleTimeParam.Value = string.IsNullOrWhiteSpace(request.IdleTime) ? DBNull.Value : (object)request.IdleTime.Trim().ToUpper();
                 cmd.Parameters.Add(idleTimeParam);

@@ -8,6 +8,7 @@ using System.Data;
 using WebAPI.Services;
 using WebAPI.Models;
 using WebAPI.Helpers;
+using WebAPI.Models.Security;
 
 namespace WebAPI.Areas.Public.Controllers
 {
@@ -31,12 +32,6 @@ namespace WebAPI.Areas.Public.Controllers
         public ActionResult<ApiResponse<string>> GetServerPublicKey()
         {
             return Ok(ApiResponse<string>.Ok(_rsaKeyService.GetServerPublicKeyBase64()));
-        }
-
-        public class RegisterClientKeyRequest
-        {
-            public string? ClientId { get; set; }
-            public string? ClientPublicKeyBase64 { get; set; }
         }
 
         [HttpPost("register-client-key")] 
@@ -114,18 +109,6 @@ namespace WebAPI.Areas.Public.Controllers
 
             _rsaKeyService.SaveClientPublicKey(request.ClientId, publicKeyToSave);
             return Ok(ApiResponse<string>.Ok("registered"));
-        }
-
-        public class EncryptForClientRequest
-        {
-            public string? ClientId { get; set; }
-            public string? Plaintext { get; set; }
-        }
-
-        public class EncryptForClientResponse
-        {
-            public string? EncryptedKeyBlockBase64 { get; set; }
-            public string? CipherDataBase64 { get; set; }
         }
 
         [HttpPost("encrypt-for-client")] 

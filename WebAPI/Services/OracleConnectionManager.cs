@@ -15,22 +15,15 @@ namespace WebAPI.Services
             _hubContext = hubContext;
             _configuration = configuration;
         }
-
-        // Thông tin lưu kèm theo mỗi connection
         private record OracleConnInfo(OracleConnection Conn, string OracleSid);
-
         // Key: (username, platform, sessionId)
-        private readonly ConcurrentDictionary<(string username, string platform, string sessionId), OracleConnInfo> _connections = new();
-
-        /// <summary>
-        /// Lấy connection nếu tồn tại và session Oracle còn sống.
-        /// </summary>
+        private readonly ConcurrentDictionary<(string username, string platform, string sessionId)
+            , OracleConnInfo> _connections = new();
         public OracleConnection? GetConnectionIfExists(string username, string platform, string sessionId)
         {
             var key = (username, platform, sessionId);
             if (!_connections.TryGetValue(key, out var info))
                 return null;
-
             try
             {
                 if (info.Conn.State != ConnectionState.Open)
@@ -48,31 +41,20 @@ namespace WebAPI.Services
                 return null;
             }
         }
-
-        /// <summary>
-        /// Tạo connection mới cho 1 user + platform + sessionId.
-        /// </summary>
-        public OracleConnection CreateConnection(string username, string password, string platform, string sessionId, bool proxy = false)
+        public OracleConnection CreateConnection(string username, string password, string platform
+            , string sessionId, bool proxy = false)
         {
-            // username ở đây luôn là "logical username" (ví dụ: số điện thoại của customer)
-            // Nếu proxy=true thì chỉ dùng username để build Oracle username, còn key trong dictionary vẫn dùng logical username.
-
-            // ❌ Xóa hết connection cũ của logical username + platform và push logout
             RemoveAllConnections(username, platform).Wait();
-
             var oracleUsername = proxy
                 ? BuildProxyUsername(username)
                 : username;
-
             var connectionStringTemplate = _configuration.GetConnectionString("OracleDb");
             var connString = connectionStringTemplate
                 .Replace("{username}", oracleUsername)
                 .Replace("{password}", password);
-
             var conn = new OracleConnection(connString);
             OracleConnection.ClearPool(conn);
             conn.Open();
-
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = "BEGIN DBMS_APPLICATION_INFO.SET_MODULE(:module_name, :client_info); END;";
@@ -80,28 +62,22 @@ namespace WebAPI.Services
                 cmd.Parameters.Add(new OracleParameter("client_info", sessionId));
                 cmd.ExecuteNonQuery();
             }
-
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = "BEGIN DBMS_SESSION.SET_IDENTIFIER(:sid); END;";
                 cmd.Parameters.Add(new OracleParameter("sid", sessionId));
                 cmd.ExecuteNonQuery();
             }
-
             string oracleSid;
             using (var cmd = conn.CreateCommand())
             {
                 cmd.CommandText = "SELECT SYS_CONTEXT('USERENV', 'SID') FROM DUAL";
                 oracleSid = cmd.ExecuteScalar()?.ToString() ?? "";
             }
-
             var key = (username, platform, sessionId);
             _connections[key] = new OracleConnInfo(conn, oracleSid);
-            Console.WriteLine($"[CreateConnection] New Oracle SID={oracleSid} for {key}");
-
             return conn;
         }
-
         private string BuildProxyUsername(string targetUsername)
         {
             var proxyUser = _configuration["QrLogin:ProxyUser"]
@@ -109,10 +85,6 @@ namespace WebAPI.Services
                 ?? "APP";
             return $"{proxyUser}[{targetUsername}]";
         }
-
-        /// <summary>
-        /// Xóa connection của 1 session cụ thể.
-        /// </summary>
         public async Task RemoveConnection(string username, string platform, string sessionId)
         {
             var key = (username, platform, sessionId);
@@ -151,9 +123,6 @@ namespace WebAPI.Services
             conn.Open();
             return conn;
         }
-        /// <summary>
-        /// Xóa tất cả connection của 1 user trên 1 platform.
-        /// </summary>
         public async Task RemoveAllConnections(string username, string platform)
         {
             var keys = _connections.Keys
@@ -163,10 +132,6 @@ namespace WebAPI.Services
             foreach (var key in keys)
                 await RemoveConnection(key.username, key.platform, key.sessionId);
         }
-
-        /// <summary>
-        /// Kiểm tra toàn bộ connection định kỳ (optional)
-        /// </summary>
         public void CleanupDeadConnections()
         {
             foreach (var key in _connections.Keys.ToList())

@@ -474,31 +474,5 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, new { message = "Lỗi khi hủy đơn hàng", detail = ex.Message });
             }
         }
-
-        public class CompleteOrderRequest
-        {
-            public int OrderId { get; set; }
-            public string EmpUsername { get; set; }
-        }
-
-        public class ServiceDto
-        {
-            public decimal ServiceId { get; set; }
-            public string Name { get; set; }
-            public string Description { get; set; }
-            public decimal Price { get; set; }
-            public decimal Quantity { get; set; }
-        }
-
-        public class OrderServiceDto
-        {
-            public decimal OrderId { get; set; }
-            public decimal ServiceId { get; set; }
-            public string ServiceName { get; set; }
-            public string ServiceDescription { get; set; }
-            public decimal Quantity { get; set; }
-            public decimal Price { get; set; }
-            public string Status { get; set; }
-        }
     }
 }

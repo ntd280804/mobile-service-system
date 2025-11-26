@@ -159,7 +159,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Admin.Controllers.CustomerController\u002BUnlockCustomerDto",
+        "Type": "WebAPI.Models.Auth.UnlockCustomerDto",
         "IsRequired": true
       }
     ],
@@ -175,7 +175,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Admin.Controllers.CustomerController\u002BUnlockCustomerDto",
+        "Type": "WebAPI.Models.Auth.UnlockCustomerDto",
         "IsRequired": true
       }
     ],
@@ -217,7 +217,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Models.Auth.changePasswordDto",
+        "Type": "WebAPI.Models.Auth.ChangePasswordDto",
         "IsRequired": true
       }
     ],
@@ -405,7 +405,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Admin.Controllers.CreateExportFromOrderDto",
+        "Type": "WebAPI.Models.Export.CreateExportFromOrderDto",
         "IsRequired": true
       }
     ],
@@ -547,7 +547,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Admin.Controllers.ImportStockDto",
+        "Type": "WebAPI.Models.Import.ImportStockDto",
         "IsRequired": true
       }
     ],
@@ -982,7 +982,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Areas.Admin.Controllers.ProfileController\u002BCreateProfileRequest",
+        "Type": "WebAPI.Models.Permission.CreateProfileRequest",
         "IsRequired": true
       }
     ],
@@ -1051,7 +1051,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Areas.Admin.Controllers.ProfileController\u002BAssignProfileRequest",
+        "Type": "WebAPI.Models.Permission.AssignProfileRequest",
         "IsRequired": true
       }
     ],
@@ -1203,7 +1203,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Models.Auth.changePasswordDto",
+        "Type": "WebAPI.Models.Auth.ChangePasswordDto",
         "IsRequired": true
       }
     ],
@@ -1255,7 +1255,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Public.Controllers.CustomerController\u002BForgotPasswordGenerateOtpDto",
+        "Type": "WebAPI.Models.Auth.ForgotPasswordGenerateOtpDto",
         "IsRequired": true
       }
     ],
@@ -1271,7 +1271,7 @@
     "Parameters": [
       {
         "Name": "dto",
-        "Type": "WebAPI.Areas.Public.Controllers.CustomerController\u002BForgotPasswordResetDto",
+        "Type": "WebAPI.Models.Auth.ForgotPasswordResetDto",
         "IsRequired": true
       }
     ],
@@ -1365,7 +1365,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Areas.Public.Controllers.HelpController\u002BSendHelpEmailRequest",
+        "Type": "WebAPI.Models.Public.SendHelpEmailRequest",
         "IsRequired": true
       }
     ],
@@ -1463,13 +1463,13 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Areas.Public.Controllers.SecurityController\u002BEncryptForClientRequest",
+        "Type": "WebAPI.Models.Security.EncryptForClientRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": [
       {
-        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Areas.Public.Controllers.SecurityController\u002BEncryptForClientResponse, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptForClientResponse, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
         "MediaTypes": [
           "text/plain",
           "application/json",
@@ -1489,7 +1489,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "WebAPI.Areas.Public.Controllers.SecurityController\u002BRegisterClientKeyRequest",
+        "Type": "WebAPI.Models.Security.RegisterClientKeyRequest",
         "IsRequired": true
       }
     ],
