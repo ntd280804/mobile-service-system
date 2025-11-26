@@ -7,8 +7,8 @@ using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using System.Data;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Models;
@@ -22,17 +22,18 @@ namespace WebAPI.Areas.Admin.Controllers
     [ApiController]
     public class EmployeeController : ControllerBase
     {
-        
+        private readonly ControllerHelper _helper;
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
         private readonly OracleSessionHelper _oracleSessionHelper;
 
         public EmployeeController(
-                                  OracleConnectionManager connManager,
-                                  JwtHelper jwtHelper,
-                                  OracleSessionHelper oracleSessionHelper)
+            ControllerHelper helper,
+            OracleConnectionManager connManager,
+            JwtHelper jwtHelper,
+            OracleSessionHelper oracleSessionHelper)
         {
-            
+            _helper = helper;
             _connManager = connManager;
             _jwtHelper = jwtHelper;
             _oracleSessionHelper = oracleSessionHelper;
@@ -45,46 +46,25 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult GetAll()
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.GET_ALL_EMPLOYEES", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
+                var result = OracleHelper.ExecuteRefCursor(
+                    conn,
+                    "APP.GET_ALL_EMPLOYEES",
+                    "p_cursor",
+                    reader => new
+                    {
+                        EmpId = reader.GetDecimal(0),
+                        FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+                        Username = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        Email = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
+                        Status = reader.IsDBNull(5) ? null : reader.GetString(5),
+                        Roles = reader.IsDBNull(6) ? "" : reader.GetString(6)
+                    });
 
-                var cursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
-                cmd.Parameters.Add(cursor);
-
-                using var reader = cmd.ExecuteReader();
-                var list = new List<object>();
-
-                while (reader.Read())
-                {
-					list.Add(new
-					{
-						EmpId = reader.GetDecimal(0),
-						FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
-						Username = reader.IsDBNull(2) ? null : reader.GetString(2),
-						Email = reader.IsDBNull(3) ? null : reader.GetString(3),
-						Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
-						Status = reader.IsDBNull(5) ? null : reader.GetString(5),
-						Roles = reader.IsDBNull(6) ? "" : reader.GetString(6) // Cột Roles
-					});
-                }
-
-                return Ok(list);
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                // Retrieve session info from HttpContext
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi lấy danh sách nhân viên", detail = ex.Message });
-            }
+                return Ok(result);
+            }, "Lỗi khi lấy danh sách nhân viên");
         }
         [HttpPost("change-password")]
         [Authorize]
@@ -102,19 +82,27 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                using var cmd = new OracleCommand("APP.CHANGE_EMPLOYEE_PASSWORD", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.BindByName = true;
-                cmd.Parameters.Add("p_username", OracleDbType.Varchar2, ParameterDirection.Input).Value = headerUsername;
-                cmd.Parameters.Add("p_old_password", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.OldPassword;
-                cmd.Parameters.Add("p_new_password", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.NewPassword;
-                cmd.ExecuteNonQuery();
+                OracleHelper.ExecuteNonQuery(
+                    conn,
+                    "APP.CHANGE_EMPLOYEE_PASSWORD",
+                    ("p_username", OracleDbType.Varchar2, headerUsername),
+                    ("p_old_password", OracleDbType.Varchar2, dto.OldPassword),
+                    ("p_new_password", OracleDbType.Varchar2, dto.NewPassword));
+
                 return Ok(ApiResponse<string>.Ok("Đổi mật khẩu thành công."));
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(ApiResponse<string>.Fail("Phiên Oracle đã bị kill. Vui lòng đăng nhập lại."));
+            }
+            catch (OracleException ex) when (ex.Number == 20001)
+            {
+                return BadRequest(ApiResponse<string>.Fail("Mật khẩu cũ không đúng."));
             }
             catch (OracleException ex)
             {
-                if (ex.Number == 20001)
-                    return BadRequest(ApiResponse<string>.Fail("Mật khẩu cũ không đúng."));
                 return StatusCode(500, ApiResponse<string>.Fail($"Oracle error {ex.Number}: {ex.Message}"));
             }
             catch (Exception ex)
@@ -202,58 +190,50 @@ namespace WebAPI.Areas.Admin.Controllers
                 // Đảm bảo public key đã được load từ DB vào RsaKeyService
                 if (!rsaKeyService.TryGetClientPublicKey(clientId, out _))
                 {
-                    // Lấy public key từ DB và lưu vào RsaKeyService
-                    var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-                    if (conn != null)
+                    var connPubKey = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorizedPubKey);
+                    if (connPubKey != null)
                     {
                         try
                         {
-                            using var cmd = new OracleCommand("APP.GET_PUBLICKEY_BY_USERNAME", conn);
-                            cmd.CommandType = CommandType.StoredProcedure;
-                            cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = username;
-                            var pPubKey = new OracleParameter("p_public_key", OracleDbType.Clob, ParameterDirection.Output);
-                            cmd.Parameters.Add(pPubKey);
-                            cmd.ExecuteNonQuery();
+                            string? publicKeyFromDb = OracleHelper.ExecuteClobOutput(
+                                connPubKey,
+                                "APP.GET_PUBLICKEY_BY_USERNAME",
+                                "p_public_key",
+                                ("p_username", OracleDbType.Varchar2, username));
 
-                            if (pPubKey.Value != DBNull.Value && pPubKey.Value != null)
+                            if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
                             {
-                                var clobPubKey = (Oracle.ManagedDataAccess.Types.OracleClob)pPubKey.Value;
-                                string publicKeyFromDb = clobPubKey.Value?.Trim() ?? "";
-                                if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
+                                // Normalize public key
+                                string normalizedPublicKey = publicKeyFromDb
+                                    .Replace("\r", "")
+                                    .Replace("\n", "")
+                                    .Replace(" ", "")
+                                    .Replace("\t", "");
+
+                                // Extract Base64 từ PEM format nếu có
+                                if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
                                 {
-                                    // Normalize public key: loại bỏ whitespace và kiểm tra format
-                                    string normalizedPublicKey = publicKeyFromDb
-                                        .Replace("\r", "")
-                                        .Replace("\n", "")
-                                        .Replace(" ", "")
-                                        .Replace("\t", "");
-                                    
-                                    // Nếu có PEM headers, extract Base64
-                                    if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
+                                    int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
+                                    int endIdx = normalizedPublicKey.IndexOf("-----END");
+                                    if (startIdx >= 0 && endIdx > startIdx)
                                     {
-                                        // Extract Base64 từ PEM format
-                                        int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
-                                        int endIdx = normalizedPublicKey.IndexOf("-----END");
-                                        if (startIdx >= 0 && endIdx > startIdx)
+                                        int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
+                                        if (beginEnd > startIdx)
                                         {
-                                            int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
-                                            if (beginEnd > startIdx)
-                                            {
-                                                normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
-                                                    .Replace("\r", "")
-                                                    .Replace("\n", "")
-                                                    .Replace(" ", "");
-                                            }
+                                            normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
+                                                .Replace("\r", "")
+                                                .Replace("\n", "")
+                                                .Replace(" ", "");
                                         }
                                     }
-                                    
-                                    rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                                 }
+
+                                rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                             }
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            // Log error nhưng tiếp tục, sẽ throw error sau nếu không có public key
+                            // Log error nhưng tiếp tục
                         }
                     }
                 }
@@ -277,45 +257,28 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult Get(decimal id)
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.GET_EMPLOYEE_BY_ID", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
+                var rows = OracleHelper.ExecuteRefCursor(
+                    conn,
+                    "APP.GET_EMPLOYEE_BY_ID",
+                    "p_cursor",
+                    reader => new
+                    {
+                        EmpId = reader.GetDecimal(0),
+                        FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+                        Username = reader.IsDBNull(2) ? null : reader.GetString(2),
+                        Email = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
+                        Status = reader.IsDBNull(5) ? null : reader.GetString(5)
+                    },
+                    ("p_empid", OracleDbType.Decimal, id));
 
-                cmd.Parameters.Add("p_empid", OracleDbType.Decimal).Value = id;
-                var cursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
-                cmd.Parameters.Add(cursor);
+                if (rows.Count == 0)
+                    return NotFound();
 
-                using var reader = cmd.ExecuteReader();
-
-				if (reader.Read())
-				{
-					return Ok(new
-					{
-						EmpId = reader.GetDecimal(0),
-						FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
-						Username = reader.IsDBNull(2) ? null : reader.GetString(2),
-						Email = reader.IsDBNull(3) ? null : reader.GetString(3),
-						Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
-						Status = reader.IsDBNull(5) ? null : reader.GetString(5)
-					});
-				}
-
-                return NotFound();
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi lấy thông tin nhân viên", detail = ex.Message });
-            }
+                return Ok(rows[0]);
+            }, "Lỗi khi lấy thông tin nhân viên");
         }
 
         // =====================
@@ -596,55 +559,27 @@ namespace WebAPI.Areas.Admin.Controllers
         {
             if (dto == null) return BadRequest("Invalid data");
 
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.REGISTER_EMPLOYEE", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
+                string? privateKey = OracleHelper.ExecuteClobOutput(
+                    conn,
+                    "APP.REGISTER_EMPLOYEE",
+                    "p_private_key",
+                    ("p_empid", OracleDbType.Decimal, DBNull.Value),
+                    ("p_full_name", OracleDbType.Varchar2, dto.FullName ?? ""),
+                    ("p_username", OracleDbType.Varchar2, dto.Username ?? ""),
+                    ("p_password", OracleDbType.Varchar2, dto.Password ?? ""),
+                    ("p_email", OracleDbType.Varchar2, dto.Email ?? ""),
+                    ("p_phone", OracleDbType.Varchar2, dto.Phone ?? ""));
 
-                cmd.Parameters.Add("p_empid", OracleDbType.Decimal).Value = DBNull.Value;
-                cmd.Parameters.Add("p_full_name", OracleDbType.Varchar2).Value = dto.FullName;
-                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
-                cmd.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
-                cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
-                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
+                if (string.IsNullOrEmpty(privateKey))
+                    return Conflict(new { message = "Lỗi khi thêm nhân viên: không nhận được private key" });
 
-                // OUT param để nhận private key
-                var privateKeyParam = new OracleParameter("p_private_key", OracleDbType.Clob)
-                {
-                    Direction = ParameterDirection.Output
-                };
-                cmd.Parameters.Add(privateKeyParam);
-
-                cmd.ExecuteNonQuery();
-
-                // ✅ Lấy private key từ OracleClob
-                string privateKey = string.Empty;
-                if (privateKeyParam.Value is Oracle.ManagedDataAccess.Types.OracleClob clob && !clob.IsNull)
-                {
-                    using var reader = new StreamReader(clob, Encoding.UTF8);
-                    privateKey = reader.ReadToEnd();
-                }
-
-                // Chuyển private key thành byte array để trả file
                 var fileBytes = Encoding.UTF8.GetBytes(privateKey);
                 var fileName = $"{dto.Username}_private_key.txt";
 
-                // Trả file để web app tải xuống
                 return File(fileBytes, "text/plain", fileName);
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext,_connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill." });
-            }
-            catch (Exception ex)
-            {
-                return Conflict(new { message = "Lỗi khi thêm nhân viên", detail = ex.Message });
-            }
+            }, "Lỗi khi thêm nhân viên");
         }
 
         [HttpPost("register-secure-encrypted")]
@@ -692,58 +627,50 @@ namespace WebAPI.Areas.Admin.Controllers
                 // Đảm bảo public key đã được load từ DB vào RsaKeyService
                 if (!rsaKeyService.TryGetClientPublicKey(clientId, out _))
                 {
-                    // Lấy public key từ DB và lưu vào RsaKeyService
-                    var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-                    if (conn != null)
+                    var connPubKey = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorizedPubKey);
+                    if (connPubKey != null)
                     {
                         try
                         {
-                            using var cmd = new OracleCommand("APP.GET_PUBLICKEY_BY_USERNAME", conn);
-                            cmd.CommandType = CommandType.StoredProcedure;
-                            cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = username;
-                            var pPubKey = new OracleParameter("p_public_key", OracleDbType.Clob, ParameterDirection.Output);
-                            cmd.Parameters.Add(pPubKey);
-                            cmd.ExecuteNonQuery();
+                            string? publicKeyFromDb = OracleHelper.ExecuteClobOutput(
+                                connPubKey,
+                                "APP.GET_PUBLICKEY_BY_USERNAME",
+                                "p_public_key",
+                                ("p_username", OracleDbType.Varchar2, username));
 
-                            if (pPubKey.Value != DBNull.Value && pPubKey.Value != null)
+                            if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
                             {
-                                var clobPubKey = (Oracle.ManagedDataAccess.Types.OracleClob)pPubKey.Value;
-                                string publicKeyFromDb = clobPubKey.Value?.Trim() ?? "";
-                                if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
+                                // Normalize public key
+                                string normalizedPublicKey = publicKeyFromDb
+                                    .Replace("\r", "")
+                                    .Replace("\n", "")
+                                    .Replace(" ", "")
+                                    .Replace("\t", "");
+
+                                // Extract Base64 từ PEM format nếu có
+                                if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
                                 {
-                                    // Normalize public key: loại bỏ whitespace và kiểm tra format
-                                    string normalizedPublicKey = publicKeyFromDb
-                                        .Replace("\r", "")
-                                        .Replace("\n", "")
-                                        .Replace(" ", "")
-                                        .Replace("\t", "");
-                                    
-                                    // Nếu có PEM headers, extract Base64
-                                    if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
+                                    int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
+                                    int endIdx = normalizedPublicKey.IndexOf("-----END");
+                                    if (startIdx >= 0 && endIdx > startIdx)
                                     {
-                                        // Extract Base64 từ PEM format
-                                        int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
-                                        int endIdx = normalizedPublicKey.IndexOf("-----END");
-                                        if (startIdx >= 0 && endIdx > startIdx)
+                                        int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
+                                        if (beginEnd > startIdx)
                                         {
-                                            int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
-                                            if (beginEnd > startIdx)
-                                            {
-                                                normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
-                                                    .Replace("\r", "")
-                                                    .Replace("\n", "")
-                                                    .Replace(" ", "");
-                                            }
+                                            normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
+                                                .Replace("\r", "")
+                                                .Replace("\n", "")
+                                                .Replace(" ", "");
                                         }
                                     }
-                                    
-                                    rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                                 }
+
+                                rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                             }
                         }
-                        catch (Exception ex)
+                        catch
                         {
-                            // Log error nhưng tiếp tục, sẽ throw error sau nếu không có public key
+                            // Log error nhưng tiếp tục
                         }
                     }
                 }
@@ -765,31 +692,27 @@ namespace WebAPI.Areas.Admin.Controllers
                         }));
                     }
 
-                    using var cmd = new OracleCommand("APP.REGISTER_EMPLOYEE", conn);
-                    cmd.CommandType = CommandType.StoredProcedure;
+                    string? privateKey = OracleHelper.ExecuteClobOutput(
+                        conn,
+                        "APP.REGISTER_EMPLOYEE",
+                        "p_private_key",
+                        ("p_empid", OracleDbType.Decimal, DBNull.Value),
+                        ("p_full_name", OracleDbType.Varchar2, dto.FullName ?? ""),
+                        ("p_username", OracleDbType.Varchar2, dto.Username ?? ""),
+                        ("p_password", OracleDbType.Varchar2, dto.Password ?? ""),
+                        ("p_email", OracleDbType.Varchar2, dto.Email ?? ""),
+                        ("p_phone", OracleDbType.Varchar2, dto.Phone ?? ""));
 
-                    cmd.Parameters.Add("p_empid", OracleDbType.Decimal).Value = DBNull.Value;
-                    cmd.Parameters.Add("p_full_name", OracleDbType.Varchar2).Value = dto.FullName;
-                    cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
-                    cmd.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
-                    cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
-                    cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
-
-                    // OUT param để nhận private key
-                    var privateKeyParam = new OracleParameter("p_private_key", OracleDbType.Clob)
+                    if (string.IsNullOrEmpty(privateKey))
                     {
-                        Direction = ParameterDirection.Output
-                    };
-                    cmd.Parameters.Add(privateKeyParam);
-
-                    cmd.ExecuteNonQuery();
-
-                    // ✅ Lấy private key từ OracleClob
-                    string privateKey = string.Empty;
-                    if (privateKeyParam.Value is Oracle.ManagedDataAccess.Types.OracleClob clob && !clob.IsNull)
-                    {
-                        using var reader = new StreamReader(clob, Encoding.UTF8);
-                        privateKey = reader.ReadToEnd();
+                        var errorObj = new { Success = false, Message = "Lỗi khi thêm nhân viên: không nhận được private key" };
+                        string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
+                        var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
+                        return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
+                        {
+                            EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
+                            CipherDataBase64 = encryptedError.CipherDataBase64
+                        }));
                     }
 
                     // Tạo response object chứa private key base64 và filename
@@ -835,27 +758,15 @@ namespace WebAPI.Areas.Admin.Controllers
             if (dto == null || string.IsNullOrEmpty(dto.Username))
                 return BadRequest(new { message = "Username không hợp lệ." });
 
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.UNLOCK_DB_USER", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
-
-                cmd.ExecuteNonQuery();
+                OracleHelper.ExecuteNonQuery(
+                    conn,
+                    "APP.UNLOCK_DB_USER",
+                    ("p_username", OracleDbType.Varchar2, dto.Username));
 
                 return Ok(new { message = $"Tài khoản {dto.Username} đã được unlock." });
-            }
-            catch (OracleException ex)
-            {
-                return Conflict(new { message = $"Lỗi Oracle: {ex.Message}", number = ex.Number });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+            }, "Lỗi khi unlock tài khoản");
         }
 
         
@@ -867,27 +778,15 @@ namespace WebAPI.Areas.Admin.Controllers
             if (dto == null || string.IsNullOrEmpty(dto.Username))
                 return BadRequest(new { message = "Username không hợp lệ." });
 
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.LOCK_DB_USER", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = dto.Username;
-
-                cmd.ExecuteNonQuery();
+                OracleHelper.ExecuteNonQuery(
+                    conn,
+                    "APP.LOCK_DB_USER",
+                    ("p_username", OracleDbType.Varchar2, dto.Username));
 
                 return Ok(new { message = $"Tài khoản {dto.Username} đã bị khóa." });
-            }
-            catch (OracleException ex)
-            {
-                return Conflict(new { message = $"Lỗi Oracle: {ex.Message}", number = ex.Number });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+            }, "Lỗi khi khóa tài khoản");
         }
 
     }

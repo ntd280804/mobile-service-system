@@ -46,8 +46,13 @@ namespace WebApp.Areas.Admin.Controllers
                         parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Serial) && p.Serial.Contains(serial, StringComparison.OrdinalIgnoreCase)).ToList();
                     if (!string.IsNullOrWhiteSpace(manufacturer))
                         parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Manufacturer) && p.Manufacturer.Contains(manufacturer, StringComparison.OrdinalIgnoreCase)).ToList();
-                    if (!string.IsNullOrWhiteSpace(status))
-                        parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Status) && p.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (!string.IsNullOrWhiteSpace(status) && !status.Equals("Tất cả", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Lọc các phần có Status khác null/whitespace và bằng với status (không phân biệt chữ hoa/thường)
+                        parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Status) &&
+                                                 p.Status.Equals(status, StringComparison.OrdinalIgnoreCase))
+                                     .ToList();
+                    }
                     if (priceMin.HasValue)
                         parts = parts.Where(p => p.Price.HasValue && p.Price.Value >= priceMin.Value).ToList();
                     if (priceMax.HasValue)

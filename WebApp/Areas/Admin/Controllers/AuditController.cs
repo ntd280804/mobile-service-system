@@ -77,7 +77,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 var content = await response.Content.ReadAsStringAsync();
                 viewModel.Logs = JsonSerializer.Deserialize<List<TriggerAuditLogDto>>(content, _jsonOptions)
-                                  ?? new List<TriggerAuditLogDto>();
+                                ?? new List<TriggerAuditLogDto>();
 
                 return View(viewModel);
             }
@@ -142,7 +142,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 var content = await response.Content.ReadAsStringAsync();
                 viewModel.Logs = JsonSerializer.Deserialize<List<StandardAuditLogDto>>(content, _jsonOptions)
-                                  ?? new List<StandardAuditLogDto>();
+                                ?? new List<StandardAuditLogDto>();
 
                 return View(viewModel);
             }
@@ -207,7 +207,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 var content = await response.Content.ReadAsStringAsync();
                 viewModel.Logs = JsonSerializer.Deserialize<List<FgaAuditLogDto>>(content, _jsonOptions)
-                                  ?? new List<FgaAuditLogDto>();
+                                ?? new List<FgaAuditLogDto>();
 
                 return View(viewModel);
             }

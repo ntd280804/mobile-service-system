@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
-using System.Data;
-using WebAPI.Services;
 using WebAPI.Helpers;
 using WebAPI.Models.Permission;
+
 namespace WebAPI.Areas.Admin.Controllers
 {
     [Area("Admin")]
@@ -12,286 +11,140 @@ namespace WebAPI.Areas.Admin.Controllers
     [ApiController]
     public class RoleController : ControllerBase
     {
-        private readonly OracleConnectionManager _connManager;
-        private readonly JwtHelper _jwtHelper;
-        private readonly OracleSessionHelper _oracleSessionHelper;
+        private readonly ControllerHelper _helper;
 
-        public RoleController(OracleConnectionManager connManager, JwtHelper jwtHelper, OracleSessionHelper oracleSessionHelper)
+        public RoleController(ControllerHelper helper)
         {
-            _connManager = connManager;
-            _jwtHelper = jwtHelper;
-            _oracleSessionHelper = oracleSessionHelper;
+            _helper = helper;
         }
 
-        
-        // GET: api/Admin/Role/users
         [HttpGet("users")]
         [Authorize]
         public IActionResult GetAllDBUser()
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.GET_ALL_USERS", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-                cmd.Parameters.Add("p_cursor", OracleDbType.RefCursor).Direction = ParameterDirection.Output;
-
-                using var reader = cmd.ExecuteReader();
-                var list = new List<object>();
-                while (reader.Read())
-                {
-                    list.Add(new { Username = reader.GetString(0) });
-                }
-
+                var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_USERS", "p_cursor",
+                    reader => new { Username = reader.GetString(0) });
                 return Ok(list);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Failed to get users", detail = ex.Message });
-            }
+            }, "Failed to get users");
         }
 
-        // GET: api/Admin/Role/roles
         [HttpGet("roles")]
         [Authorize]
         public IActionResult GetAllRoles()
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(platform) ||
-                string.IsNullOrEmpty(sessionId))
-                return Unauthorized(new { message = "Missing Oracle session headers" });
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Phiên Oracle của bạn đã bị terminate, vui lòng đăng nhập lại." });
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.GET_ALL_ROLES", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-                cmd.Parameters.Add("p_cursor", OracleDbType.RefCursor).Direction = ParameterDirection.Output;
-
-                using var reader = cmd.ExecuteReader();
-                var list = new List<object>();
-                while (reader.Read())
-                {
-                    list.Add(new { Role = reader.GetString(0) });
-                }
-
+                var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_ROLES", "p_cursor",
+                    reader => new { Role = reader.GetString(0) });
                 return Ok(list);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[GetAllRoles] Error: {ex.Message}");
-                return StatusCode(500, new { message = "Lỗi khi lấy danh sách role", detail = ex.Message });
-            }
+            }, "Lỗi khi lấy danh sách role");
         }
 
         [HttpGet("roles-of-user/{Username}")]
         [Authorize]
         public IActionResult GetRoleOfUser(string Username)
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            if (string.IsNullOrEmpty(username) ||
-                string.IsNullOrEmpty(platform) ||
-                string.IsNullOrEmpty(sessionId))
-                return Unauthorized(new { message = "Missing Oracle session headers" });
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Phiên Oracle của bạn đã bị terminate, vui lòng đăng nhập lại." });
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.GET_ROLES_OF_USER", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = Username.ToUpper();
-                cmd.Parameters.Add("p_cursor", OracleDbType.RefCursor).Direction = ParameterDirection.Output;
-
-                using var reader = cmd.ExecuteReader();
-                var list = new List<object>();
-                while (reader.Read())
-                {
-                    list.Add(new { GrantedRole = reader.GetString(0) });
-                }
-
+                var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ROLES_OF_USER", "p_cursor",
+                    reader => new { GrantedRole = reader.GetString(0) },
+                    ("p_username", OracleDbType.Varchar2, Username.ToUpper()));
                 return Ok(list);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Failed to get roles of user", detail = ex.Message });
-            }
+            }, "Failed to get roles of user");
         }
-        // POST: api/Admin/Role/createrole/{roleName}
+
         [HttpPost("createrole/{roleName}")]
         [Authorize]
-        public async Task<IActionResult> CreateRole(string roleName)
+        public IActionResult CreateRole(string roleName)
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.CREATE_ROLE_PROC", conn)
+                try
                 {
-                    CommandType = CommandType.StoredProcedure
-                };
-                cmd.Parameters.Add("p_role_name", OracleDbType.Varchar2).Value = roleName;
-
-                await cmd.ExecuteNonQueryAsync();
-                return Ok(new { message = $"Role '{roleName}' created successfully." });
-            }
-            catch (OracleException ex) when (ex.Number == 1920)
-            {
-                return Conflict(new { message = $"Role '{roleName}' already exists." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Failed to create role.", detail = ex.Message });
-            }
+                    OracleHelper.ExecuteNonQuery(conn, "APP.CREATE_ROLE_PROC",
+                        ("p_role_name", OracleDbType.Varchar2, roleName));
+                    return Ok(new { message = $"Role '{roleName}' created successfully." });
+                }
+                catch (OracleException ex) when (ex.Number == 1920)
+                {
+                    return Conflict(new { message = $"Role '{roleName}' already exists." });
+                }
+            }, "Failed to create role.");
         }
 
-        // DELETE: api/Admin/Role/deleterole/{roleName}
         [HttpDelete("deleterole/{roleName}")]
         [Authorize]
-        public async Task<IActionResult> DeleteRole(string roleName)
+        public IActionResult DeleteRole(string roleName)
         {
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.DELETE_ROLE_PROC", conn)
+                try
                 {
-                    CommandType = CommandType.StoredProcedure
-                };
-                cmd.Parameters.Add("p_role_name", OracleDbType.Varchar2).Value = roleName;
-
-                await cmd.ExecuteNonQueryAsync();
-                return Ok(new { message = $"Role '{roleName}' deleted successfully." });
-            }
-            catch (OracleException ex) when (ex.Number == 1919)
-            {
-                return NotFound(new { message = $"Role '{roleName}' does not exist." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Failed to delete role.", detail = ex.Message });
-            }
+                    OracleHelper.ExecuteNonQuery(conn, "APP.DELETE_ROLE_PROC",
+                        ("p_role_name", OracleDbType.Varchar2, roleName));
+                    return Ok(new { message = $"Role '{roleName}' deleted successfully." });
+                }
+                catch (OracleException ex) when (ex.Number == 1919)
+                {
+                    return NotFound(new { message = $"Role '{roleName}' does not exist." });
+                }
+            }, "Failed to delete role.");
         }
 
-        // POST: api/Admin/Role/assignrole
         [HttpPost("assignrole")]
         [Authorize]
-        public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
+        public IActionResult AssignRole([FromBody] AssignRoleRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.RoleName))
                 return BadRequest(new { message = "User or Role cannot be empty." });
 
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.ASSIGN_ROLE_PROC", conn)
+                try
                 {
-                    CommandType = CommandType.StoredProcedure
-                };
-                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = request.UserName;
-                cmd.Parameters.Add("p_role_name", OracleDbType.Varchar2).Value = request.RoleName;
-
-                await cmd.ExecuteNonQueryAsync();
-                return Ok(new { message = $"Role '{request.RoleName}' assigned to user '{request.UserName}' successfully." });
-            }
-            catch (OracleException ex) when (ex.Number == 1918)
-            {
-                return NotFound(new { message = $"User '{request.UserName}' does not exist." });
-            }
-            catch (OracleException ex) when (ex.Number == 1919)
-            {
-                return NotFound(new { message = $"Role '{request.RoleName}' does not exist." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Failed to assign role.", detail = ex.Message });
-            }
+                    OracleHelper.ExecuteNonQuery(conn, "APP.ASSIGN_ROLE_PROC",
+                        ("p_username", OracleDbType.Varchar2, request.UserName),
+                        ("p_role_name", OracleDbType.Varchar2, request.RoleName));
+                    return Ok(new { message = $"Role '{request.RoleName}' assigned to user '{request.UserName}' successfully." });
+                }
+                catch (OracleException ex) when (ex.Number == 1918)
+                {
+                    return NotFound(new { message = $"User '{request.UserName}' does not exist." });
+                }
+                catch (OracleException ex) when (ex.Number == 1919)
+                {
+                    return NotFound(new { message = $"Role '{request.RoleName}' does not exist." });
+                }
+            }, "Failed to assign role.");
         }
 
-        // POST: api/Admin/Role/revokerole
         [HttpPost("revokerole")]
         [Authorize]
-        public async Task<IActionResult> RevokeRole([FromBody] RevokeRoleRequest request)
+        public IActionResult RevokeRole([FromBody] RevokeRoleRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.RoleName))
                 return BadRequest(new { message = "User or Role cannot be empty." });
 
-            var username = HttpContext.Request.Headers["X-Oracle-Username"].FirstOrDefault();
-            var platform = HttpContext.Request.Headers["X-Oracle-Platform"].FirstOrDefault();
-            var sessionId = HttpContext.Request.Headers["X-Oracle-SessionId"].FirstOrDefault();
-
-            var conn = _connManager.GetConnectionIfExists(username, platform, sessionId);
-            if (conn == null)
-                return Unauthorized(new { message = "Oracle session expired. Please login again." });
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.REVOKE_ROLE_PROC", conn)
+                try
                 {
-                    CommandType = CommandType.StoredProcedure
-                };
-                cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = request.UserName;
-                cmd.Parameters.Add("p_role_name", OracleDbType.Varchar2).Value = request.RoleName;
-
-                await cmd.ExecuteNonQueryAsync();
-                return Ok(new { message = $"Role '{request.RoleName}' revoked from user '{request.UserName}' successfully." });
-            }
-            catch (OracleException ex) when (ex.Number == 1918)
-            {
-                return NotFound(new { message = $"User '{request.UserName}' does not exist." });
-            }
-            catch (OracleException ex) when (ex.Number == 1919)
-            {
-                return NotFound(new { message = $"Role '{request.RoleName}' does not exist." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Failed to revoke role.", detail = ex.Message });
-            }
+                    OracleHelper.ExecuteNonQuery(conn, "APP.REVOKE_ROLE_PROC",
+                        ("p_username", OracleDbType.Varchar2, request.UserName),
+                        ("p_role_name", OracleDbType.Varchar2, request.RoleName));
+                    return Ok(new { message = $"Role '{request.RoleName}' revoked from user '{request.UserName}' successfully." });
+                }
+                catch (OracleException ex) when (ex.Number == 1918)
+                {
+                    return NotFound(new { message = $"User '{request.UserName}' does not exist." });
+                }
+                catch (OracleException ex) when (ex.Number == 1919)
+                {
+                    return NotFound(new { message = $"Role '{request.RoleName}' does not exist." });
+                }
+            }, "Failed to revoke role.");
         }
     }
 }

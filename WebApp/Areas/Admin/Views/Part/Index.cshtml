@@ -54,10 +54,11 @@
     </div>
     <div class="col-md-2">
         <select class="form-select" name="status">
+            <option value="Tất cả" selected="@(status == "Tất cả" ? "selected" : null)">Tất cả</option>
             <option value="Trong kho" selected="@(status == "Trong kho" ? "selected" : null)">Trong kho</option>
             <option value="Đã gán" selected="@(status == "Đã gán" ? "selected" : null)">Đã gán</option>
             <option value="Đã xuất" selected="@(status == "Đã xuất kho" ? "selected" : null)">Đã xuất</option>
-
+            <option value="Đã được đăng kí" selected="@(status == "Đã được đăng kí" ? "selected" : null)">Đã được đăng kí</option>
             <!-- Thêm trạng thái khác nếu có -->
         </select>
     </div>

@@ -129,6 +129,8 @@ builder.Services.AddSingleton<InvoicePdfService>(sp => new InvoicePdfService(
 ));
 builder.Services.AddSingleton<RsaKeyService>();
 builder.Services.AddSingleton<EmailService>();
+// Controller helper for common patterns
+builder.Services.AddSingleton<ControllerHelper>();
 // Add SignalR
 builder.Services.AddSignalR();
 builder.WebHost.ConfigureKestrel(options =>

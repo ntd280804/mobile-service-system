@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using WebAPI.Helpers;
-using WebAPI.Services;
 
 namespace WebAPI.Areas.Admin.Controllers
 {
@@ -21,15 +20,11 @@ namespace WebAPI.Areas.Admin.Controllers
                                                   "'USER_OTP_LOG','EMPLOYEE_SHIFT','CUSTOMER_APPOINTMENT','INVOICE'," +
                                                   "'INVOICE_ITEM','SERVICE','ORDER_SERVICE','INVOICE_SERVICE'";
 
-        private readonly OracleConnectionManager _connManager;
-        private readonly OracleSessionHelper _oracleSessionHelper;
+        private readonly ControllerHelper _helper;
 
-        public AuditController(
-            OracleConnectionManager connManager,
-            OracleSessionHelper oracleSessionHelper)
+        public AuditController(ControllerHelper helper)
         {
-            _connManager = connManager;
-            _oracleSessionHelper = oracleSessionHelper;
+            _helper = helper;
         }
 
         [HttpGet]
@@ -37,29 +32,15 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult GetAllAuditLog()
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
                     return failureResult;
                 }
 
-                // Get audit log
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "APP.GET_ALL_AUDIT_LOG";
-                cmd.CommandType = CommandType.StoredProcedure;
-
-                var outputCursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
-                cmd.Parameters.Add(outputCursor);
-
-                var result = new List<object>();
-                using var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                {
-                    result.Add(new
+                var result = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_AUDIT_LOG", "p_cursor",
+                    reader => new
                     {
                         LogId = reader["LOG_ID"] != DBNull.Value ? Convert.ToInt64(reader["LOG_ID"]) : 0,
                         EventTs = reader["EVENT_TS"] != DBNull.Value ? Convert.ToDateTime(reader["EVENT_TS"]) : (DateTime?)null,
@@ -77,48 +58,24 @@ namespace WebAPI.Areas.Admin.Controllers
                         OldValues = reader["OLD_VALUES"]?.ToString(),
                         NewValues = reader["NEW_VALUES"]?.ToString()
                     });
-                }
 
                 return Ok(result);
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi lấy audit log", detail = ex.Message });
-            }
+            }, "Lỗi khi lấy audit log");
         }
 
         [HttpGet("standard")]
         [Authorize]
         public IActionResult GetStandardAudit()
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
                     return failureResult;
                 }
 
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "APP.GET_ALL_AUDIT_PROJECT";
-                cmd.CommandType = CommandType.StoredProcedure;
-
-                var outputCursor = new OracleParameter("p_cursor", OracleDbType.RefCursor, ParameterDirection.Output);
-                cmd.Parameters.Add(outputCursor);
-
-                var result = new List<object>();
-                using var reader = cmd.ExecuteReader();
-                while (reader.Read())
-                {
-                    result.Add(new
+                var result = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_AUDIT_PROJECT", "p_cursor",
+                    reader => new
                     {
                         EventTs = reader["EVENT_TS"] != DBNull.Value ? Convert.ToDateTime(reader["EVENT_TS"]) : (DateTime?)null,
                         DbUser = reader["DB_USER"]?.ToString(),
@@ -127,30 +84,16 @@ namespace WebAPI.Areas.Admin.Controllers
                         Action = reader["ACTION"]?.ToString(),
                         Note = reader["NOTE"]?.ToString()
                     });
-                }
 
                 return Ok(result);
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi lấy standard audit", detail = ex.Message });
-            }
+            }, "Lỗi khi lấy standard audit");
         }
 
         [HttpGet("fga")]
         [Authorize]
         public IActionResult GetFgaAudit()
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
@@ -196,17 +139,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 }
 
                 return Ok(result);
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi lấy FGA audit", detail = ex.Message });
-            }
+            }, "Lỗi khi lấy FGA audit");
         }
 
         [HttpPost("trigger/enable")]
@@ -237,10 +170,7 @@ namespace WebAPI.Areas.Admin.Controllers
         [Authorize]
         public IActionResult GetAuditStatus()
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
@@ -274,9 +204,6 @@ namespace WebAPI.Areas.Admin.Controllers
                     cmd.ExecuteNonQuery();
                     if (pCount.Value != DBNull.Value && pCount.Value is OracleDecimal oracleDecimal)
                         triggerAuditCount = oracleDecimal.ToInt32();
-                    // Nếu dùng ExecuteScalar:
-                    // var scalarResult = cmd.ExecuteScalar();
-                    // if (scalarResult is OracleDecimal dec) n = dec.ToInt32();
                 }
 
                 // FGA - tạm để đó, trả về false
@@ -304,25 +231,12 @@ namespace WebAPI.Areas.Admin.Controllers
                         Note = "Tạm thời chưa kiểm tra"
                     }
                 });
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Lỗi khi lấy trạng thái audit", detail = ex.Message });
-            }
+            }, "Lỗi khi lấy trạng thái audit");
         }
 
         private IActionResult ExecuteAuditToggle(string procedureName, string successMessage)
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
@@ -335,17 +249,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 cmd.ExecuteNonQuery();
 
                 return Ok(new { message = successMessage });
-            }
-            catch (OracleException ex) when (ex.Number == 28)
-            {
-                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
-                return Unauthorized(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = $"Lỗi khi thực thi {procedureName}", detail = ex.Message });
-            }
+            }, $"Lỗi khi thực thi {procedureName}");
         }
 
         private bool TryEnsureAdminRole(OracleConnection conn, out IActionResult failureResult)

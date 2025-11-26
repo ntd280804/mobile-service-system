@@ -192,30 +192,6 @@
         }
       }
     },
-    "/api/admin/BackupRestore/backup": {
-      "post": {
-        "tags": [
-          "BackupRestore"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/admin/BackupRestore/restore": {
-      "post": {
-        "tags": [
-          "BackupRestore"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/Public/Customer/login": {
       "post": {
         "tags": [
@@ -1395,65 +1371,6 @@
         "responses": {
           "200": {
             "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/admin/Invoice/{invoiceId}/generate-pdf-secure-encrypted": {
-      "post": {
-        "tags": [
-          "Invoice"
-        ],
-        "parameters": [
-          {
-            "name": "invoiceId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EncryptedPayload"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EncryptedPayload"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/EncryptedPayload"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/EncryptedPayloadApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EncryptedPayloadApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EncryptedPayloadApiResponse"
-                }
-              }
-            }
           }
         }
       }

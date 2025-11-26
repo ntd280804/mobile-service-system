@@ -3,32 +3,8 @@
   "WorkspaceRootPath": "D:\\DOCUMENT\\mobile-service-system\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\models\\part\\importdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\models\\part\\importdetailviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\admin\\controllers\\importcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\admin\\controllers\\importcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\admin\\views\\import\\details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\admin\\views\\import\\details.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\admin\\controllers\\invoicecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\admin\\controllers\\invoicecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\admin\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\admin\\controllers\\profilecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\admin\\controllers\\exportcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\admin\\controllers\\exportcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\services\\invoicepdfservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\services\\invoicepdfservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\admin\\controllers\\employeecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\admin\\controllers\\employeecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,99 +14,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 5,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ImportController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Controllers\\ImportController.cs",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Admin\\Controllers\\ImportController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Controllers\\ImportController.cs",
-              "RelativeToolTip": "WebApp\\Areas\\Admin\\Controllers\\ImportController.cs",
-              "ViewState": "AgIAAG0AAAAAAAAAAAAmwHYAAABbAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-26T16:16:35.339Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ImportDetailViewModel.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Models\\Part\\ImportDetailViewModel.cs",
-              "RelativeDocumentMoniker": "WebApp\\Models\\Part\\ImportDetailViewModel.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Models\\Part\\ImportDetailViewModel.cs",
-              "RelativeToolTip": "WebApp\\Models\\Part\\ImportDetailViewModel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAIAAAARAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-26T16:16:20.088Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Details.cshtml",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Views\\Import\\Details.cshtml",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Admin\\Views\\Import\\Details.cshtml",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Views\\Import\\Details.cshtml",
-              "RelativeToolTip": "WebApp\\Areas\\Admin\\Views\\Import\\Details.cshtml",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAGAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-26T16:16:10.539Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "InvoiceController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\InvoiceController.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Areas\\Admin\\Controllers\\InvoiceController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\InvoiceController.cs",
-              "RelativeToolTip": "WebAPI\\Areas\\Admin\\Controllers\\InvoiceController.cs",
-              "ViewState": "AgIAAJsBAAAAAAAAAADwv6cBAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-26T16:12:07.855Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "InvoicePdfService.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Services\\InvoicePdfService.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Services\\InvoicePdfService.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Services\\InvoicePdfService.cs",
-              "RelativeToolTip": "WebAPI\\Services\\InvoicePdfService.cs",
-              "ViewState": "AgIAAMoBAAAAAAAAAADwv9YBAABHAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-26T16:08:02.815Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "ExportController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\ExportController.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Areas\\Admin\\Controllers\\ExportController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\ExportController.cs",
-              "RelativeToolTip": "WebAPI\\Areas\\Admin\\Controllers\\ExportController.cs",
-              "ViewState": "AgIAAEgDAAAAAAAAAAAwwE0DAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-26T16:02:03.563Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "ProfileController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\ProfileController.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Areas\\Admin\\Controllers\\ProfileController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\ProfileController.cs",
-              "RelativeToolTip": "WebAPI\\Areas\\Admin\\Controllers\\ProfileController.cs",
-              "ViewState": "AgIAAAIAAAAAAAAAAAAjwA4AAAAQAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-26T16:01:47.507Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
@@ -150,6 +35,19 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "EmployeeController.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\EmployeeController.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Areas\\Admin\\Controllers\\EmployeeController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\EmployeeController.cs",
+              "RelativeToolTip": "WebAPI\\Areas\\Admin\\Controllers\\EmployeeController.cs",
+              "ViewState": "AgIAAMwBAAAAAAAAAAAAAEoCAABSAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-26T18:50:50.609Z",
+              "EditorCaption": ""
             }
           ]
         }

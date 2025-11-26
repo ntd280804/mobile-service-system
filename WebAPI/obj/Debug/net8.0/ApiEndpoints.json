@@ -120,26 +120,6 @@
     "ReturnTypes": []
   },
   {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.BackupRestoreController",
-    "Method": "RunBackup",
-    "RelativePath": "api/admin/BackupRestore/backup",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.BackupRestoreController",
-    "Method": "RunRestore",
-    "RelativePath": "api/admin/BackupRestore/restore",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.CustomerController",
     "Method": "GetAll",
     "RelativePath": "api/Admin/Customer",
@@ -481,7 +461,7 @@
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.ExportController",
-    "Method": "VerifyStockInSignature",
+    "Method": "VerifyStockOutSignature",
     "RelativePath": "api/admin/Export/verifysign/{stockoutId}",
     "HttpMethod": "GET",
     "IsController": true,
@@ -620,37 +600,6 @@
       }
     ],
     "ReturnTypes": []
-  },
-  {
-    "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
-    "Method": "GenerateInvoicePdfSecureEncrypted",
-    "RelativePath": "api/admin/Invoice/{invoiceId}/generate-pdf-secure-encrypted",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "invoiceId",
-        "Type": "System.Int32",
-        "IsRequired": true
-      },
-      {
-        "Name": "payload",
-        "Type": "WebAPI.Models.Security.EncryptedPayload",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": [
-      {
-        "Type": "WebAPI.Models.ApiResponse\u00601[[WebAPI.Models.Security.EncryptedPayload, WebAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
-      }
-    ]
   },
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
