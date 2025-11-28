@@ -5,14 +5,14 @@ using System.Data;
 
 namespace WebAPI.Helpers
 {
-    /// <summary>
+    
     /// Helper methods for common Oracle operations (stored procedures, cursors, etc.)
-    /// </summary>
+    
     public static class OracleHelper
     {
-        /// <summary>
+        
         /// Execute a stored procedure that returns a RefCursor and map results to a list.
-        /// </summary>
+        
         /// <typeparam name="T">The type to map each row to.</typeparam>
         /// <param name="conn">The Oracle connection.</param>
         /// <param name="procedureName">The stored procedure name (e.g., "APP.GET_ALL_EMPLOYEES").</param>
@@ -49,10 +49,10 @@ namespace WebAPI.Helpers
             return result;
         }
 
-        /// <summary>
+        
         /// Execute a stored procedure with optional input parameters and output parameters.
         /// Returns a dictionary of output parameter values.
-        /// </summary>
+        
         public static Dictionary<string, object> ExecuteNonQueryWithOutputs(
             OracleConnection conn,
             string procedureName,
@@ -100,9 +100,9 @@ namespace WebAPI.Helpers
             return result;
         }
 
-        /// <summary>
+        
         /// Execute a simple stored procedure with no outputs.
-        /// </summary>
+        
         public static void ExecuteNonQuery(
             OracleConnection conn,
             string procedureName,
@@ -120,9 +120,9 @@ namespace WebAPI.Helpers
             cmd.ExecuteNonQuery();
         }
 
-        /// <summary>
+        
         /// Execute a simple stored procedure with no outputs, within a transaction.
-        /// </summary>
+        
         public static void ExecuteNonQueryWithTransaction(
             OracleConnection conn,
             string procedureName,
@@ -142,10 +142,10 @@ namespace WebAPI.Helpers
             cmd.ExecuteNonQuery();
         }
 
-        /// <summary>
+        
         /// Execute a stored procedure and return a single output parameter value.
         /// Supports optional transaction for use within ExecuteWithTransaction.
-        /// </summary>
+        
         public static T ExecuteScalar<T>(
             OracleConnection conn,
             string procedureName,
@@ -180,50 +180,50 @@ namespace WebAPI.Helpers
             return (T)Convert.ChangeType(outputParam.Value.ToString(), typeof(T));
         }
 
-        /// <summary>
+        
         /// Safely get a string value from reader, returning empty string if null.
-        /// </summary>
+        
         public static string GetStringSafe(this OracleDataReader reader, int ordinal)
         {
             return reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
         }
 
-        /// <summary>
+        
         /// Safely get a string value from reader by column name, returning empty string if null.
-        /// </summary>
+        
         public static string GetStringSafe(this OracleDataReader reader, string columnName)
         {
             var ordinal = reader.GetOrdinal(columnName);
             return reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
         }
 
-        /// <summary>
+        
         /// Safely get a nullable decimal from reader.
-        /// </summary>
+        
         public static decimal? GetDecimalOrNull(this OracleDataReader reader, int ordinal)
         {
             return reader.IsDBNull(ordinal) ? null : reader.GetDecimal(ordinal);
         }
 
-        /// <summary>
+        
         /// Safely get a nullable int from reader.
-        /// </summary>
+        
         public static int? GetInt32OrNull(this OracleDataReader reader, int ordinal)
         {
             return reader.IsDBNull(ordinal) ? null : Convert.ToInt32(reader.GetDecimal(ordinal));
         }
 
-        /// <summary>
+        
         /// Safely get a nullable DateTime from reader.
-        /// </summary>
+        
         public static DateTime? GetDateTimeOrNull(this OracleDataReader reader, int ordinal)
         {
             return reader.IsDBNull(ordinal) ? null : reader.GetDateTime(ordinal);
         }
 
-        /// <summary>
+        
         /// Execute a stored procedure that returns a CLOB output parameter.
-        /// </summary>
+        
         public static string? ExecuteClobOutput(
             OracleConnection conn,
             string procedureName,
@@ -233,9 +233,9 @@ namespace WebAPI.Helpers
             return ExecuteClobOutput(conn, procedureName, outputParamName, null, inputParams);
         }
 
-        /// <summary>
+        
         /// Execute a stored procedure that returns a CLOB output parameter with transaction support.
-        /// </summary>
+        
         public static string? ExecuteClobOutput(
             OracleConnection conn,
             string procedureName,
@@ -265,9 +265,9 @@ namespace WebAPI.Helpers
             return clob.Value;
         }
 
-        /// <summary>
+        
         /// Execute a stored procedure that returns a BLOB output parameter.
-        /// </summary>
+        
         public static byte[]? ExecuteBlobOutput(
             OracleConnection conn,
             string procedureName,

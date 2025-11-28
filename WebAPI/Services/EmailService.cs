@@ -79,6 +79,52 @@ namespace WebAPI.Services
                 return false;
             }
         }
+
+        public async Task<(bool Success, string Message)> SendHelpEmailAsync(string requesterEmail, string content)
+        {
+            try
+            {
+                var recipientEmail = _configuration["Email:RecipientEmail"] ?? _configuration["Email:SenderEmail"];
+                var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
+                var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+                var senderEmail = _configuration["Email:SenderEmail"];
+                var senderPassword = _configuration["Email:SenderPassword"];
+
+                if (string.IsNullOrWhiteSpace(recipientEmail) ||
+                    string.IsNullOrWhiteSpace(senderEmail) ||
+                    string.IsNullOrWhiteSpace(senderPassword))
+                {
+                    const string missingConfigMessage = "Cấu hình email chưa được thiết lập.";
+                    _logger.LogError(missingConfigMessage);
+                    return (false, missingConfigMessage);
+                }
+
+                using var client = new SmtpClient(smtpHost, smtpPort)
+                {
+                    EnableSsl = true,
+                    Credentials = new NetworkCredential(senderEmail, senderPassword)
+                };
+
+                var mailMessage = new MailMessage
+                {
+                    From = new MailAddress(senderEmail, "Mobile Service System"),
+                    Subject = $"Yêu cầu trợ giúp từ: {requesterEmail}",
+                    Body = $"Email người gửi: {requesterEmail}\n\nNội dung:\n{content}",
+                    IsBodyHtml = false
+                };
+
+                mailMessage.To.Add(recipientEmail);
+                await client.SendMailAsync(mailMessage);
+
+                _logger.LogInformation("Help email sent from {Requester} to {Recipient}", requesterEmail, recipientEmail);
+                return (true, "Email đã được gửi thành công! Chúng tôi sẽ phản hồi sớm nhất có thể.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi gửi help email từ {Requester}", requesterEmail);
+                return (false, $"Lỗi khi gửi email: {ex.Message}");
+            }
+        }
     }
 }
 

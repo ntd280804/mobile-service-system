@@ -39,9 +39,9 @@ namespace WebAPI.Services
             return ok;
         }
 
-        /// <summary>
+        
         /// Mã hóa dữ liệu cho client sử dụng client public key
-        /// </summary>
+        
         public (string EncryptedKeyBlockBase64, string CipherDataBase64) EncryptForClient(string clientId, string plaintext)
         {
             if (!TryGetClientPublicKey(clientId, out string? publicKeyBase64) || string.IsNullOrWhiteSpace(publicKeyBase64))

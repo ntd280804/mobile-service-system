@@ -1,8 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using WebAPI.Services;
@@ -40,74 +37,21 @@ namespace WebAPI.Areas.Public.Controllers
             if (string.IsNullOrWhiteSpace(request.ClientId))
                 return BadRequest(ApiResponse<string>.Fail("clientId is required."));
 
-            string publicKeyToSave;
-
-            // Nếu là admin (clientId bắt đầu bằng "admin-"), lấy public key từ DB
             if (request.ClientId.StartsWith("admin-", StringComparison.OrdinalIgnoreCase))
             {
-                // Lấy username từ header Oracle session
-                var username = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
-                if (string.IsNullOrWhiteSpace(username))
+                if (!TryResolveAdminPublicKey(request, out var publicKey, out var errorResult))
                 {
-                    // Fallback: dùng public key từ request nếu không có session
-                    if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
-                        return BadRequest(ApiResponse<string>.Fail("clientPublicKeyBase64 is required for admin without session."));
-                    publicKeyToSave = request.ClientPublicKeyBase64;
-                }
-                else
-                {
-                    // Lấy public key từ DB
-                    var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-                    if (conn == null)
-                    {
-                        // Fallback: dùng public key từ request
-                        if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
-                            return BadRequest(ApiResponse<string>.Fail("clientPublicKeyBase64 is required when session is invalid."));
-                        publicKeyToSave = request.ClientPublicKeyBase64;
+                    return errorResult!;
                     }
-                    else
-                    {
-                        try
-                        {
-                            using var cmd = new OracleCommand("APP.GET_PUBLICKEY_BY_USERNAME", conn);
-                            cmd.CommandType = CommandType.StoredProcedure;
-                            cmd.Parameters.Add("p_username", OracleDbType.Varchar2).Value = username;
-                            var pPubKey = new OracleParameter("p_public_key", OracleDbType.Clob, ParameterDirection.Output);
-                            cmd.Parameters.Add(pPubKey);
-                            cmd.ExecuteNonQuery();
 
-                            if (pPubKey.Value == DBNull.Value || pPubKey.Value == null)
-                            {
-                                // Không có public key trong DB, dùng từ request
-                                if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
-                                    return BadRequest(ApiResponse<string>.Fail($"Public key not found in DB for username: {username}. Please provide clientPublicKeyBase64."));
-                                publicKeyToSave = request.ClientPublicKeyBase64;
-                            }
-                            else
-                            {
-                                var clobPubKey = (Oracle.ManagedDataAccess.Types.OracleClob)pPubKey.Value;
-                                publicKeyToSave = clobPubKey.Value;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // Fallback: dùng public key từ request
-                            if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
-                                return BadRequest(ApiResponse<string>.Fail($"Error getting public key from DB: {ex.Message}. Please provide clientPublicKeyBase64."));
-                            publicKeyToSave = request.ClientPublicKeyBase64;
-                        }
-                    }
-                }
+                _rsaKeyService.SaveClientPublicKey(request.ClientId, publicKey);
+                return Ok(ApiResponse<string>.Ok("registered"));
             }
-            else
-            {
-                // Public client: dùng public key từ request
+
                 if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
                     return BadRequest(ApiResponse<string>.Fail("clientPublicKeyBase64 is required for public clients."));
-                publicKeyToSave = request.ClientPublicKeyBase64;
-            }
 
-            _rsaKeyService.SaveClientPublicKey(request.ClientId, publicKeyToSave);
+            _rsaKeyService.SaveClientPublicKey(request.ClientId, request.ClientPublicKeyBase64);
             return Ok(ApiResponse<string>.Ok("registered"));
         }
 
@@ -120,39 +64,91 @@ namespace WebAPI.Areas.Public.Controllers
             if (!_rsaKeyService.TryGetClientPublicKey(request.ClientId, out string? publicKeyBase64) || string.IsNullOrWhiteSpace(publicKeyBase64))
                 return NotFound(ApiResponse<EncryptForClientResponse>.Fail("Unknown clientId."));
 
-            // Build AES key and encrypt data
-            using (Aes aes = Aes.Create())
+            try
             {
-                aes.GenerateKey();
-                aes.GenerateIV();
-                byte[] key = aes.Key;
-                byte[] iv = aes.IV;
-
-                ICryptoTransform encryptor = aes.CreateEncryptor(key, iv);
-                byte[] dataBytes = Encoding.UTF8.GetBytes(request.Plaintext);
-                byte[] cipherBytes;
-                using (var ms = new MemoryStream())
-                using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                {
-                    cs.Write(dataBytes, 0, dataBytes.Length);
-                    cs.FlushFinalBlock();
-                    cipherBytes = ms.ToArray();
-                }
-
-                byte[] keyBlock = new byte[key.Length + iv.Length];
-                Buffer.BlockCopy(key, 0, keyBlock, 0, key.Length);
-                Buffer.BlockCopy(iv, 0, keyBlock, key.Length, iv.Length);
-
-                using (var rsa = RSA.Create())
-                {
-                    rsa.ImportSubjectPublicKeyInfo(Convert.FromBase64String(publicKeyBase64), out _);
-                    byte[] encryptedKeyBlock = rsa.Encrypt(keyBlock, RSAEncryptionPadding.OaepSHA1);
+                var encrypted = _rsaKeyService.EncryptForClient(request.ClientId, request.Plaintext);
                     return Ok(ApiResponse<EncryptForClientResponse>.Ok(new EncryptForClientResponse
                     {
-                        EncryptedKeyBlockBase64 = Convert.ToBase64String(encryptedKeyBlock),
-                        CipherDataBase64 = Convert.ToBase64String(cipherBytes)
+                    EncryptedKeyBlockBase64 = encrypted.EncryptedKeyBlockBase64,
+                    CipherDataBase64 = encrypted.CipherDataBase64
                     }));
                 }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ApiResponse<EncryptForClientResponse>.Fail(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<EncryptForClientResponse>.Fail($"Encryption failed: {ex.Message}"));
+            }
+        }
+        private bool TryResolveAdminPublicKey(RegisterClientKeyRequest request, out string publicKey, out ActionResult<ApiResponse<string>>? errorResult)
+        {
+            publicKey = string.Empty;
+            errorResult = null;
+
+            var username = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                if (string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                {
+                    errorResult = BadRequest(ApiResponse<string>.Fail("clientPublicKeyBase64 is required for admin without session."));
+                    return false;
+                }
+
+                publicKey = request.ClientPublicKeyBase64;
+                return true;
+            }
+
+            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
+            if (conn == null)
+            {
+                if (!string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                {
+                    publicKey = request.ClientPublicKeyBase64;
+                    return true;
+                }
+
+                errorResult = unauthorized is ObjectResult obj
+                    ? StatusCode(obj.StatusCode ?? 401, ApiResponse<string>.Fail(ControllerResponseHelper.ExtractMessage(obj.Value) ?? "Unauthorized"))
+                    : Unauthorized(ApiResponse<string>.Fail("Unauthorized"));
+
+                return false;
+            }
+
+            try
+            {
+                var publicKeyFromDb = OracleHelper.ExecuteClobOutput(
+                    conn,
+                    "APP.GET_PUBLICKEY_BY_USERNAME",
+                    "p_public_key",
+                    ("p_username", OracleDbType.Varchar2, username));
+
+                if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
+                {
+                    publicKey = publicKeyFromDb;
+                    return true;
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                {
+                    publicKey = request.ClientPublicKeyBase64;
+                    return true;
+                }
+
+                errorResult = BadRequest(ApiResponse<string>.Fail($"Public key not found in DB for username: {username}. Please provide clientPublicKeyBase64."));
+                return false;
+            }
+            catch (Exception ex)
+            {
+                if (!string.IsNullOrWhiteSpace(request.ClientPublicKeyBase64))
+                {
+                    publicKey = request.ClientPublicKeyBase64;
+                    return true;
+                }
+
+                errorResult = BadRequest(ApiResponse<string>.Fail($"Error getting public key from DB: {ex.Message}. Please provide clientPublicKeyBase64."));
+                return false;
             }
         }
     }

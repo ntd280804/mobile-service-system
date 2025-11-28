@@ -4,7 +4,7 @@ using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
+using System.Security.Cryptography.X509Certificates;
 using WebAPI.Helpers;
 using WebAPI.Models;
 using WebAPI.Models.Export;
@@ -21,14 +21,14 @@ namespace WebAPI.Areas.Admin.Controllers
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
         private readonly OracleSessionHelper _oracleSessionHelper;
-        private readonly InvoicePdfService _invoicePdfService;
+        private readonly PdfService _invoicePdfService;
 
         public ExportController(
             ControllerHelper helper,
             OracleConnectionManager connManager,
             JwtHelper jwtHelper,
             OracleSessionHelper oracleSessionHelper,
-            InvoicePdfService invoicePdfService)
+            PdfService invoicePdfService)
         {
             _helper = helper;
             _connManager = connManager;
@@ -194,6 +194,13 @@ namespace WebAPI.Areas.Admin.Controllers
                 return BadRequest("Không thể tạo PFX hợp lệ khi chỉ có private key. Vui lòng cung cấp PFX do CA cấp.");
             }
 
+            if (!TryValidateCertificate(dto.CertificatePfxBase64, dto.CertificatePassword, out var certificateBytes, out var certificateError))
+            {
+                return BadRequest(certificateError);
+            }
+
+            var certificatePassword = dto.CertificatePassword ?? "";
+
             return _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
             {
                 // 1. Get employee ID
@@ -273,21 +280,10 @@ namespace WebAPI.Areas.Admin.Controllers
                 };
 
                 // Generate PDFs
-                byte[] pfxBytes;
-                try
-                {
-                    pfxBytes = Convert.FromBase64String(dto.CertificatePfxBase64);
-                }
-                catch
-                {
-                    return BadRequest("Invalid certificate PFX base64.");
-                }
-
-                string pfxPassword = dto.CertificatePassword ?? "";
                 var signedExportPdf = _invoicePdfService.GenerateExportInvoicePdfAndSignWithCertificate(
                     pdfDto,
-                    pfxBytes,
-                    pfxPassword,
+                    certificateBytes,
+                    certificatePassword,
                     cmd => cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockOutId,
                     null,
                     null);
@@ -298,8 +294,8 @@ namespace WebAPI.Areas.Admin.Controllers
                 {
                     var signedInvoicePdf = _invoicePdfService.GenerateInvoicePdfAndSignWithCertificate(
                         invoiceDto,
-                        pfxBytes,
-                        pfxPassword,
+                            certificateBytes,
+                            certificatePassword,
                         cmd => cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId,
                         null,
                         null);
@@ -319,27 +315,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                // Giải mã request từ client
-                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
-                byte[] aesKey = new byte[32];
-                byte[] iv = new byte[16];
-                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
-                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
-
-                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
-                string plaintext;
-                using (Aes aes = Aes.Create())
-                {
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
-                    using (var ms = new MemoryStream(cipherBytes))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var reader = new StreamReader(cs, Encoding.UTF8))
-                    {
-                        plaintext = reader.ReadToEnd();
-                    }
-                }
-
-                var dto = System.Text.Json.JsonSerializer.Deserialize<CreateExportFromOrderDto>(plaintext);
+                var dto = SecurePayloadHelper.DecryptPayload<CreateExportFromOrderDto>(rsaKeyService, payload);
                 if (dto == null)
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
@@ -403,18 +379,26 @@ namespace WebAPI.Areas.Admin.Controllers
                     }
                 }
 
+                if (!TryValidateCertificate(dto.CertificatePfxBase64, dto.CertificatePassword, out var certificateBytes, out var certificateError))
+                {
+                    var encryptedError = SecurePayloadHelper.EncryptResponse(
+                        rsaKeyService,
+                        clientId,
+                        new { Success = false, Message = certificateError });
+                    return Ok(encryptedError);
+                }
+
+                var certificatePassword = dto.CertificatePassword ?? "";
+
                 // Xử lý export - cần generate PDF trực tiếp để mã hóa response
                 var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
                 if (conn == null)
                 {
-                    var errorObj = new { Success = false, Message = "Unauthorized" };
-                    string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
-                    var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
-                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                    {
-                        EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
-                        CipherDataBase64 = encryptedError.CipherDataBase64
-                    }));
+                    var encryptedError = SecurePayloadHelper.EncryptResponse(
+                        rsaKeyService,
+                        clientId,
+                        new { Success = false, Message = "Unauthorized" });
+                    return Ok(encryptedError);
                 }
 
                 OracleTransaction? transaction = null;
@@ -534,10 +518,8 @@ namespace WebAPI.Areas.Admin.Controllers
                     };
 
                     // Generate PDFs
-                    byte[] pfxBytes = Convert.FromBase64String(dto.CertificatePfxBase64 ?? "");
-                    string pfxPassword = dto.CertificatePassword ?? "";
                     var signedExportPdf = _invoicePdfService.GenerateExportInvoicePdfAndSignWithCertificate(
-                        pdfDto, pfxBytes, pfxPassword,
+                        pdfDto, certificateBytes, certificatePassword,
                         cmd => cmd.Parameters.Add("p_stockout_id", OracleDbType.Int32, ParameterDirection.Input).Value = stockOutId,
                         null, null);
 
@@ -547,7 +529,7 @@ namespace WebAPI.Areas.Admin.Controllers
                     if (invoiceDto != null)
                     {
                         signedInvoicePdf = _invoicePdfService.GenerateInvoicePdfAndSignWithCertificate(
-                            invoiceDto, pfxBytes, pfxPassword,
+                            invoiceDto, certificateBytes, certificatePassword,
                             cmd => cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId,
                             null, null);
                     }
@@ -570,46 +552,79 @@ namespace WebAPI.Areas.Admin.Controllers
                         StockOutId = stockOutId
                     };
 
-                    string responseJson = System.Text.Json.JsonSerializer.Serialize(responseObj);
-                    var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
+                    var encryptedResponse = SecurePayloadHelper.EncryptResponse(rsaKeyService, clientId, responseObj);
 
-                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                    {
-                        EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
-                        CipherDataBase64 = encryptedResponse.CipherDataBase64
-                    }));
+                    return Ok(encryptedResponse);
                 }
                 catch (InvalidOperationException ex)
                 {
                     transaction?.Rollback();
                     transaction?.Dispose();
-                    var errorObj = new { Success = false, Message = ex.Message };
-                    string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
-                    var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
-                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                    {
-                        EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
-                        CipherDataBase64 = encryptedError.CipherDataBase64
-                    }));
+                    var encryptedError = SecurePayloadHelper.EncryptResponse(
+                        rsaKeyService,
+                        clientId,
+                        new { Success = false, Message = ex.Message });
+                    return Ok(encryptedError);
                 }
                 catch (Exception ex)
                 {
                     transaction?.Rollback();
                     transaction?.Dispose();
-                    var errorObj = new { Success = false, Message = ex.Message };
-                    string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
-                    var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
-                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                    {
-                        EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
-                        CipherDataBase64 = encryptedError.CipherDataBase64
-                    }));
+                    var encryptedError = SecurePayloadHelper.EncryptResponse(
+                        rsaKeyService,
+                        clientId,
+                        new { Success = false, Message = ex.Message });
+                    return Ok(encryptedError);
                 }
             }
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResponse<EncryptedPayload>.Fail(ex.Message));
             }
+        }
+
+        private static bool TryValidateCertificate(string? certificatePfxBase64, string? certificatePassword, out byte[] pfxBytes, out string errorMessage)
+        {
+            pfxBytes = Array.Empty<byte>();
+            errorMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(certificatePfxBase64))
+            {
+                errorMessage = "Certificate PFX is required.";
+                return false;
+            }
+
+            try
+            {
+                pfxBytes = Convert.FromBase64String(certificatePfxBase64);
+            }
+            catch (FormatException)
+            {
+                errorMessage = "Certificate PFX phải được mã hóa Base64 hợp lệ.";
+                return false;
+            }
+
+            var password = certificatePassword ?? string.Empty;
+            try
+            {
+                using var cert = new X509Certificate2(
+                    pfxBytes,
+                    password,
+                    X509KeyStorageFlags.EphemeralKeySet | X509KeyStorageFlags.Exportable);
+
+                if (!cert.HasPrivateKey)
+                {
+                    errorMessage = "Certificate PFX không chứa private key hợp lệ.";
+                    return false;
+                }
+            }
+            catch (CryptographicException)
+            {
+                errorMessage = "Không thể mở PFX certificate. Vui lòng kiểm tra lại mật khẩu hoặc định dạng tập tin.";
+                return false;
+            }
+
+            return true;
         }
     }
 }

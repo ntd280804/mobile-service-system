@@ -24,10 +24,10 @@ namespace WebAPI.Helpers
 
             var claims = new[]
             {
-        new Claim(ClaimTypes.Name, username),
-        new Claim(ClaimTypes.Role, roles ?? ""),
-        new Claim("sessionId", sessionId ?? "")  // ✅ thêm sessionId
-    };
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, roles ?? ""),
+                new Claim("sessionId", sessionId ?? "")  // ✅ thêm sessionId
+            };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

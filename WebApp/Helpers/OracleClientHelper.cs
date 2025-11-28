@@ -14,10 +14,10 @@ namespace WebApp.Helpers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        /// <summary>
+        
         /// Lấy header Oracle từ session và set cho HttpClient.
         /// Nếu thiếu thông tin session, trả về IActionResult redirect về Login.
-        /// </summary>
+        
         /// <param name="httpClient">HttpClient cần set header</param>
         /// <param name="redirectToLogin">IActionResult redirect nếu session thiếu</param>
         /// <param name="isAdmin">true nếu Admin, false nếu Public</param>
@@ -62,9 +62,9 @@ namespace WebApp.Helpers
             return true;
         }
 
-        /// <summary>
+        
         /// Xóa session khi logout hoặc session expired
-        /// </summary>
+        
         public void ClearSession(bool isAdmin = true)
         {
             var httpContext = _httpContextAccessor.HttpContext;
@@ -76,9 +76,9 @@ namespace WebApp.Helpers
             httpContext.Session.Remove($"{prefix}SessionId");
         }
 
-        /// <summary>
+        
         /// Lấy thông tin session mà không set header
-        /// </summary>
+        
         public bool TryGetSession(out string token, out string username, out string platform, out string sessionId, bool isAdmin = true)
         {
             var httpContext = _httpContextAccessor.HttpContext;

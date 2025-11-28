@@ -111,21 +111,26 @@ builder.Services.AddSingleton<OracleSessionHelper>();
 builder.Services.AddSingleton<OracleConnectionManager>();
 builder.Services.AddSingleton<QrGeneratorSingleton>();
 builder.Services.AddSingleton<QrLoginStore>();
-builder.Services.AddSingleton<CustomerQrLoginService>();
-builder.Services.AddSingleton<EmployeeQrLoginService>();
 builder.Services.AddSingleton<WebToMobileQrStore>();
+builder.Services.AddSingleton<ProxyLoginService>();
 // PDF signing services
-builder.Services.AddSingleton<PdfSignatureService>(sp =>
-    new PdfSignatureService(
+builder.Services.AddSingleton<SignatureService>(sp =>
+    new SignatureService(
         sp.GetRequiredService<OracleSessionHelper>(),
         sp.GetRequiredService<OracleConnectionManager>(),
         sp.GetRequiredService<IHttpContextAccessor>()
     )
 );
-builder.Services.AddSingleton<InvoicePdfService>(sp => new InvoicePdfService(
-    sp.GetRequiredService<PdfSignatureService>(),
+builder.Services.AddSingleton<WebAPI.Services.PdfTemplates.IPdfTemplate<WebAPI.Models.Import.ImportStockDto>, WebAPI.Services.PdfTemplates.ImportInvoiceTemplate>();
+builder.Services.AddSingleton<WebAPI.Services.PdfTemplates.IPdfTemplate<WebAPI.Models.Export.ExportStockDto>, WebAPI.Services.PdfTemplates.ExportInvoiceTemplate>();
+builder.Services.AddSingleton<WebAPI.Services.PdfTemplates.IPdfTemplate<WebAPI.Models.Invoice.InvoiceDto>, WebAPI.Services.PdfTemplates.SalesInvoiceTemplate>();
+builder.Services.AddSingleton<PdfService>(sp => new PdfService(
+    sp.GetRequiredService<SignatureService>(),
     sp.GetRequiredService<IConfiguration>(),
-    sp.GetRequiredService<IHostEnvironment>()
+    sp.GetRequiredService<IHostEnvironment>(),
+    sp.GetRequiredService<WebAPI.Services.PdfTemplates.IPdfTemplate<WebAPI.Models.Import.ImportStockDto>>(),
+    sp.GetRequiredService<WebAPI.Services.PdfTemplates.IPdfTemplate<WebAPI.Models.Export.ExportStockDto>>(),
+    sp.GetRequiredService<WebAPI.Services.PdfTemplates.IPdfTemplate<WebAPI.Models.Invoice.InvoiceDto>>()
 ));
 builder.Services.AddSingleton<RsaKeyService>();
 builder.Services.AddSingleton<EmailService>();

@@ -14,9 +14,9 @@ namespace WebAPI.Helpers
         {
             _config = config;
         }
-        /// <summary>
+        
         /// Lấy connection Oracle từ header session. Nếu không hợp lệ, trả về UnauthorizedResult.
-        /// </summary>
+        
         public  OracleConnection GetConnectionOrUnauthorized(HttpContext httpContext,
             OracleConnectionManager connManager, out IActionResult unauthorizedResult)
         {
@@ -42,9 +42,9 @@ namespace WebAPI.Helpers
             return conn;
         }
 
-        /// <summary>
+        
         /// Xử lý session bị kill hoặc terminate, xóa connection khỏi manager.
-        /// </summary>
+        
         public  void HandleSessionKilled(HttpContext httpContext,
             OracleConnectionManager connManager, string username, string platform, string sessionId)
         {
@@ -53,9 +53,9 @@ namespace WebAPI.Helpers
             Console.WriteLine($"[OracleSessionHelper] Session killed for {username}-{platform}-{sessionId}");
         }
 
-        /// <summary>
+        
         /// Lấy thông tin session từ header
-        /// </summary>
+        
         public bool TryGetSession(HttpContext httpContext, out string username, out string platform, out string sessionId)
         {
             username = httpContext.Request.Headers["X-Oracle-Username"].ToString();

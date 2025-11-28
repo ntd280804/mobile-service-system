@@ -104,11 +104,6 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi lấy danh sách linh kiện từ yêu cầu");
         }
 
-        // ============ Private Helpers ============
-
-        /// <summary>
-        /// Map a Part row from OracleDataReader (columns 0-7)
-        /// </summary>
         private object MapPart(OracleDataReader reader)
         {
             return new
@@ -124,10 +119,6 @@ namespace WebAPI.Areas.Admin.Controllers
                 Price = reader.GetDecimalOrNull(7)
             };
         }
-
-        /// <summary>
-        /// Map a Part row with PartRequest info (columns 0-10)
-        /// </summary>
         private object MapPartWithRequest(OracleDataReader reader)
         {
             return new

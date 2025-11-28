@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using WebAPI.Models;
@@ -15,22 +16,19 @@ namespace WebAPI.Areas.Public.Controllers
     public class QrLoginController : ControllerBase
     {
         private readonly QrLoginStore _qrLoginStore;
-        private readonly CustomerQrLoginService _customerQrLoginService;
-        private readonly EmployeeQrLoginService _employeeQrLoginService;
+        private readonly ProxyLoginService _proxyLoginService;
 
         public QrLoginController(
             QrLoginStore qrLoginStore,
-            CustomerQrLoginService customerQrLoginService,
-            EmployeeQrLoginService employeeQrLoginService)
+            ProxyLoginService proxyLoginService)
         {
             _qrLoginStore = qrLoginStore;
-            _customerQrLoginService = customerQrLoginService;
-            _employeeQrLoginService = employeeQrLoginService;
+            _proxyLoginService = proxyLoginService;
         }
 
-        /// <summary>
+        
         /// Web gọi để tạo session QR login (TTL 2 phút).
-        /// </summary>
+        
         [HttpPost("create")]
         [AllowAnonymous]
         public ActionResult<ApiResponse<QrLoginCreateResponse>> Create()
@@ -47,9 +45,9 @@ namespace WebAPI.Areas.Public.Controllers
             return Ok(ApiResponse<QrLoginCreateResponse>.Ok(response));
         }
 
-        /// <summary>
+        
         /// Mobile (đã đăng nhập, gửi JWT) gọi để confirm đăng nhập Web bằng code.
-        /// </summary>
+        
         [HttpPost("confirm")]
         [Authorize(AuthenticationSchemes = "Bearer")]
         public ActionResult<ApiResponse<string>> Confirm([FromBody] QrLoginConfirmRequest request)
@@ -73,43 +71,16 @@ namespace WebAPI.Areas.Public.Controllers
 
             try
             {
-                // Lấy roles từ JWT để phân biệt customer vs employee
-                var rolesFromJwt = string.Join(",",
-                    User.Claims
-                        .Where(c => c.Type == ClaimTypes.Role)
-                        .Select(c => c.Value));
-
-                bool isCustomer = rolesFromJwt
-                    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                    .Any(r => r.Equals("ROLE_KHACHHANG", StringComparison.OrdinalIgnoreCase));
-
-                string finalUsername;
-                string finalRoles;
-                string finalToken;
-                string finalSessionId;
-
-                if (isCustomer)
-                {
-                    var result = _customerQrLoginService.LoginViaProxy(username, "WEB");
-                    finalUsername = result.Username ?? username;
-                    finalRoles = result.Roles ?? string.Empty;
-                    finalToken = result.Token ?? string.Empty;
-                    finalSessionId = result.SessionId ?? Guid.NewGuid().ToString();
-                }
-                else
-                {
-                    var result = _employeeQrLoginService.LoginViaProxy(username, "WEB");
-                    finalUsername = result.Username ?? username;
-                    finalRoles = result.Roles ?? string.Empty;
-                    finalToken = result.Token ?? string.Empty;
-                    finalSessionId = result.SessionId ?? Guid.NewGuid().ToString();
-                }
+                var isCustomer = HasCustomerRole(User.Claims);
+                var proxyLogin = isCustomer
+                    ? _proxyLoginService.LoginCustomer(username, "WEB")
+                    : _proxyLoginService.LoginEmployee(username, "WEB");
 
                 session.Status = Services.QrLoginStatus.Confirmed;
-                session.Username = finalUsername;
-                session.Roles = finalRoles;
-                session.WebToken = finalToken;
-                session.WebSessionId = finalSessionId;
+                session.Username = proxyLogin.Username;
+                session.Roles = proxyLogin.Roles;
+                session.WebToken = proxyLogin.Token;
+                session.WebSessionId = proxyLogin.SessionId;
 
                 return Ok(ApiResponse<string>.Ok("CONFIRMED"));
             }
@@ -119,9 +90,9 @@ namespace WebAPI.Areas.Public.Controllers
             }
         }
 
-        /// <summary>
+        
         /// Web poll trạng thái QR login; nếu đã confirm thì nhận Web token để login.
-        /// </summary>
+        
         [HttpGet("status/{qrLoginId}")]
         [AllowAnonymous]
         public ActionResult<ApiResponse<QrLoginStatusResponse>> Status(string qrLoginId)
@@ -149,6 +120,13 @@ namespace WebAPI.Areas.Public.Controllers
             };
 
             return Ok(ApiResponse<QrLoginStatusResponse>.Ok(response));
+        }
+        private static bool HasCustomerRole(IEnumerable<Claim> claims)
+        {
+            return claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .Any(role => role.Equals("ROLE_KHACHHANG", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

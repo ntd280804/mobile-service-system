@@ -7,9 +7,9 @@ using WebAPI.Services;
 
 namespace WebAPI.Helpers
 {
-    /// <summary>
+    
     /// Helper for common controller patterns (Oracle exception handling, session management, etc.)
-    /// </summary>
+    
     public class ControllerHelper
     {
         private readonly OracleConnectionManager _connManager;
@@ -21,11 +21,11 @@ namespace WebAPI.Helpers
             _sessionHelper = sessionHelper;
         }
 
-        /// <summary>
+        
         /// Wraps an Oracle action with standard connection retrieval and exception handling.
         /// Returns Unauthorized if session is invalid, handles OracleException 28 (session killed),
         /// and returns StatusCode 500 for other exceptions.
-        /// </summary>
+        
         /// <param name="httpContext">The current HttpContext.</param>
         /// <param name="action">The action to execute with the Oracle connection.</param>
         /// <param name="errorMessage">Custom error message for general exceptions.</param>
@@ -62,9 +62,9 @@ namespace WebAPI.Helpers
             }
         }
 
-        /// <summary>
+        
         /// Async version of ExecuteWithConnection.
-        /// </summary>
+        
         public async Task<IActionResult> ExecuteWithConnectionAsync(
             HttpContext httpContext,
             Func<OracleConnection, Task<IActionResult>> action,
@@ -97,9 +97,9 @@ namespace WebAPI.Helpers
             }
         }
 
-        /// <summary>
+        
         /// Handle session killed error (OracleException 28).
-        /// </summary>
+        
         private IActionResult HandleSessionKilled(HttpContext httpContext)
         {
             _sessionHelper.TryGetSession(httpContext, out var username, out var platform, out var sessionId);
@@ -107,31 +107,31 @@ namespace WebAPI.Helpers
             return new UnauthorizedObjectResult(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
         }
 
-        /// <summary>
+        
         /// Create a standard Ok response with data.
-        /// </summary>
+        
         public static IActionResult Ok(object data) => new OkObjectResult(data);
 
-        /// <summary>
+        
         /// Create a standard BadRequest response.
-        /// </summary>
+        
         public static IActionResult BadRequest(string message) => new BadRequestObjectResult(new { message });
 
-        /// <summary>
+        
         /// Create a standard NotFound response.
-        /// </summary>
+        
         public static IActionResult NotFound(string message) => new NotFoundObjectResult(new { message });
 
-        /// <summary>
+        
         /// Create a standard error response with status code 500.
-        /// </summary>
+        
         public static IActionResult ServerError(string message, string detail) =>
             new ObjectResult(new { message, detail }) { StatusCode = 500 };
 
-        /// <summary>
+        
         /// Execute an action within a transaction. Auto-rollback on error, auto-commit on success.
         /// Handles OracleException 28 (session killed) and business errors (20001-20999).
-        /// </summary>
+        
         public IActionResult ExecuteWithTransaction(
             HttpContext httpContext,
             Func<OracleConnection, OracleTransaction, IActionResult> action,

@@ -1,12 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
-
 using WebAPI.Helpers;
-
-using WebAPI.Services;
 using WebAPI.Models.Appointment;
 
 namespace WebAPI.Areas.Public.Controllers
@@ -16,30 +12,18 @@ namespace WebAPI.Areas.Public.Controllers
     [ApiController]
     public class AppointmentController : ControllerBase
     {
+        private readonly ControllerHelper _helper;
 
-        private readonly OracleConnectionManager _connManager;
-        private readonly JwtHelper _jwtHelper;
-        private readonly OracleSessionHelper _oracleSessionHelper;
-
-        public AppointmentController(
-                                  OracleConnectionManager connManager,
-                                  JwtHelper jwtHelper,
-                                  OracleSessionHelper oracleSessionHelper)
+        public AppointmentController(ControllerHelper helper)
         {
-
-            _connManager = connManager;
-            _jwtHelper = jwtHelper;
-            _oracleSessionHelper = oracleSessionHelper;
+            _helper = helper;
         }
 
         [HttpGet("all")]
         [Authorize]
         public IActionResult GetAll()
         {
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 using var cmd = new OracleCommand("APP.GET_ALL_APPOINTMENTS", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -64,15 +48,7 @@ namespace WebAPI.Areas.Public.Controllers
                 }
 
                 return Ok(list);
-            }
-            catch (OracleException ex)
-            {
-                return StatusCode(500, new { message = "Lỗi Oracle", detail = ex.Message, number = ex.Number });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+            }, "Lỗi khi lấy danh sách lịch hẹn");
         }
 
 
@@ -83,10 +59,7 @@ namespace WebAPI.Areas.Public.Controllers
             if (dto == null || string.IsNullOrEmpty(dto.CustomerPhone) || dto.AppointmentDate == default)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ." });
 
-            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 using var cmd = new OracleCommand("APP.CREATE_APPOINTMENT", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -108,15 +81,7 @@ namespace WebAPI.Areas.Public.Controllers
                     message = "Đặt lịch thành công",
                     status
                 });
-            }
-            catch (OracleException ex)
-            {
-                return StatusCode(500, new { message = "Lỗi Oracle", detail = ex.Message, number = ex.Number });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+            }, "Lỗi khi tạo lịch hẹn");
         }
 
     }

@@ -29,9 +29,9 @@ namespace WebApp.Services
             _httpClient = httpClient;
         }
 
-        /// <summary>
+        
         /// Set headers cho authenticated requests (JWT token và Oracle session headers)
-        /// </summary>
+        
         public void SetHeaders(string jwtToken, string username, string platform, string sessionId)
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
@@ -107,9 +107,9 @@ namespace WebApp.Services
             }
         }
 
-        /// <summary>
+        
         /// Lấy private key PEM để lưu vào session
-        /// </summary>
+        
         public string? GetPrivateKeyPem()
         {
             if (string.IsNullOrWhiteSpace(_clientPrivateKeyBase64))

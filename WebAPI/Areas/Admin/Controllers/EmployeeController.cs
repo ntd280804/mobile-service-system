@@ -6,9 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Models;
@@ -29,9 +27,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         public EmployeeController(
             ControllerHelper helper,
-            OracleConnectionManager connManager,
-            JwtHelper jwtHelper,
-            OracleSessionHelper oracleSessionHelper)
+                                  OracleConnectionManager connManager,
+                                  JwtHelper jwtHelper,
+                                  OracleSessionHelper oracleSessionHelper)
         {
             _helper = helper;
             _connManager = connManager;
@@ -53,13 +51,13 @@ namespace WebAPI.Areas.Admin.Controllers
                     "APP.GET_ALL_EMPLOYEES",
                     "p_cursor",
                     reader => new
-                    {
-                        EmpId = reader.GetDecimal(0),
-                        FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
-                        Username = reader.IsDBNull(2) ? null : reader.GetString(2),
-                        Email = reader.IsDBNull(3) ? null : reader.GetString(3),
-                        Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
-                        Status = reader.IsDBNull(5) ? null : reader.GetString(5),
+					{
+						EmpId = reader.GetDecimal(0),
+						FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+						Username = reader.IsDBNull(2) ? null : reader.GetString(2),
+						Email = reader.IsDBNull(3) ? null : reader.GetString(3),
+						Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
+						Status = reader.IsDBNull(5) ? null : reader.GetString(5),
                         Roles = reader.IsDBNull(6) ? "" : reader.GetString(6)
                     });
 
@@ -119,64 +117,13 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                // Giải mã request từ client
-                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
-                byte[] aesKey = new byte[32];
-                byte[] iv = new byte[16];
-                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
-                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
-
-                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
-                string plaintext;
-                using (Aes aes = Aes.Create())
-                {
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
-                    using (var ms = new MemoryStream(cipherBytes))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var reader = new StreamReader(cs, Encoding.UTF8))
-                    {
-                        plaintext = reader.ReadToEnd();
-                    }
-                }
-
-                var dto = System.Text.Json.JsonSerializer.Deserialize<ChangePasswordDto>(plaintext);
+                var dto = SecurePayloadHelper.DecryptPayload<ChangePasswordDto>(rsaKeyService, payload);
                 if (dto == null)
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
                 // Xử lý change password
                 var changePasswordResult = ChangePassword(dto);
-                ApiResponse<string> apiResp;
-                
-                if (changePasswordResult.Result is ObjectResult objResult && objResult.Value is ApiResponse<string> resp)
-                {
-                    apiResp = resp;
-                }
-                else if (changePasswordResult.Result is BadRequestObjectResult badRequestObj && badRequestObj.Value is ApiResponse<string> badResp)
-                {
-                    // Lấy error message từ BadRequestObjectResult
-                    apiResp = badResp;
-                }
-                else if (changePasswordResult.Result is UnauthorizedObjectResult unauthorizedObj && unauthorizedObj.Value is ApiResponse<string> unauthResp)
-                {
-                    // Lấy error message từ UnauthorizedObjectResult
-                    apiResp = unauthResp;
-                }
-                else if (changePasswordResult.Result is StatusCodeResult statusCodeResult)
-                {
-                    string errorMsg = "Change password failed";
-                    if (statusCodeResult.StatusCode == 400)
-                        errorMsg = "Bad request";
-                    else if (statusCodeResult.StatusCode == 401)
-                        errorMsg = "Unauthorized";
-                    apiResp = ApiResponse<string>.Fail(errorMsg);
-                }
-                else
-                {
-                    apiResp = ApiResponse<string>.Fail("Unexpected response format");
-                }
-
-                // Mã hóa response
-                string responseJson = System.Text.Json.JsonSerializer.Serialize(apiResp);
+                var apiResp = ControllerResponseHelper.ExtractApiResponse(changePasswordResult, "Change password failed");
                 
                 // Lấy clientId từ session headers
                 var username = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
@@ -202,35 +149,35 @@ namespace WebAPI.Areas.Admin.Controllers
                                 ("p_username", OracleDbType.Varchar2, username));
 
                             if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
-                            {
-                                // Normalize public key
-                                string normalizedPublicKey = publicKeyFromDb
-                                    .Replace("\r", "")
-                                    .Replace("\n", "")
-                                    .Replace(" ", "")
-                                    .Replace("\t", "");
-
-                                // Extract Base64 từ PEM format nếu có
-                                if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
                                 {
-                                    int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
-                                    int endIdx = normalizedPublicKey.IndexOf("-----END");
-                                    if (startIdx >= 0 && endIdx > startIdx)
+                                // Normalize public key
+                                    string normalizedPublicKey = publicKeyFromDb
+                                        .Replace("\r", "")
+                                        .Replace("\n", "")
+                                        .Replace(" ", "")
+                                        .Replace("\t", "");
+                                    
+                                // Extract Base64 từ PEM format nếu có
+                                    if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
                                     {
-                                        int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
-                                        if (beginEnd > startIdx)
+                                        int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
+                                        int endIdx = normalizedPublicKey.IndexOf("-----END");
+                                        if (startIdx >= 0 && endIdx > startIdx)
                                         {
-                                            normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
-                                                .Replace("\r", "")
-                                                .Replace("\n", "")
-                                                .Replace(" ", "");
+                                            int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
+                                            if (beginEnd > startIdx)
+                                            {
+                                                normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
+                                                    .Replace("\r", "")
+                                                    .Replace("\n", "")
+                                                    .Replace(" ", "");
+                                            }
                                         }
                                     }
+                                    
+                                    rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                                 }
-
-                                rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                             }
-                        }
                         catch
                         {
                             // Log error nhưng tiếp tục
@@ -238,12 +185,8 @@ namespace WebAPI.Areas.Admin.Controllers
                     }
                 }
                 
-                var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
-                return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                {
-                    EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
-                    CipherDataBase64 = encryptedResponse.CipherDataBase64
-                }));
+                var encryptedResponse = SecurePayloadHelper.EncryptResponse(rsaKeyService, clientId, apiResp);
+                return Ok(encryptedResponse);
             }
             catch (Exception ex)
             {
@@ -264,18 +207,18 @@ namespace WebAPI.Areas.Admin.Controllers
                     "APP.GET_EMPLOYEE_BY_ID",
                     "p_cursor",
                     reader => new
-                    {
-                        EmpId = reader.GetDecimal(0),
-                        FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
-                        Username = reader.IsDBNull(2) ? null : reader.GetString(2),
-                        Email = reader.IsDBNull(3) ? null : reader.GetString(3),
-                        Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
-                        Status = reader.IsDBNull(5) ? null : reader.GetString(5)
+					{
+						EmpId = reader.GetDecimal(0),
+						FullName = reader.IsDBNull(1) ? null : reader.GetString(1),
+						Username = reader.IsDBNull(2) ? null : reader.GetString(2),
+						Email = reader.IsDBNull(3) ? null : reader.GetString(3),
+						Phone = reader.IsDBNull(4) ? null : reader.GetString(4),
+						Status = reader.IsDBNull(5) ? null : reader.GetString(5)
                     },
                     ("p_empid", OracleDbType.Decimal, id));
 
                 if (rows.Count == 0)
-                    return NotFound();
+                return NotFound();
 
                 return Ok(rows[0]);
             }, "Lỗi khi lấy thông tin nhân viên");
@@ -442,93 +385,21 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                // Giải mã request từ client
-                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
-                byte[] aesKey = new byte[32];
-                byte[] iv = new byte[16];
-                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
-                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
-
-                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
-                string plaintext;
-                using (Aes aes = Aes.Create())
-                {
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
-                    using (var ms = new MemoryStream(cipherBytes))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var reader = new StreamReader(cs, Encoding.UTF8))
-                    {
-                        plaintext = reader.ReadToEnd();
-                    }
-                }
-
-                var dto = System.Text.Json.JsonSerializer.Deserialize<EmployeeLoginDto>(plaintext);
+                var dto = SecurePayloadHelper.DecryptPayload<EmployeeLoginDto>(rsaKeyService, payload);
                 if (dto == null)
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
                 // Xử lý login
                 var loginResult = Login(dto);
-                ApiResponse<EmployeeLoginResult> apiResp;
-                
-                if (loginResult.Result is ObjectResult objResult && objResult.Value is ApiResponse<EmployeeLoginResult> resp)
-                {
-                    apiResp = resp;
-                }
-                else if (loginResult.Result is UnauthorizedObjectResult unauthorizedObj)
-                {
-                    // Xử lý UnauthorizedObjectResult có thể chứa ApiResponse hoặc anonymous object
-                    if (unauthorizedObj.Value is ApiResponse<EmployeeLoginResult> unauthResp)
-                    {
-                        apiResp = unauthResp;
-                    }
-                    else if (unauthorizedObj.Value != null)
-                    {
-                        // Thử deserialize anonymous object để lấy message
-                        try
-                        {
-                            var json = System.Text.Json.JsonSerializer.Serialize(unauthorizedObj.Value);
-                            var anonObj = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
-                            string message = "Unauthorized";
-                            if (anonObj.TryGetProperty("message", out var msgProp))
-                                message = msgProp.GetString() ?? message;
-                            else if (anonObj.TryGetProperty("Message", out var msgProp2))
-                                message = msgProp2.GetString() ?? message;
-                            apiResp = ApiResponse<EmployeeLoginResult>.Fail(message);
-                        }
-                        catch
-                        {
-                            apiResp = ApiResponse<EmployeeLoginResult>.Fail("Đăng nhập thất bại.");
-                        }
-                    }
-                    else
-                    {
-                        apiResp = ApiResponse<EmployeeLoginResult>.Fail("Đăng nhập thất bại.");
-                    }
-                }
-                else if (loginResult.Result is StatusCodeResult statusCodeResult)
-                {
-                    string errorMsg = "Login failed";
-                    if (statusCodeResult.StatusCode == 401)
-                        errorMsg = "Sai username hoặc mật khẩu.";
-                    apiResp = ApiResponse<EmployeeLoginResult>.Fail(errorMsg);
-                }
-                else
-                {
-                    apiResp = ApiResponse<EmployeeLoginResult>.Fail("Unexpected response format");
-                }
+                var apiResp = ControllerResponseHelper.ExtractApiResponse(loginResult, "Đăng nhập thất bại.");
 
                 // Mã hóa response (cả success và error đều được mã hóa)
                 // Login dùng clientId = username + platform (RSA tự động generate, KHÔNG dùng "admin-")
                 // Public key đã được register khi client gọi register-client-key trong InitializeAsync
                 string clientId = dto.Username + dto.Platform;
                 
-                string responseJson = System.Text.Json.JsonSerializer.Serialize(apiResp);
-                var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
-                return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                {
-                    EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
-                    CipherDataBase64 = encryptedResponse.CipherDataBase64
-                }));
+                var encryptedResponse = SecurePayloadHelper.EncryptResponse(rsaKeyService, clientId, apiResp);
+                return Ok(encryptedResponse);
             }
             catch (Exception ex)
             {
@@ -591,27 +462,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
             try
             {
-                // Giải mã request từ client
-                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
-                byte[] aesKey = new byte[32];
-                byte[] iv = new byte[16];
-                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
-                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
-
-                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
-                string plaintext;
-                using (Aes aes = Aes.Create())
-                {
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
-                    using (var ms = new MemoryStream(cipherBytes))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var reader = new StreamReader(cs, Encoding.UTF8))
-                    {
-                        plaintext = reader.ReadToEnd();
-                    }
-                }
-
-                var dto = System.Text.Json.JsonSerializer.Deserialize<EmployeeRegisterDto>(plaintext);
+                var dto = SecurePayloadHelper.DecryptPayload<EmployeeRegisterDto>(rsaKeyService, payload);
                 if (dto == null)
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
@@ -639,35 +490,35 @@ namespace WebAPI.Areas.Admin.Controllers
                                 ("p_username", OracleDbType.Varchar2, username));
 
                             if (!string.IsNullOrWhiteSpace(publicKeyFromDb))
-                            {
-                                // Normalize public key
-                                string normalizedPublicKey = publicKeyFromDb
-                                    .Replace("\r", "")
-                                    .Replace("\n", "")
-                                    .Replace(" ", "")
-                                    .Replace("\t", "");
-
-                                // Extract Base64 từ PEM format nếu có
-                                if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
                                 {
-                                    int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
-                                    int endIdx = normalizedPublicKey.IndexOf("-----END");
-                                    if (startIdx >= 0 && endIdx > startIdx)
+                                // Normalize public key
+                                    string normalizedPublicKey = publicKeyFromDb
+                                        .Replace("\r", "")
+                                        .Replace("\n", "")
+                                        .Replace(" ", "")
+                                        .Replace("\t", "");
+                                    
+                                // Extract Base64 từ PEM format nếu có
+                                    if (normalizedPublicKey.Contains("BEGIN") || normalizedPublicKey.Contains("END"))
                                     {
-                                        int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
-                                        if (beginEnd > startIdx)
+                                        int startIdx = normalizedPublicKey.IndexOf("-----BEGIN");
+                                        int endIdx = normalizedPublicKey.IndexOf("-----END");
+                                        if (startIdx >= 0 && endIdx > startIdx)
                                         {
-                                            normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
-                                                .Replace("\r", "")
-                                                .Replace("\n", "")
-                                                .Replace(" ", "");
+                                            int beginEnd = normalizedPublicKey.IndexOf("-----", startIdx + 10);
+                                            if (beginEnd > startIdx)
+                                            {
+                                                normalizedPublicKey = normalizedPublicKey.Substring(beginEnd + 5, endIdx - beginEnd - 5)
+                                                    .Replace("\r", "")
+                                                    .Replace("\n", "")
+                                                    .Replace(" ", "");
+                                            }
                                         }
                                     }
+                                    
+                                    rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                                 }
-
-                                rsaKeyService.SaveClientPublicKey(clientId, normalizedPublicKey);
                             }
-                        }
                         catch
                         {
                             // Log error nhưng tiếp tục
@@ -682,14 +533,8 @@ namespace WebAPI.Areas.Admin.Controllers
                     if (conn == null)
                     {
                         // Mã hóa error message
-                        var errorObj = new { Success = false, Message = "Unauthorized" };
-                        string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
-                        var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
-                        return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                        {
-                            EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
-                            CipherDataBase64 = encryptedError.CipherDataBase64
-                        }));
+                        var encryptedError = SecurePayloadHelper.EncryptResponse(rsaKeyService, clientId, new { Success = false, Message = "Unauthorized" });
+                        return Ok(encryptedError);
                     }
 
                     string? privateKey = OracleHelper.ExecuteClobOutput(
@@ -705,14 +550,11 @@ namespace WebAPI.Areas.Admin.Controllers
 
                     if (string.IsNullOrEmpty(privateKey))
                     {
-                        var errorObj = new { Success = false, Message = "Lỗi khi thêm nhân viên: không nhận được private key" };
-                        string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
-                        var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
-                        return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                        {
-                            EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
-                            CipherDataBase64 = encryptedError.CipherDataBase64
-                        }));
+                        var encryptedError = SecurePayloadHelper.EncryptResponse(
+                            rsaKeyService,
+                            clientId,
+                            new { Success = false, Message = "Lỗi khi thêm nhân viên: không nhận được private key" });
+                        return Ok(encryptedError);
                     }
 
                     // Tạo response object chứa private key base64 và filename
@@ -724,25 +566,17 @@ namespace WebAPI.Areas.Admin.Controllers
                         FileName = $"{dto.Username}_private_key.txt"
                     };
 
-                    string responseJson = System.Text.Json.JsonSerializer.Serialize(responseObj);
-                    var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
-                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                    {
-                        EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
-                        CipherDataBase64 = encryptedResponse.CipherDataBase64
-                    }));
+                    var encryptedResponse = SecurePayloadHelper.EncryptResponse(rsaKeyService, clientId, responseObj);
+                    return Ok(encryptedResponse);
                 }
                 catch (Exception ex)
                 {
                     // Nếu có lỗi, mã hóa error message
-                    var errorObj = new { Success = false, Message = ex.Message };
-                    string errorJson = System.Text.Json.JsonSerializer.Serialize(errorObj);
-                    var encryptedError = rsaKeyService.EncryptForClient(clientId, errorJson);
-                    return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                    {
-                        EncryptedKeyBlockBase64 = encryptedError.EncryptedKeyBlockBase64,
-                        CipherDataBase64 = encryptedError.CipherDataBase64
-                    }));
+                    var encryptedError = SecurePayloadHelper.EncryptResponse(
+                        rsaKeyService,
+                        clientId,
+                        new { Success = false, Message = ex.Message });
+                    return Ok(encryptedError);
                 }
             }
             catch (Exception ex)

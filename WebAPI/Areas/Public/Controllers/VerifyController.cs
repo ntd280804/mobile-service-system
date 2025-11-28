@@ -51,16 +51,10 @@ namespace WebAPI.Areas.Public.Controllers
                 return BadRequest(ApiResponse<bool>.Fail("Không xác định được mã hóa đơn từ nội dung PDF."));
             }
 
-            byte[] dbBytes;
-            using (var conn = _connManager.CreateDefaultConnection())
+            try
             {
-                // Set role verify trước khi truy vấn
-                using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
-                {
-                    setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = "ROLE_VERIFY";
-                    setRoleCmd.ExecuteNonQuery();
-                }
-
+            byte[] dbBytes;
+                using (var conn = CreateVerifyConnection())
                 using (var cmd = new OracleCommand("SELECT PDF FROM APP.INVOICE WHERE INVOICE_ID = :p_id", conn))
                 {
                     cmd.Parameters.Add("p_id", OracleDbType.Decimal).Value = invoiceId;
@@ -70,11 +64,9 @@ namespace WebAPI.Areas.Public.Controllers
                         {
                             return NotFound(ApiResponse<bool>.Fail("Không tìm thấy dữ liệu INVOICE."));
                         }
-                        using (var blob = reader.GetOracleBlob(0))
-                        {
+
+                        using var blob = reader.GetOracleBlob(0);
                             dbBytes = blob.Value;
-                        }
-                    }
                 }
             }
 
@@ -83,6 +75,15 @@ namespace WebAPI.Areas.Public.Controllers
             var isMatch = uploadedHash.SequenceEqual(dbHash);
 
             return Ok(ApiResponse<bool>.Ok(isMatch));
+            }
+            catch (OracleException ex)
+            {
+                return StatusCode(500, ApiResponse<bool>.Fail($"Lỗi Oracle {ex.Number}: {ex.Message}"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<bool>.Fail($"Lỗi xác thực hóa đơn: {ex.Message}"));
+            }
         }
 
         private static byte[] ComputeSha256(byte[] data)
@@ -128,6 +129,15 @@ namespace WebAPI.Areas.Public.Controllers
             }
 
             return null;
+        }
+
+        private OracleConnection CreateVerifyConnection()
+        {
+            var conn = _connManager.CreateDefaultConnection();
+            using var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn);
+            setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = "ROLE_VERIFY";
+            setRoleCmd.ExecuteNonQuery();
+            return conn;
         }
     }
 }

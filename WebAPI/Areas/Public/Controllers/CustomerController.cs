@@ -1,16 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using WebAPI.Helpers;
+using WebAPI.Models;
+using WebAPI.Models.Auth;
 using WebAPI.Models.Security;
 using WebAPI.Services;
-using WebAPI.Models.Auth;
-using WebAPI.Models;
-using System.Security.Cryptography;
-using System.Text;
-using System.IO;
 namespace WebAPI.Areas.Public.Controllers
 {
     [Area("Public")]
@@ -18,25 +14,25 @@ namespace WebAPI.Areas.Public.Controllers
     [ApiController]
     public class CustomerController : ControllerBase
     {
+        private readonly ControllerHelper _helper;
+        private const string CustomerClientId = "public-web";
         
         private readonly OracleConnectionManager _connManager;
         private readonly JwtHelper _jwtHelper;
         private readonly OracleSessionHelper _oracleSessionHelper;
-        private readonly CustomerQrLoginService _customerQrLoginService;
         private readonly EmailService _emailService;
 
         public CustomerController(
+                                  ControllerHelper helper,
                                   OracleConnectionManager connManager,
                                   JwtHelper jwtHelper,
                                   OracleSessionHelper oracleSessionHelper,
-                                  CustomerQrLoginService customerQrLoginService,
                                   EmailService emailService)
         {
-            
+            _helper = helper;
             _connManager = connManager;
             _jwtHelper = jwtHelper;
             _oracleSessionHelper = oracleSessionHelper;
-            _customerQrLoginService = customerQrLoginService;
             _emailService = emailService;
         }
         [HttpPost("login")]
@@ -81,25 +77,22 @@ namespace WebAPI.Areas.Public.Controllers
                     setCusCmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Username;
                     setCusCmd.ExecuteNonQuery();
                 }
-                using var cmd = new OracleCommand("APP.LOGIN_CUSTOMER", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.BindByName = true; // ensure parameters match by name (ODP.NET default is positional)
+                var loginOutputs = OracleHelper.ExecuteNonQueryWithOutputs(
+                    conn,
+                    "APP.LOGIN_CUSTOMER",
+                    new[]
+                    {
+                        ("p_phone", OracleDbType.Varchar2, (object?)dto.Username ?? ""),
+                        ("p_password", OracleDbType.Varchar2, (object?)dto.Password ?? "")
+                    },
+                    new[]
+                    {
+                        ("p_out_phone", OracleDbType.Varchar2),
+                        ("p_out_result", OracleDbType.Varchar2)
+                    });
 
-                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Username;
-                cmd.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
-
-                var outPhoneParam = new OracleParameter("p_out_phone", OracleDbType.Varchar2, 100)
-                { Direction = ParameterDirection.Output };
-                var outResultParam = new OracleParameter("p_out_result", OracleDbType.Varchar2, 50)
-                { Direction = ParameterDirection.Output };
-
-                cmd.Parameters.Add(outPhoneParam);
-                cmd.Parameters.Add(outResultParam);
-
-                cmd.ExecuteNonQuery(); // chạy procedure trực tiếp
-
-                var result = outResultParam.Value?.ToString();
-                var username = outPhoneParam.Value?.ToString();
+                var result = loginOutputs["p_out_result"]?.ToString();
+                var username = loginOutputs["p_out_phone"]?.ToString();
                 var roles = "ROLE_KHACHHANG";
 
                 if (result != "SUCCESS")
@@ -142,91 +135,15 @@ namespace WebAPI.Areas.Public.Controllers
 
             try
             {
-                // Giải mã request từ client
-                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
-                byte[] aesKey = new byte[32];
-                byte[] iv = new byte[16];
-                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
-                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
-
-                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
-                string plaintext;
-                using (Aes aes = Aes.Create())
-                {
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
-                    using (var ms = new MemoryStream(cipherBytes))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var reader = new StreamReader(cs, Encoding.UTF8))
-                    {
-                        plaintext = reader.ReadToEnd();
-                    }
-                }
-
-                var dto = System.Text.Json.JsonSerializer.Deserialize<CustomerLoginDto>(plaintext);
+                var dto = SecurePayloadHelper.DecryptPayload<CustomerLoginDto>(rsaKeyService, payload);
                 if (dto == null)
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
                 // Xử lý login
                 var loginResult = Login(dto);
-                ApiResponse<CustomerLoginResult> apiResp;
-                
-                if (loginResult.Result is ObjectResult objResult && objResult.Value is ApiResponse<CustomerLoginResult> resp)
-                {
-                    apiResp = resp;
-                }
-                else if (loginResult.Result is UnauthorizedObjectResult unauthorizedObj)
-                {
-                    // Xử lý UnauthorizedObjectResult có thể chứa ApiResponse hoặc anonymous object
-                    if (unauthorizedObj.Value is ApiResponse<CustomerLoginResult> unauthResp)
-                    {
-                        apiResp = unauthResp;
-                    }
-                    else if (unauthorizedObj.Value != null)
-                    {
-                        // Thử deserialize anonymous object để lấy message
-                        try
-                        {
-                            var json = System.Text.Json.JsonSerializer.Serialize(unauthorizedObj.Value);
-                            var anonObj = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
-                            string message = "Unauthorized";
-                            if (anonObj.TryGetProperty("message", out var msgProp))
-                                message = msgProp.GetString() ?? message;
-                            else if (anonObj.TryGetProperty("Message", out var msgProp2))
-                                message = msgProp2.GetString() ?? message;
-                            apiResp = ApiResponse<CustomerLoginResult>.Fail(message);
-                        }
-                        catch
-                        {
-                            apiResp = ApiResponse<CustomerLoginResult>.Fail("Sai số điện thoại hoặc mật khẩu.");
-                        }
-                    }
-                    else
-                    {
-                        apiResp = ApiResponse<CustomerLoginResult>.Fail("Sai số điện thoại hoặc mật khẩu.");
-                    }
-                }
-                else if (loginResult.Result is StatusCodeResult statusCodeResult)
-                {
-                    string errorMsg = "Login failed";
-                    if (statusCodeResult.StatusCode == 401)
-                        errorMsg = "Sai số điện thoại hoặc mật khẩu.";
-                    apiResp = ApiResponse<CustomerLoginResult>.Fail(errorMsg);
-                }
-                else
-                {
-                    apiResp = ApiResponse<CustomerLoginResult>.Fail("Unexpected response format");
-                }
+                var apiResp = ControllerResponseHelper.ExtractApiResponse(loginResult, "Sai số điện thoại hoặc mật khẩu.");
 
-                // Mã hóa response (cả success và error đều được mã hóa)
-                // Customer dùng clientId là "public-web" (fixed)
-                string responseJson = System.Text.Json.JsonSerializer.Serialize(apiResp);
-                string clientId = "public-web";
-                var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
-                return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                {
-                    EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
-                    CipherDataBase64 = encryptedResponse.CipherDataBase64
-                }));
+                return Ok(SecurePayloadHelper.EncryptResponse(rsaKeyService, CustomerClientId, apiResp));
             }
             catch (Exception ex)
             {
@@ -242,19 +159,16 @@ namespace WebAPI.Areas.Public.Controllers
             try
             {
                 // Tạo connection admin hoặc user có quyền gọi procedure
-                var conn = _connManager.CreateDefaultConnection(); // dùng connection string từ Program.cs
+                using var conn = _connManager.CreateDefaultConnection(); // dùng connection string từ Program.cs
 
-
-                using var cmd = new OracleCommand("APP.REGISTER_CUSTOMER", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-
-                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2).Value = dto.Phone;
-                cmd.Parameters.Add("p_full_name", OracleDbType.Varchar2).Value = dto.FullName;
-                cmd.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
-                cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
-                cmd.Parameters.Add("p_address", OracleDbType.Varchar2).Value = dto.Address;
-
-                cmd.ExecuteNonQuery(); // chạy procedure trực tiếp
+                OracleHelper.ExecuteNonQuery(
+                    conn,
+                    "APP.REGISTER_CUSTOMER",
+                    ("p_phone", OracleDbType.Varchar2, dto.Phone ?? ""),
+                    ("p_full_name", OracleDbType.Varchar2, dto.FullName ?? ""),
+                    ("p_password", OracleDbType.Varchar2, dto.Password ?? ""),
+                    ("p_email", OracleDbType.Varchar2, dto.Email ?? ""),
+                    ("p_address", OracleDbType.Varchar2, dto.Address ?? ""));
 
                 return Ok(new { message = "Customer registered" });
             }
@@ -293,23 +207,35 @@ namespace WebAPI.Areas.Public.Controllers
                 return Unauthorized(ApiResponse<string>.Fail("Missing Oracle user header."));
 
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return Unauthorized(ApiResponse<string>.Fail("Unauthorized"));
-
-            try
+            if (conn == null)
             {
-                using var cmd = new OracleCommand("APP.CHANGE_CUSTOMER_PASSWORD", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.BindByName = true;
-                cmd.Parameters.Add("p_phone", OracleDbType.Varchar2, ParameterDirection.Input).Value = headerUsername;
-                cmd.Parameters.Add("p_old_password", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.OldPassword;
-                cmd.Parameters.Add("p_new_password", OracleDbType.Varchar2, ParameterDirection.Input).Value = dto.NewPassword;
-                cmd.ExecuteNonQuery();
+                var message = unauthorized is ObjectResult obj ? ControllerResponseHelper.ExtractMessage(obj.Value) : "Unauthorized";
+                return Unauthorized(ApiResponse<string>.Fail(message ?? "Unauthorized"));
+            }
+
+                try
+                {
+                    OracleHelper.ExecuteNonQuery(
+                        conn,
+                        "APP.CHANGE_CUSTOMER_PASSWORD",
+                        ("p_phone", OracleDbType.Varchar2, headerUsername),
+                        ("p_old_password", OracleDbType.Varchar2, dto.OldPassword),
+                        ("p_new_password", OracleDbType.Varchar2, dto.NewPassword));
+
                 return Ok(ApiResponse<string>.Ok("Đổi mật khẩu thành công."));
+            }
+            catch (OracleException ex) when (ex.Number == 28)
+            {
+                _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
+                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                return Unauthorized(ApiResponse<string>.Fail("Phiên Oracle đã bị kill. Vui lòng đăng nhập lại."));
+            }
+                catch (OracleException ex) when (ex.Number == 20001)
+            {
+                    return BadRequest(ApiResponse<string>.Fail("Mật khẩu cũ không đúng."));
             }
             catch (OracleException ex)
             {
-                if (ex.Number == 20001)
-                    return BadRequest(ApiResponse<string>.Fail("Mật khẩu cũ không đúng."));
                 return StatusCode(500, ApiResponse<string>.Fail($"Oracle error {ex.Number}: {ex.Message}"));
             }
             catch (Exception ex)
@@ -326,73 +252,15 @@ namespace WebAPI.Areas.Public.Controllers
 
             try
             {
-                // Giải mã request từ client
-                byte[] keyBlock = rsaKeyService.DecryptKeyBlock(Convert.FromBase64String(payload.EncryptedKeyBlockBase64));
-                byte[] aesKey = new byte[32];
-                byte[] iv = new byte[16];
-                Buffer.BlockCopy(keyBlock, 0, aesKey, 0, 32);
-                Buffer.BlockCopy(keyBlock, 32, iv, 0, 16);
-
-                byte[] cipherBytes = Convert.FromBase64String(payload.CipherDataBase64);
-                string plaintext;
-                using (Aes aes = Aes.Create())
-                {
-                    ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, iv);
-                    using (var ms = new MemoryStream(cipherBytes))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var reader = new StreamReader(cs, Encoding.UTF8))
-                    {
-                        plaintext = reader.ReadToEnd();
-                    }
-                }
-
-                var dto = System.Text.Json.JsonSerializer.Deserialize<ChangePasswordDto>(plaintext);
+                var dto = SecurePayloadHelper.DecryptPayload<ChangePasswordDto>(rsaKeyService, payload);
                 if (dto == null)
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
                 // Xử lý change password
                 var changePasswordResult = ChangePassword(dto);
-                ApiResponse<string> apiResp;
-                
-                if (changePasswordResult.Result is ObjectResult objResult && objResult.Value is ApiResponse<string> resp)
-                {
-                    apiResp = resp;
-                }
-                else if (changePasswordResult.Result is BadRequestObjectResult badRequestObj && badRequestObj.Value is ApiResponse<string> badResp)
-                {
-                    // Lấy error message từ BadRequestObjectResult
-                    apiResp = badResp;
-                }
-                else if (changePasswordResult.Result is UnauthorizedObjectResult unauthorizedObj && unauthorizedObj.Value is ApiResponse<string> unauthResp)
-                {
-                    // Lấy error message từ UnauthorizedObjectResult
-                    apiResp = unauthResp;
-                }
-                else if (changePasswordResult.Result is StatusCodeResult statusCodeResult)
-                {
-                    string errorMsg = "Change password failed";
-                    if (statusCodeResult.StatusCode == 400)
-                        errorMsg = "Bad request";
-                    else if (statusCodeResult.StatusCode == 401)
-                        errorMsg = "Unauthorized";
-                    apiResp = ApiResponse<string>.Fail(errorMsg);
-                }
-                else
-                {
-                    apiResp = ApiResponse<string>.Fail("Unexpected response format");
-                }
+                var apiResp = ControllerResponseHelper.ExtractApiResponse(changePasswordResult, "Change password failed");
 
-                // Mã hóa response
-                string responseJson = System.Text.Json.JsonSerializer.Serialize(apiResp);
-                
-                // Customer dùng clientId là "public-web" (fixed)
-                string clientId = "public-web";
-                var encryptedResponse = rsaKeyService.EncryptForClient(clientId, responseJson);
-                return Ok(ApiResponse<EncryptedPayload>.Ok(new EncryptedPayload
-                {
-                    EncryptedKeyBlockBase64 = encryptedResponse.EncryptedKeyBlockBase64,
-                    CipherDataBase64 = encryptedResponse.CipherDataBase64
-                }));
+                return Ok(SecurePayloadHelper.EncryptResponse(rsaKeyService, CustomerClientId, apiResp));
             }
             catch (Exception ex)
             {
@@ -410,25 +278,19 @@ namespace WebAPI.Areas.Public.Controllers
 
             try
             {
-                var conn = _connManager.CreateDefaultConnection();
-                using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
-                {
-                    setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = "ROLE_VERIFY";
-                    setRoleCmd.ExecuteNonQuery();
-                }
-                using var cmd = new OracleCommand("APP.GENERATE_OTP_CUSTOMER", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
+                using var conn = CreateDefaultConnectionWithRole("ROLE_VERIFY");
+                var otpOutputs = OracleHelper.ExecuteNonQueryWithOutputs(
+                    conn,
+                    "APP.GENERATE_OTP_CUSTOMER",
+                    new[] { ("p_email", OracleDbType.Varchar2, (object?)dto.Email ?? "") },
+                    new[]
+                    {
+                        ("p_otp", OracleDbType.Varchar2),
+                        ("p_result", OracleDbType.Varchar2)
+                    });
 
-                cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
-                var pOtp = new OracleParameter("p_otp", OracleDbType.Varchar2, 10, null, ParameterDirection.Output);
-                var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
-                cmd.Parameters.Add(pOtp);
-                cmd.Parameters.Add(pResult);
-
-                cmd.ExecuteNonQuery();
-
-                string result = pResult.Value?.ToString() ?? "";
-                string otp = pOtp.Value?.ToString() ?? "";
+                string result = otpOutputs["p_result"]?.ToString() ?? "";
+                string otp = otpOutputs["p_otp"]?.ToString() ?? "";
 
                 if (result.Contains("Lỗi") || result.Contains("không tồn tại"))
                 {
@@ -471,24 +333,19 @@ namespace WebAPI.Areas.Public.Controllers
 
             try
             {
-                var conn = _connManager.CreateDefaultConnection();
-                using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
-                {
-                    setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = "ROLE_VERIFY";
-                    setRoleCmd.ExecuteNonQuery();
-                }
-                using var cmd = new OracleCommand("APP.RESET_PASSWORD_CUSTOMER", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
+                using var conn = CreateDefaultConnectionWithRole("ROLE_VERIFY");
+                var resetOutputs = OracleHelper.ExecuteNonQueryWithOutputs(
+                    conn,
+                    "APP.RESET_PASSWORD_CUSTOMER",
+                    new[]
+                    {
+                        ("p_email", OracleDbType.Varchar2, (object?)dto.Email ?? ""),
+                        ("p_otp", OracleDbType.Varchar2, (object?)dto.Otp ?? ""),
+                        ("p_new_password", OracleDbType.Varchar2, (object?)dto.NewPassword ?? "")
+                    },
+                    new[] { ("p_result", OracleDbType.Varchar2) });
 
-                cmd.Parameters.Add("p_email", OracleDbType.Varchar2).Value = dto.Email;
-                cmd.Parameters.Add("p_otp", OracleDbType.Varchar2).Value = dto.Otp;
-                cmd.Parameters.Add("p_new_password", OracleDbType.Varchar2).Value = dto.NewPassword;
-                var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, ParameterDirection.Output);
-                cmd.Parameters.Add(pResult);
-
-                cmd.ExecuteNonQuery();
-
-                string result = pResult.Value?.ToString() ?? "";
+                string result = resetOutputs["p_result"]?.ToString() ?? "";
 
                 if (result.Contains("Lỗi") || result.Contains("không hợp lệ") || result.Contains("không tồn tại"))
                 {
@@ -505,6 +362,15 @@ namespace WebAPI.Areas.Public.Controllers
             {
                 return StatusCode(500, ApiResponse<string>.Fail("Lỗi khi đặt lại mật khẩu: " + ex.Message));
             }
+        }
+
+        private OracleConnection CreateDefaultConnectionWithRole(string role)
+        {
+            var conn = _connManager.CreateDefaultConnection();
+            using var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn);
+            setRoleCmd.Parameters.Add("p_role", OracleDbType.Varchar2).Value = role;
+            setRoleCmd.ExecuteNonQuery();
+            return conn;
         }
     }
 }

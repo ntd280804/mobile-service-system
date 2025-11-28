@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
+using System;
 using System.Linq;
 using System.Security.Claims;
 using WebAPI.Models;
@@ -16,17 +16,14 @@ namespace WebAPI.Areas.Public.Controllers
     public class WebToMobileQrController : ControllerBase
     {
         private readonly WebToMobileQrStore _store;
-        private readonly CustomerQrLoginService _customerQrLoginService;
-        private readonly EmployeeQrLoginService _employeeQrLoginService;
+        private readonly ProxyLoginService _proxyLoginService;
 
         public WebToMobileQrController(
             WebToMobileQrStore store,
-            CustomerQrLoginService customerQrLoginService,
-            EmployeeQrLoginService employeeQrLoginService)
+            ProxyLoginService proxyLoginService)
         {
             _store = store;
-            _customerQrLoginService = customerQrLoginService;
-            _employeeQrLoginService = employeeQrLoginService;
+            _proxyLoginService = proxyLoginService;
         }
 
         [HttpPost("create")]
@@ -98,32 +95,20 @@ namespace WebAPI.Areas.Public.Controllers
                     ? "MOBILE"
                     : request.Platform!;
 
-                WebToMobileQrConfirmResponse response;
+                var isCustomer = HasCustomerRole(session.SourceRoles);
+                var proxyLogin = isCustomer
+                    ? _proxyLoginService.LoginCustomer(session.SourceUsername, platform)
+                    : _proxyLoginService.LoginEmployee(session.SourceUsername, platform);
 
-                if (session.SourceRoles?.Contains("ROLE_KHACHHANG", StringComparison.OrdinalIgnoreCase) == true)
+                _store.MarkConfirmed(session, proxyLogin.Token, proxyLogin.SessionId, proxyLogin.Roles);
+
+                var response = new WebToMobileQrConfirmResponse
                 {
-                    var loginResult = _customerQrLoginService.LoginViaProxy(session.SourceUsername, platform);
-                    _store.MarkConfirmed(session, loginResult.Token!, loginResult.SessionId!, loginResult.Roles ?? string.Empty);
-                    response = new WebToMobileQrConfirmResponse
-                    {
-                        Username = loginResult.Username ?? session.SourceUsername,
-                        Roles = loginResult.Roles ?? string.Empty,
-                        Token = loginResult.Token ?? string.Empty,
-                        SessionId = loginResult.SessionId ?? string.Empty
-                    };
-                }
-                else
-                {
-                    var loginResult = _employeeQrLoginService.LoginViaProxy(session.SourceUsername, platform);
-                    _store.MarkConfirmed(session, loginResult.Token!, loginResult.SessionId!, loginResult.Roles ?? string.Empty);
-                    response = new WebToMobileQrConfirmResponse
-                    {
-                        Username = loginResult.Username ?? session.SourceUsername,
-                        Roles = loginResult.Roles ?? string.Empty,
-                        Token = loginResult.Token ?? string.Empty,
-                        SessionId = loginResult.SessionId ?? string.Empty
-                    };
-                }
+                    Username = proxyLogin.Username,
+                    Roles = proxyLogin.Roles,
+                    Token = proxyLogin.Token,
+                    SessionId = proxyLogin.SessionId
+                };
 
                 return Ok(ApiResponse<WebToMobileQrConfirmResponse>.Ok(response));
             }
@@ -131,6 +116,15 @@ namespace WebAPI.Areas.Public.Controllers
             {
                 return StatusCode(500, ApiResponse<WebToMobileQrConfirmResponse>.Fail(ex.Message));
             }
+        }
+
+        private static bool HasCustomerRole(string? roles)
+        {
+            if (string.IsNullOrWhiteSpace(roles)) return false;
+
+            return roles
+                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Any(role => role.Equals("ROLE_KHACHHANG", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

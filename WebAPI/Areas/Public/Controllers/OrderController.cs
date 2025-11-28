@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
 using System.Data;
 using WebAPI.Helpers;
-using WebAPI.Helpers;
-using WebAPI.Models.Appointment;
 using WebAPI.Models.Order;
-using WebAPI.Services;
 namespace WebAPI.Areas.Public.Controllers
 {
     [Area("Public")]
@@ -14,26 +11,18 @@ namespace WebAPI.Areas.Public.Controllers
     [ApiController]
     public class OrderController : ControllerBase
     {
-        private readonly OracleConnectionManager _connManager;
-        private readonly JwtHelper _jwtHelper;
-        private readonly OracleSessionHelper _oracleSessionHelper;
+        private readonly ControllerHelper _helper;
 
         public OrderController(
-            OracleConnectionManager connManager,
-            JwtHelper jwtHelper,
-            OracleSessionHelper oracleSessionHelper)
+            ControllerHelper helper)
         {
-            _connManager = connManager;
-            _jwtHelper = jwtHelper;
-            _oracleSessionHelper = oracleSessionHelper;
+            _helper = helper;
         }
         [HttpGet("all")]
         [Authorize]
         public IActionResult GetByPhone()
-        {            var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
-            if (conn == null) return unauthorized;
-
-            try
+        {
+            return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 using var cmd = new OracleCommand("APP.GET_ALL_ORDERS", conn);
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -61,15 +50,7 @@ namespace WebAPI.Areas.Public.Controllers
 
 
                 return Ok(list);
-            }
-            catch (OracleException ex)
-            {
-                return StatusCode(500, new { message = "Lỗi Oracle", detail = ex.Message, number = ex.Number });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+            }, "Lỗi khi lấy danh sách đơn hàng");
         }
         string SafeGetString(OracleDataReader r, int index)
         {

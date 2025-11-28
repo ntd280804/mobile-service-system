@@ -18,7 +18,7 @@ namespace WebAPI.Areas.Admin.Controllers
         private const string CommonObjectFilter = "'EMPLOYEE','CUSTOMER','ORDERS','STOCK_IN','STOCK_IN_ITEM'," +
                                                   "'PART','STOCK_OUT','STOCK_OUT_ITEM','PART_REQUEST','PART_REQUEST_ITEM'," +
                                                   "'USER_OTP_LOG','EMPLOYEE_SHIFT','CUSTOMER_APPOINTMENT','INVOICE'," +
-                                                  "'INVOICE_ITEM','SERVICE','ORDER_SERVICE','INVOICE_SERVICE'";
+                                                  "'INVOICE_ITEM','SERVICE','ORDER_SERVICE'";
 
         private readonly ControllerHelper _helper;
 
