@@ -17,6 +17,28 @@ namespace WebApp.Areas.Admin.Controllers
             _httpClient = httpClientFactory.CreateClient("WebApiClient");
             _OracleClientHelper = _oracleclienthelper;
         }
+
+        // =============================
+        // Xem thông tin cá nhân
+        // =============================
+        
+        public IActionResult MyProfile()
+        {
+            var username = HttpContext.Session.GetString("Username");
+            var roleString = HttpContext.Session.GetString("Role") ?? "";
+            var sessionId = HttpContext.Session.GetString("SessionId");
+            
+            var roles = roleString.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                  .Select(r => r.Trim().ToUpperInvariant())
+                                  .ToList();
+
+            ViewData["Username"] = username;
+            ViewData["Roles"] = string.Join(", ", roles);
+            ViewData["SessionId"] = sessionId;
+            ViewData["LoginTime"] = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
+            
+            return View();
+        }
         
 
         // =============================

@@ -1,0 +1,229 @@
+@model dynamic
+
+@{
+    var pageIndex = (int)Model.PageIndex;
+    var totalPages = (int)Model.TotalPages;
+    var hasPreviousPage = (bool)Model.HasPreviousPage;
+    var hasNextPage = (bool)Model.HasNextPage;
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Home";
+    var actionName = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+    var area = ViewContext.RouteData.Values["area"]?.ToString();
+    
+    // Tính toán các trang hiển thị
+    int maxPagesToShow = 5;
+    int startPage = Math.Max(1, pageIndex - maxPagesToShow / 2);
+    int endPage = Math.Min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1)
+    {
+        startPage = Math.Max(1, endPage - maxPagesToShow + 1);
+    }
+}
+
+<style>
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1.5rem 0;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .pagination-info {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin-right: 1rem;
+    }
+
+    .pagination-list {
+        display: flex;
+        gap: 0.375rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .pagination-item {
+        display: flex;
+    }
+
+    .pagination-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+        height: 2.5rem;
+        padding: 0 0.75rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        text-decoration: none;
+        color: #475569;
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .pagination-link:hover:not(.disabled):not(.active) {
+        background-color: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #1e293b;
+        transform: translateY(-1px);
+    }
+
+    .pagination-link.active {
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+        color: white;
+        border-color: #4f46e5;
+        cursor: default;
+        box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+    }
+
+    .pagination-link.disabled {
+        background-color: #f8fafc;
+        color: #cbd5e1;
+        cursor: not-allowed;
+        border-color: #f1f5f9;
+    }
+
+    .pagination-link i {
+        font-size: 1rem;
+    }
+
+    .pagination-ellipsis {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2.5rem;
+        height: 2.5rem;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+
+    @@media (max-width: 767.98px) {
+        .pagination-container {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .pagination-info {
+            margin-right: 0;
+            text-align: center;
+        }
+
+        .pagination-link {
+            min-width: 2.25rem;
+            height: 2.25rem;
+            font-size: 0.8125rem;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .pagination-list {
+            gap: 0.25rem;
+        }
+
+        .pagination-link {
+            min-width: 2rem;
+            height: 2rem;
+            padding: 0 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .pagination-link span.page-text {
+            display: none;
+        }
+    }
+</style>
+
+@if (totalPages > 1)
+{
+    <div class="pagination-container">
+        <div class="pagination-info">
+            <strong>Trang @pageIndex</strong> / @totalPages
+        </div>
+        
+        <ul class="pagination-list">
+            <!-- Previous Button -->
+            <li class="pagination-item">
+                @if (hasPreviousPage)
+                {
+                    <a class="pagination-link" asp-area="@area" asp-controller="@controllerName" asp-action="@actionName" asp-route-page="@(pageIndex - 1)">
+                        <i class="bi bi-chevron-left"></i>
+                        <span class="page-text ms-1">Trước</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="pagination-link disabled">
+                        <i class="bi bi-chevron-left"></i>
+                        <span class="page-text ms-1">Trước</span>
+                    </span>
+                }
+            </li>
+
+            <!-- First Page -->
+            @if (startPage > 1)
+            {
+                <li class="pagination-item">
+                    <a class="pagination-link" asp-area="@area" asp-controller="@controllerName" asp-action="@actionName" asp-route-page="1">1</a>
+                </li>
+                @if (startPage > 2)
+                {
+                    <li class="pagination-item">
+                        <span class="pagination-ellipsis">...</span>
+                    </li>
+                }
+            }
+
+            <!-- Page Numbers -->
+            @for (int i = startPage; i <= endPage; i++)
+            {
+                <li class="pagination-item">
+                    @if (i == pageIndex)
+                    {
+                        <span class="pagination-link active">@i</span>
+                    }
+                    else
+                    {
+                        <a class="pagination-link" asp-area="@area" asp-controller="@controllerName" asp-action="@actionName" asp-route-page="@i">@i</a>
+                    }
+                </li>
+            }
+
+            <!-- Last Page -->
+            @if (endPage < totalPages)
+            {
+                @if (endPage < totalPages - 1)
+                {
+                    <li class="pagination-item">
+                        <span class="pagination-ellipsis">...</span>
+                    </li>
+                }
+                <li class="pagination-item">
+                    <a class="pagination-link" asp-area="@area" asp-controller="@controllerName" asp-action="@actionName" asp-route-page="@totalPages">@totalPages</a>
+                </li>
+            }
+
+            <!-- Next Button -->
+            <li class="pagination-item">
+                @if (hasNextPage)
+                {
+                    <a class="pagination-link" asp-area="@area" asp-controller="@controllerName" asp-action="@actionName" asp-route-page="@(pageIndex + 1)">
+                        <span class="page-text me-1">Sau</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                }
+                else
+                {
+                    <span class="pagination-link disabled">
+                        <span class="page-text me-1">Sau</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </span>
+                }
+            </li>
+        </ul>
+    </div>
+}

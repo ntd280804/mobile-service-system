@@ -1,10 +1,237 @@
-﻿@model WebApp.Models.Permission.UserRoleViewModel
+﻿ @model WebApp.Models.Permission.UserRoleViewModel
 @{
-    ViewData["Title"] = "Danh sách quyền";
+    ViewData["Title"] = "Quản lý Phân quyền";
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">🔐 Quản lý Phân quyền</h2>
+<style>
+    .role-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-left: 4px solid #3b82f6;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .role-header h2 {
+        margin: 0;
+        color: #1e40af;
+        font-weight: 600;
+    }
+
+    .role-card {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.2) 0%, 
+            rgba(224, 242, 254, 0.18) 25%,
+            rgba(186, 230, 253, 0.2) 50%,
+            rgba(224, 242, 254, 0.18) 75%,
+            rgba(240, 253, 255, 0.2) 100%);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .role-card-header {
+        background: linear-gradient(135deg, 
+            rgba(59, 130, 246, 0.8) 0%,
+            rgba(37, 99, 235, 0.85) 25%,
+            rgba(139, 92, 246, 0.9) 50%,
+            rgba(168, 85, 247, 0.85) 75%,
+            rgba(192, 132, 252, 0.8) 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .role-card-body {
+        padding: 1.5rem;
+    }
+
+    .scroll-list {
+        max-height: 300px;
+        overflow-y: auto;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+    .scroll-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .scroll-list::-webkit-scrollbar-track {
+        background: rgba(226, 232, 240, 0.3);
+        border-radius: 4px;
+    }
+
+    .scroll-list::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, rgba(96, 165, 250, 0.6) 0%, rgba(168, 85, 247, 0.6) 100%);
+        border-radius: 4px;
+    }
+
+    .entity-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .entity-list .item {
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.25rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(125, 211, 252, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #475569;
+    }
+
+    .entity-list .item:hover {
+        background: linear-gradient(90deg, 
+            rgba(147, 197, 253, 0.25) 0%,
+            rgba(96, 165, 250, 0.22) 25%, 
+            rgba(168, 85, 247, 0.2) 50%,
+            rgba(96, 165, 250, 0.22) 75%,
+            rgba(147, 197, 253, 0.25) 100%);
+        border-color: rgba(96, 165, 250, 0.4);
+        color: #1e293b;
+        box-shadow: 0 2px 8px rgba(96, 165, 250, 0.2);
+    }
+
+    .entity-list .item.active {
+        background: linear-gradient(135deg, 
+            rgba(96, 165, 250, 0.6) 0%,
+            rgba(59, 130, 246, 0.65) 25%,
+            rgba(147, 51, 234, 0.7) 50%,
+            rgba(168, 85, 247, 0.65) 75%,
+            rgba(192, 132, 252, 0.6) 100%);
+        color: white;
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
+    }
+
+    .form-control, .form-select {
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: rgba(59, 130, 246, 0.5);
+        box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, 
+            rgba(52, 211, 153, 0.7) 0%,
+            rgba(16, 185, 129, 0.75) 50%,
+            rgba(5, 150, 105, 0.7) 100%);
+        border: none;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-gradient:hover {
+        background: linear-gradient(135deg, 
+            rgba(16, 185, 129, 0.9) 0%,
+            rgba(5, 150, 105, 0.95) 50%,
+            rgba(4, 120, 87, 0.9) 100%);
+        box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, 
+            rgba(96, 165, 250, 0.8) 0%,
+            rgba(59, 130, 246, 0.85) 25%,
+            rgba(147, 51, 234, 0.9) 50%,
+            rgba(168, 85, 247, 0.85) 75%,
+            rgba(192, 132, 252, 0.8) 100%);
+        border: none;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(96, 165, 250, 0.3);
+    }
+
+    .btn-primary-gradient:hover {
+        background: linear-gradient(135deg, 
+            rgba(37, 99, 235, 0.9) 0%,
+            rgba(29, 78, 216, 0.95) 25%,
+            rgba(124, 58, 237, 1) 50%,
+            rgba(139, 92, 246, 0.95) 75%,
+            rgba(168, 85, 247, 0.9) 100%);
+        box-shadow: 0 6px 12px rgba(96, 165, 250, 0.4);
+        color: white;
+    }
+
+    .btn-danger-gradient {
+        background: linear-gradient(135deg, 
+            rgba(251, 113, 133, 0.7) 0%,
+            rgba(239, 68, 68, 0.75) 50%, 
+            rgba(220, 38, 38, 0.7) 100%);
+        border: none;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger-gradient:hover {
+        background: linear-gradient(135deg, 
+            rgba(239, 68, 68, 0.9) 0%,
+            rgba(220, 38, 38, 0.95) 50%, 
+            rgba(185, 28, 28, 0.9) 100%);
+        box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+        color: white;
+    }
+
+    .btn-warning-gradient {
+        background: linear-gradient(135deg, 
+            rgba(251, 191, 36, 0.7) 0%,
+            rgba(245, 158, 11, 0.75) 50%,
+            rgba(217, 119, 6, 0.7) 100%);
+        border: none;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-warning-gradient:hover {
+        background: linear-gradient(135deg, 
+            rgba(245, 158, 11, 0.9) 0%,
+            rgba(217, 119, 6, 0.95) 50%,
+            rgba(180, 83, 9, 0.9) 100%);
+        box-shadow: 0 6px 12px rgba(245, 158, 11, 0.4);
+        color: white;
+    }
+</style>
+
+<div class="role-header">
+    <h2>Quản lý Phân quyền</h2>
+</div>
 
     @if (TempData["Error"] != null)
     {
@@ -29,97 +256,111 @@
 
     <div class="row mb-4">
         <div class="col-md-4 mb-3">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <strong>👥 Danh sách User</strong>
+            <div class="role-card">
+                <div class="role-card-header">
+                    <i class="bi bi-people"></i> Danh sách User
                 </div>
-                <div class="card-body p-0">
-                    <ul id="user-list" class="scroll-list entity-list mb-0">
+                <div class="role-card-body">
+                    <div class="mb-3">
+                        <input type="text" id="search-user" class="form-control" placeholder="Tìm kiếm user..." />
+                    </div>
+                    <ul id="user-list" class="scroll-list entity-list">
                         @if (Model.Users?.Any() == true)
                         {
                             foreach (var u in Model.Users)
                             {
-                                <li class="list-group-item item" data-type="user" data-value="@u.Username">
+                                <li class="item" data-type="user" data-value="@u.Username">
                                     <i class="bi bi-person"></i> @u.Username
                                 </li>
                             }
                         }
                         else
                         {
-                            <li class="list-group-item text-muted">Không có user</li>
+                            <li class="item text-muted">Không có user</li>
                         }
                     </ul>
+                    <div id="no-user-result" class="text-muted text-center py-3" style="display: none;">
+                        <i class="bi bi-search"></i> Không tìm thấy user
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4 mb-3">
-            <div class="card shadow">
-                <div class="card-header bg-secondary text-white">
-                    <strong>🛡️ Danh sách Role</strong>
+            <div class="role-card">
+                <div class="role-card-header">
+                    <i class="bi bi-shield-lock"></i> Danh sách Role
                 </div>
-                <div class="card-body p-0">
-                    <ul id="role-list" class="scroll-list entity-list mb-0">
+                <div class="role-card-body">
+                    <div class="mb-3">
+                        <input type="text" id="search-role" class="form-control" placeholder="Tìm kiếm role..." />
+                    </div>
+                    <ul id="role-list" class="scroll-list entity-list">
                         @if (Model.Roles?.Any() == true)
                         {
                             foreach (var r in Model.Roles)
                             {
-                                <li class="list-group-item item" data-type="role" data-value="@r.Role">
+                                <li class="item" data-type="role" data-value="@r.Role">
                                     <i class="bi bi-shield-lock"></i> @r.Role
                                 </li>
                             }
                         }
                         else
                         {
-                            <li class="list-group-item text-muted">Không có role</li>
+                            <li class="item text-muted">Không có role</li>
                         }
                     </ul>
+                    <div id="no-role-result" class="text-muted text-center py-3" style="display: none;">
+                        <i class="bi bi-search"></i> Không tìm thấy role
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4 mb-3">
-            <div class="card shadow">
-                <div class="card-header bg-info text-white">
-                    <strong>📋 Role của User</strong>
+            <div class="role-card">
+                <div class="role-card-header">
+                    <i class="bi bi-card-checklist"></i> Role của User
                 </div>
-                <div class="card-body p-0">
-                    <ul id="user-role-list" class="scroll-list entity-list mb-0">
-                        <li class="list-group-item text-muted">Chọn user để xem role</li>
+                <div class="role-card-body p-0">
+                    <ul id="user-role-list" class="scroll-list entity-list">
+                        <li class="item text-muted">Chọn user để xem role</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white">
-                    <strong>➕ Tạo Role mới</strong>
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="role-card">
+                <div class="role-card-header">
+                    <i class="bi bi-plus-circle"></i> Tạo Role mới
                 </div>
-                <div class="card-body">
+                <div class="role-card-body">
                     <form asp-area="Admin" asp-controller="Role" asp-action="CreateRole" method="post">
                         <div class="form-group mb-3">
-                            <label for="roleName">Tên Role</label>
+                            <label for="roleName" class="fw-semibold mb-2">Tên Role</label>
                             <input type="text" class="form-control" name="roleName" placeholder="Nhập tên role" required />
                         </div>
-                        <button type="submit" class="btn btn-success">
+                        <button type="submit" class="btn btn-gradient w-100">
                             <i class="bi bi-plus-circle"></i> Thêm Role
                         </button>
                     </form>
                 </div>
             </div>
+        </div>
 
-            <div class="card shadow mt-4">
-                <div class="card-header bg-danger text-white">
-                    <strong>🗑️ Xóa Role</strong>
+        <div class="col-md-6 mb-3">
+            <div class="role-card">
+                <div class="role-card-header">
+                    <i class="bi bi-trash"></i> Xóa Role
                 </div>
-                <div class="card-body">
+                <div class="role-card-body">
                     <form asp-area="Admin" asp-controller="Role" asp-action="DeleteRole" method="post">
                         <div class="form-group mb-3">
-                            <label for="roleName">Chọn Role</label>
-                            <select name="roleName" class="form-control" required>
+                            <label for="roleName" class="fw-semibold mb-2">Chọn Role</label>
+                            <select name="roleName" class="form-select" required>
                                 <option value="">-- Chọn Role --</option>
                                 @foreach (var u in Model.Roles)
                                 {
@@ -127,22 +368,26 @@
                                 }
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-danger">Xóa Role</button>
+                        <button type="submit" class="btn btn-danger-gradient w-100">
+                            <i class="bi bi-trash"></i> Xóa Role
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <strong>🔐 Gán Role cho User</strong>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="role-card">
+                <div class="role-card-header">
+                    <i class="bi bi-person-plus"></i> Gán Role cho User
                 </div>
-                <div class="card-body">
+                <div class="role-card-body">
                     <form asp-area="Admin" asp-controller="Role" asp-action="AssignRole" method="post">
                         <div class="form-group mb-3">
-                            <label for="userName">Chọn User</label>
-                            <select name="userName" class="form-control" required>
+                            <label for="userName" class="fw-semibold mb-2">Chọn User</label>
+                            <select name="userName" class="form-select" required>
                                 <option value="">-- Chọn User --</option>
                                 @foreach (var u in Model.Users)
                                 {
@@ -151,8 +396,8 @@
                             </select>
                         </div>
                         <div class="form-group mb-3">
-                            <label for="roleName">Chọn Role</label>
-                            <select name="roleName" class="form-control" required>
+                            <label for="roleName" class="fw-semibold mb-2">Chọn Role</label>
+                            <select name="roleName" class="form-select" required>
                                 <option value="">-- Chọn Role --</option>
                                 @foreach (var r in Model.Roles)
                                 {
@@ -160,22 +405,24 @@
                                 }
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary-gradient w-100">
                             <i class="bi bi-person-plus"></i> Gán Role
                         </button>
                     </form>
                 </div>
             </div>
+        </div>
 
-            <div class="card shadow mt-4">
-                <div class="card-header bg-warning text-white">
-                    <strong>⚠️ Thu hồi Role từ User</strong>
+        <div class="col-md-6 mb-3">
+            <div class="role-card">
+                <div class="role-card-header">
+                    <i class="bi bi-person-dash"></i> Thu hồi Role từ User
                 </div>
-                <div class="card-body">
+                <div class="role-card-body">
                     <form asp-area="Admin" asp-controller="Role" asp-action="RevokeRole" method="post">
                         <div class="form-group mb-3">
-                            <label for="revoke-username">Chọn User</label>
-                            <select id="revoke-username" name="userName" class="form-control" required>
+                            <label for="revoke-username" class="fw-semibold mb-2">Chọn User</label>
+                            <select id="revoke-username" name="userName" class="form-select" required>
                                 <option value="">-- Chọn User --</option>
                                 @foreach (var u in Model.Users)
                                 {
@@ -184,8 +431,8 @@
                             </select>
                         </div>
                         <div class="form-group mb-3">
-                            <label for="revoke-role">Chọn Role</label>
-                            <select id="revoke-role" name="roleName" class="form-control" required>
+                            <label for="revoke-role" class="fw-semibold mb-2">Chọn Role</label>
+                            <select id="revoke-role" name="roleName" class="form-select" required>
                                 <option value="">-- Chọn Role --</option>
                                 @foreach (var r in Model.Roles)
                                 {
@@ -193,7 +440,7 @@
                                 }
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-warning">
+                        <button type="submit" class="btn btn-warning-gradient w-100">
                             <i class="bi bi-person-dash"></i> Thu hồi Role
                         </button>
                     </form>
@@ -201,9 +448,6 @@
             </div>
         </div>
     </div>
-</div>
-
-
 
 @section Scripts {
     <script>
@@ -212,6 +456,62 @@
         const userRoleList = document.getElementById('user-role-list');
         const revokeUsernameSelect = document.getElementById('revoke-username');
         const revokeRoleSelect = document.getElementById('revoke-role');
+        const searchUserInput = document.getElementById('search-user');
+        const searchRoleInput = document.getElementById('search-role');
+        const noUserResult = document.getElementById('no-user-result');
+        const noRoleResult = document.getElementById('no-role-result');
+
+        // Tìm kiếm User
+        searchUserInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const userItems = userList.querySelectorAll('.item[data-type="user"]');
+            let visibleCount = 0;
+
+            userItems.forEach(item => {
+                const username = item.dataset.value.toLowerCase();
+                if (username.includes(searchTerm)) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Hiển thị thông báo nếu không tìm thấy
+            if (visibleCount === 0 && userItems.length > 0) {
+                userList.style.display = 'none';
+                noUserResult.style.display = 'block';
+            } else {
+                userList.style.display = '';
+                noUserResult.style.display = 'none';
+            }
+        });
+
+        // Tìm kiếm Role
+        searchRoleInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const roleItems = document.querySelectorAll('#role-list .item[data-type="role"]');
+            let visibleCount = 0;
+
+            roleItems.forEach(item => {
+                const roleName = item.dataset.value.toLowerCase();
+                if (roleName.includes(searchTerm)) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Hiển thị thông báo nếu không tìm thấy
+            if (visibleCount === 0 && roleItems.length > 0) {
+                document.getElementById('role-list').style.display = 'none';
+                noRoleResult.style.display = 'block';
+            } else {
+                document.getElementById('role-list').style.display = '';
+                noRoleResult.style.display = 'none';
+            }
+        });
 
         // Hàm lấy role của user
         async function loadRolesOfUser(username) {
@@ -235,18 +535,18 @@
             li.classList.add('active');
 
             const username = li.dataset.value;
-            userRoleList.innerHTML = `<li class="list-group-item text-muted">Đang tải role...</li>`;
+            userRoleList.innerHTML = `<li class="item text-muted">Đang tải role...</li>`;
 
             const roles = await loadRolesOfUser(username);
             userRoleList.innerHTML = '';
             if (!roles) {
-                userRoleList.innerHTML = `<li class="list-group-item text-danger">Không thể tải role</li>`;
+                userRoleList.innerHTML = `<li class="item text-danger">Không thể tải role</li>`;
             } else if (roles.length === 0) {
-                userRoleList.innerHTML = `<li class="list-group-item text-muted">Không có role</li>`;
+                userRoleList.innerHTML = `<li class="item text-muted">Không có role</li>`;
             } else {
                 roles.forEach(roleName => {
                     const liRole = document.createElement('li');
-                    liRole.className = 'list-group-item py-1 px-2';
+                    liRole.className = 'item';
                     liRole.innerHTML = `<i class="bi bi-shield-lock"></i> ${roleName}`;
                     userRoleList.appendChild(liRole);
                 });
@@ -275,29 +575,3 @@
         });
     </script>
 }
-
-
-
-<style>
-    .scroll-list {
-        max-height: 150px;
-        overflow-y: auto;
-        font-size: 0.75rem;
-    }
-
-    .entity-list .item {
-        cursor: pointer;
-        transition: background-color 0.2s;
-        padding: 4px 8px;
-    }
-
-        .entity-list .item:hover {
-            background-color: #f0f0f0;
-        }
-
-        .entity-list .item.active {
-            background-color: #007bff;
-            color: #fff;
-        }
-
-</style>

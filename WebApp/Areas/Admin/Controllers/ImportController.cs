@@ -27,29 +27,42 @@ namespace WebApp.Areas.Admin.Controllers
 
         // GET: /Admin/Import
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+            
+            const int pageSize = 10;
+            
             try
             {
-                
                 var response = await _httpClient.GetAsync("api/admin/import/getallimport");
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Try to read error details from API response
                     var errorContent = await response.Content.ReadAsStringAsync();
                     TempData["Error"] = $"Không thể tải danh sách import: {response.ReasonPhrase} - {errorContent}";
-                    return View(new List<ImportViewModel>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<ImportViewModel>.Create(
+                        new List<ImportViewModel>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
 
                 var list = await response.Content.ReadFromJsonAsync<List<ImportViewModel>>() ?? new List<ImportViewModel>();
-                return View(list);
+                var paginatedList = WebApp.Models.Common.PaginatedList<ImportViewModel>.Create(
+                    list, 
+                    page, 
+                    pageSize);
+                return View(paginatedList);
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<ImportViewModel>());
+                var emptyList = WebApp.Models.Common.PaginatedList<ImportViewModel>.Create(
+                    new List<ImportViewModel>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 

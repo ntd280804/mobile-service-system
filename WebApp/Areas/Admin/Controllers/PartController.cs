@@ -26,12 +26,15 @@ namespace WebApp.Areas.Admin.Controllers
         // Price được đổi từ long sang decimal? để khớp với kiểu trả về từ API (decimal).
         
 
-        // --- Index: lấy danh sách nhân viên ---
+        // --- Index: lấy danh sách linh kiện ---
         [HttpGet]
-        public async Task<IActionResult> Index(string name = null, string serial = null, string manufacturer = null, string status = null, decimal? priceMin = null, decimal? priceMax = null)
+        public async Task<IActionResult> Index(int page = 1, string name = null, string serial = null, string manufacturer = null, string status = null, decimal? priceMin = null, decimal? priceMax = null)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+            
+            const int pageSize = 10;
+            
             try
             {
                 var response = await _httpClient.GetAsync("api/Admin/Part");
@@ -53,7 +56,11 @@ namespace WebApp.Areas.Admin.Controllers
                     if (priceMax.HasValue)
                         parts = parts.Where(p => p.Price.HasValue && p.Price.Value <= priceMax.Value).ToList();
 
-                    return View(parts);
+                    var paginatedList = WebApp.Models.Common.PaginatedList<PartDto>.Create(
+                        parts ?? new List<PartDto>(), 
+                        page, 
+                        pageSize);
+                    return View(paginatedList);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -64,13 +71,21 @@ namespace WebApp.Areas.Admin.Controllers
                 else
                 {
                     TempData["Error"] = "Không thể tải danh sách linh kiện: " + response.ReasonPhrase;
-                    return View(new List<PartDto>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<PartDto>.Create(
+                        new List<PartDto>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<PartDto>());
+                var emptyList = WebApp.Models.Common.PaginatedList<PartDto>.Create(
+                    new List<PartDto>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 

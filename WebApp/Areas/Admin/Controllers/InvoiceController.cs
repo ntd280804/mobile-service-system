@@ -21,10 +21,12 @@ namespace WebApp.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, string invoiceId = null, string customerPhone = null, string dateFrom = null, string dateTo = null)
         {
             if (!_oracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+
+            const int pageSize = 10;
 
             try
             {
@@ -33,16 +35,44 @@ namespace WebApp.Areas.Admin.Controllers
                 {
                     var error = await response.Content.ReadAsStringAsync();
                     TempData["Error"] = $"Không thể tải danh sách hóa đơn: {response.ReasonPhrase} - {error}";
-                    return View(new List<InvoiceSummaryViewModel>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<InvoiceSummaryViewModel>.Create(
+                        new List<InvoiceSummaryViewModel>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
 
                 var list = await response.Content.ReadFromJsonAsync<List<InvoiceSummaryViewModel>>() ?? new List<InvoiceSummaryViewModel>();
-                return View(list);
+                
+                // Client-side filtering
+                var filtered = list;
+                
+                if (!string.IsNullOrWhiteSpace(invoiceId) && int.TryParse(invoiceId, out var invId))
+                    filtered = filtered.Where(i => i.InvoiceId == invId).ToList();
+                
+                if (!string.IsNullOrWhiteSpace(customerPhone))
+                    filtered = filtered.Where(i => i.CustomerPhone != null && i.CustomerPhone.Contains(customerPhone)).ToList();
+                
+                if (!string.IsNullOrWhiteSpace(dateFrom) && DateTime.TryParse(dateFrom, out var fromDate))
+                    filtered = filtered.Where(i => i.InvoiceDate.Date >= fromDate.Date).ToList();
+                
+                if (!string.IsNullOrWhiteSpace(dateTo) && DateTime.TryParse(dateTo, out var toDate))
+                    filtered = filtered.Where(i => i.InvoiceDate.Date <= toDate.Date).ToList();
+                
+                var paginatedList = WebApp.Models.Common.PaginatedList<InvoiceSummaryViewModel>.Create(
+                    filtered, 
+                    page, 
+                    pageSize);
+                return View(paginatedList);
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<InvoiceSummaryViewModel>());
+                var emptyList = WebApp.Models.Common.PaginatedList<InvoiceSummaryViewModel>.Create(
+                    new List<InvoiceSummaryViewModel>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 

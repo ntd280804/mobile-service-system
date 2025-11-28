@@ -5,111 +5,315 @@
     var partsRequest = ViewBag.PartsRequest as List<PartDto> ?? new List<PartDto>();
 }
 
-<h2>Chi tiết linh kiện #@Model.PartId</h2>
+<style>
+    .detail-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-left: 4px solid #3b82f6;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-<div class="card">
-    <div class="card-body">
-        <dl class="row">
-            <dt class="col-sm-3">Tên linh kiện</dt>
-            <dd class="col-sm-9">@Model.Name</dd>
+    .detail-header h2 {
+        margin: 0;
+        color: #1e40af;
+        font-weight: 600;
+    }
 
-            <dt class="col-sm-3">Hãng sản xuất</dt>
-            <dd class="col-sm-9">@Model.Manufacturer</dd>
+    .detail-card {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.2) 0%, 
+            rgba(224, 242, 254, 0.18) 25%,
+            rgba(186, 230, 253, 0.2) 50%,
+            rgba(224, 242, 254, 0.18) 75%,
+            rgba(240, 253, 255, 0.2) 100%);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
 
-            <dt class="col-sm-3">Serial</dt>
-            <dd class="col-sm-9">@Model.Serial</dd>
+    .detail-card-body {
+        padding: 1.5rem;
+    }
 
-            <dt class="col-sm-3">QR</dt>
-            <dd class="col-sm-9">
-                @if (Model.QRImage != null && Model.QRImage.Length > 0)
-                {
-                    var base64 = Convert.ToBase64String(Model.QRImage);
-                    var imgSrc = $"data:image/png;base64,{base64}";
-                    <img src="@imgSrc" alt="QR Code" style="width:120px; height:120px;" />
-                }
-            </dd>
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
 
-            <dt class="col-sm-3">Trạng thái</dt>
-            <dd class="col-sm-9">@Model.Status</dd>
+    .info-item {
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 0.5rem;
+        border: 1px solid rgba(125, 211, 252, 0.2);
+    }
 
-            <dt class="col-sm-3">Stockin ID</dt>
-            <dd class="col-sm-9"><a asp-area="Admin" 
-                               asp-controller="Import" 
-                               asp-action="Details" 
-                               asp-route-id="@Model.StockinID"
-                               class="text-decoration-none fw-bold text-primary">
-                                @Model.StockinID
-                            </a></dd>
+    .info-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
 
-            <dt class="col-sm-3">Order ID</dt>
-            <dd class="col-sm-9">
-                @if (Model.OrderId.HasValue)
-                {
+    .info-value {
+        color: #1e293b;
+        font-size: 1rem;
+    }
+
+    .qr-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, 
+            rgba(148, 163, 184, 0.7) 0%,
+            rgba(100, 116, 139, 0.75) 50%,
+            rgba(71, 85, 105, 0.7) 100%);
+        border: none;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-back:hover {
+        background: linear-gradient(135deg, 
+            rgba(100, 116, 139, 0.8) 0%,
+            rgba(71, 85, 105, 0.85) 50%,
+            rgba(51, 65, 85, 0.8) 100%);
+        color: white;
+    }
+
+    .table-container {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.2) 0%, 
+            rgba(224, 242, 254, 0.18) 25%,
+            rgba(186, 230, 253, 0.2) 50%,
+            rgba(224, 242, 254, 0.18) 75%,
+            rgba(240, 253, 255, 0.2) 100%);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid rgba(125, 211, 252, 0.3);
+    }
+
+    .detail-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: collapse;
+    }
+
+    .detail-table thead {
+        background: linear-gradient(135deg, 
+            rgba(59, 130, 246, 0.8) 0%,
+            rgba(37, 99, 235, 0.85) 25%,
+            rgba(139, 92, 246, 0.9) 50%,
+            rgba(168, 85, 247, 0.85) 75%,
+            rgba(192, 132, 252, 0.8) 100%);
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .detail-table thead th {
+        padding: 1rem;
+        font-weight: 600;
+        text-align: left;
+        font-size: 0.875rem;
+        border: none;
+    }
+
+    .detail-table tbody tr {
+        border-bottom: 1px solid rgba(186, 230, 253, 0.25);
+        transition: background 0.3s ease;
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .detail-table tbody tr:hover {
+        background: linear-gradient(90deg, 
+            rgba(147, 197, 253, 0.25) 0%,
+            rgba(96, 165, 250, 0.22) 50%,
+            rgba(147, 197, 253, 0.25) 100%);
+    }
+
+    .detail-table tbody td {
+        padding: 1rem;
+        color: #475569;
+        font-size: 0.875rem;
+        border: none;
+    }
+
+    @@media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-table thead {
+            display: none;
+        }
+
+        .detail-table tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(125, 211, 252, 0.3);
+            border-radius: 0.5rem;
+        }
+
+        .detail-table tbody td {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(186, 230, 253, 0.2);
+        }
+
+        .detail-table tbody td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .detail-table tbody td:last-child {
+            border-bottom: none;
+        }
+    }
+</style>
+
+<div class="detail-header">
+    <h2>Chi tiết linh kiện #@Model.PartId</h2>
+</div>
+
+<div class="detail-card">
+    <div class="detail-card-body">
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Tên linh kiện</div>
+                <div class="info-value">@Model.Name</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Hãng sản xuất</div>
+                <div class="info-value">@Model.Manufacturer</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Serial</div>
+                <div class="info-value">@Model.Serial</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Trạng thái</div>
+                <div class="info-value">@Model.Status</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">Stockin ID</div>
+                <div class="info-value">
                     <a asp-area="Admin" 
-                       asp-controller="Order" 
+                       asp-controller="Import" 
                        asp-action="Details" 
-                       asp-route-id="@Model.OrderId.Value"
+                       asp-route-id="@Model.StockinID"
                        class="text-decoration-none fw-bold text-primary">
-                        @Model.OrderId.Value
+                        @Model.StockinID
                     </a>
-                }
-                else
-                {
-                    <text>-</text>
-                }
-            </dd>
+                </div>
+            </div>
 
-            <dt class="col-sm-3">Giá</dt>
-            <dd class="col-sm-9">@(Model.Price?.ToString() ?? "-")</dd>
-        </dl>
+            <div class="info-item">
+                <div class="info-label">Order ID</div>
+                <div class="info-value">
+                    @if (Model.OrderId.HasValue)
+                    {
+                        <a asp-area="Admin" 
+                           asp-controller="Order" 
+                           asp-action="Details" 
+                           asp-route-id="@Model.OrderId.Value"
+                           class="text-decoration-none fw-bold text-primary">
+                            @Model.OrderId.Value
+                        </a>
+                    }
+                    else
+                    {
+                        <text>-</text>
+                    }
+                </div>
+            </div>
 
-        <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+            <div class="info-item">
+                <div class="info-label">Giá</div>
+                <div class="info-value">@(Model.Price?.ToString("N0") ?? "-") đ</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-label">QR Code</div>
+                <div class="info-value">
+                    @if (Model.QRImage != null && Model.QRImage.Length > 0)
+                    {
+                        var base64 = Convert.ToBase64String(Model.QRImage);
+                        var imgSrc = $"data:image/png;base64,{base64}";
+                        <img src="@imgSrc" alt="QR Code" class="qr-image" />
+                    }
+                    else
+                    {
+                        <text>-</text>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a asp-action="Index" class="btn-back">Quay lại</a>
+        </div>
     </div>
 </div>
 
 @if (Model.OrderId.HasValue && partsRequest.Any())
 {
-    <div class="card mt-3">
-        <div class="card-header">
-            <h5 class="mb-0">Danh sách linh kiện được yêu cầu (Part Request) - Order #@Model.OrderId.Value</h5>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Mã linh kiện</th>
-                            <th>Tên linh kiện</th>
-                            <th>Nhà sản xuất</th>
-                            <th>Serial</th>
-                            <th>Trạng thái</th>
-                            <th>Giá</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var part in partsRequest)
-                        {
-                            <tr>
-                                <td>@part.PartId</td>
-                                <td>@part.Name</td>
-                                <td>@(string.IsNullOrEmpty(part.Manufacturer) ? "-" : part.Manufacturer)</td>
-                                <td>
-                                    <a asp-area="Admin"
-                                       asp-controller="Part"
-                                       asp-action="Details"
-                                       asp-route-serial="@part.Serial"
-                                       class="text-decoration-none fw-bold text-primary">
-                                        @part.Serial
-                                    </a>
-                                </td>
-                                <td>@part.Status</td>
-                                <td>@(part.Price.HasValue ? part.Price.Value.ToString("N0") + " đ" : "-")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="detail-header">
+        <h2>Danh sách linh kiện được yêu cầu - Order #@Model.OrderId.Value</h2>
+    </div>
+
+    <div class="table-container">
+        <table class="detail-table">
+            <thead>
+                <tr>
+                    <th>Mã linh kiện</th>
+                    <th>Tên linh kiện</th>
+                    <th>Nhà sản xuất</th>
+                    <th>Serial</th>
+                    <th>Trạng thái</th>
+                    <th>Giá</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var part in partsRequest)
+                {
+                    <tr>
+                        <td data-label="Mã linh kiện">@part.PartId</td>
+                        <td data-label="Tên linh kiện">@part.Name</td>
+                        <td data-label="Nhà sản xuất">@(string.IsNullOrEmpty(part.Manufacturer) ? "-" : part.Manufacturer)</td>
+                        <td data-label="Serial">
+                            <a asp-area="Admin"
+                               asp-controller="Part"
+                               asp-action="Details"
+                               asp-route-serial="@part.Serial"
+                               class="text-decoration-none fw-bold text-primary">
+                                @part.Serial
+                            </a>
+                        </td>
+                        <td data-label="Trạng thái">@part.Status</td>
+                        <td data-label="Giá">@(part.Price.HasValue ? part.Price.Value.ToString("N0") + " đ" : "-")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     </div>
 }
 else if (Model.OrderId.HasValue)
@@ -118,5 +322,6 @@ else if (Model.OrderId.HasValue)
         <i class="bi bi-info-circle"></i> Order #@Model.OrderId.Value chưa có linh kiện nào được yêu cầu.
     </div>
 }
+
 
 

@@ -18,79 +18,203 @@
         new SelectListItem { Value = "REPAIR", Text = "REPAIR" }
     };
 }
-<h2>@ViewData["Title"]</h2>
 
-<form asp-action="Create" method="post">
-    <div class="form-group">
-        <label>Customer Phone</label>
-        <select asp-for="CustomerPhone" class="form-control" id="CustomerPhoneSelect" asp-items="ViewBag.CustomerPhones">
-            <option value="">-- Chọn khách hàng --</option>
-        </select>
-        <span asp-validation-for="CustomerPhone" class="text-danger"></span>
+<style>
+    .detail-page { 
+        padding: 2rem; 
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%); 
+        min-height: 100vh; 
+    }
+    .detail-header { 
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%); 
+        border-radius: 12px; 
+        padding: 1.5rem; 
+        margin-bottom: 2rem; 
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+    }
+    .detail-header h2 { 
+        margin: 0; 
+        color: #1e40af; 
+        font-weight: 600; 
+        font-size: 1.75rem; 
+    }
+    .detail-card { 
+        background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,250,251,0.95) 100%); 
+        border: 1px solid rgba(59,130,246,0.2); 
+        border-radius: 12px; 
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08); 
+        overflow: hidden; 
+        margin-bottom: 1.5rem; 
+    }
+    .detail-card-body { 
+        padding: 1.5rem; 
+    }
+    .detail-card-header { 
+        background: linear-gradient(135deg, rgba(59,130,246,0.8) 0%, rgba(139,92,246,0.8) 100%); 
+        padding: 1rem 1.5rem; 
+        color: white; 
+        font-weight: 600; 
+        font-size: 1.1rem; 
+    }
+    .form-label { 
+        font-weight: 600; 
+        color: #4b5563; 
+        margin-bottom: 0.5rem; 
+        display: block; 
+    }
+    .form-control { 
+        border: 1px solid rgba(59,130,246,0.3); 
+        border-radius: 8px; 
+        transition: all 0.3s ease; 
+    }
+    .form-control:focus { 
+        border-color: #3b82f6; 
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.1); 
+        outline: none; 
+    }
+    .btn-gradient { 
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); 
+        color: white; 
+        border: none; 
+        padding: 0.75rem 2rem; 
+        font-weight: 600; 
+        border-radius: 8px; 
+        transition: all 0.3s ease; 
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3); 
+    }
+    .btn-gradient:hover { 
+        transform: translateY(-2px); 
+        box-shadow: 0 4px 12px rgba(59,130,246,0.4); 
+        color: white; 
+    }
+    .btn-add-row { 
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); 
+        color: white; 
+        border: none; 
+        padding: 0.5rem 1rem; 
+        font-weight: 600; 
+        border-radius: 6px; 
+        transition: all 0.3s ease; 
+    }
+    .btn-add-row:hover { 
+        transform: translateY(-1px); 
+        box-shadow: 0 2px 8px rgba(107,114,128,0.4); 
+        color: white; 
+    }
+    .table-container { 
+        background: white; 
+        border-radius: 8px; 
+        overflow: hidden; 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+    }
+    .detail-table { 
+        margin: 0; 
+    }
+    .detail-table thead { 
+        background: linear-gradient(135deg, rgba(59,130,246,0.8) 0%, rgba(139,92,246,0.8) 100%); 
+        color: white; 
+    }
+    .detail-table thead th { 
+        font-weight: 600; 
+        border: none; 
+        padding: 1rem; 
+        font-size: 0.95rem; 
+    }
+    .detail-table tbody tr { 
+        border-bottom: 1px solid rgba(59,130,246,0.1); 
+        transition: all 0.2s ease; 
+    }
+    .detail-table tbody tr:hover { 
+        background: linear-gradient(135deg, rgba(59,130,246,0.03) 0%, rgba(139,92,246,0.03) 100%); 
+    }
+    .detail-table tbody td { 
+        padding: 1rem; 
+        vertical-align: middle; 
+    }
+    @@media (max-width: 768px) { 
+        .detail-page { padding: 1rem; } 
+        .detail-header h2 { font-size: 1.5rem; } 
+        .detail-card-body { padding: 1rem; } 
+        .btn-gradient { width: 100%; } 
+    }
+</style>
+<div class="detail-page">
+    <div class="detail-header">
+        <h2>@ViewData["Title"]</h2>
     </div>
 
-    <div class="form-group">
-        <label>Handler Username</label>
-        <select asp-for="HandlerEmpName" class="form-control" id="HandlerEmpSelect" asp-items="ViewBag.HandlerUsernames">
-            <option value="">-- Chọn nhân viên xử lý --</option>
-        </select>
-        <span asp-validation-for="HandlerEmpName" class="text-danger"></span>
-    </div>
+    <form asp-action="Create" method="post">
+        <div class="detail-card">
+            <div class="detail-card-header">Thông tin đơn hàng</div>
+            <div class="detail-card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Customer Phone</label>
+                        <select asp-for="CustomerPhone" class="form-control" id="CustomerPhoneSelect" asp-items="ViewBag.CustomerPhones">
+                            <option value="">-- Chọn khách hàng --</option>
+                        </select>
+                        <span asp-validation-for="CustomerPhone" class="text-danger"></span>
+                    </div>
 
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Handler Username</label>
+                        <select asp-for="HandlerEmpName" class="form-control" id="HandlerEmpSelect" asp-items="ViewBag.HandlerUsernames">
+                            <option value="">-- Chọn nhân viên xử lý --</option>
+                        </select>
+                        <span asp-validation-for="HandlerEmpName" class="text-danger"></span>
+                    </div>
 
-    <div class="form-group">
-        
-        <input type="hidden" asp-for="ReceiverEmpName" class="form-control" />
-    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Order Type</label>
+                        @Html.DropDownListFor(m => m.OrderType, orderTypeList, "-- Chọn loại đơn --", new { @class = "form-control" })
+                        <span asp-validation-for="OrderType" class="text-danger"></span>
+                    </div>
 
-    <div class="form-group">
-        <label>Order Type</label>
-        @Html.DropDownListFor(m => m.OrderType, orderTypeList, "-- Chọn loại đơn --", new { @class = "form-control" })
-        <span asp-validation-for="OrderType" class="text-danger"></span>
-    </div>
+                    <div class="col-12">
+                        <label class="form-label">Description</label>
+                        <textarea asp-for="Description" class="form-control"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
 
+                    <input type="hidden" asp-for="ReceiverEmpName" />
+                    <input type="hidden" asp-for="Status" />
+                </div>
+            </div>
+        </div>
 
-
-    <div class="form-group">
-        <input type="hidden" asp-for="Status" class="form-control" />
-        
-    </div>
-
-    <div class="form-group">
-        <label>Description</label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-
-    <hr />
-    <h4>Dịch vụ</h4>
-    <div class="table-responsive">
-        <table class="table table-bordered" id="servicesTable">
-            <thead>
-                <tr>
-                    <th style="width:50%">Dịch vụ</th>
-                    <th style="width:15%">Đơn giá</th>
-                    <th style="width:15%">Số lượng</th>
-                    <th style="width:15%">Thành tiền</th>
-                    <th style="width:5%"></th>
-                </tr>
-            </thead>
+        <div class="detail-card">
+            <div class="detail-card-header">Dịch vụ</div>
+            <div class="detail-card-body">
+                <div class="table-container">
+                    <table class="table detail-table" id="servicesTable">
+                        <thead>
+                            <tr>
+                                <th style="width:50%">Dịch vụ</th>
+                                <th style="width:15%">Đơn giá</th>
+                                <th style="width:15%">Số lượng</th>
+                                <th style="width:15%">Thành tiền</th>
+                                <th style="width:5%"></th>
+                            </tr>
+                        </thead>
             <tbody>
             </tbody>
             <tfoot>
                 <tr>
                     <td colspan="5">
-                        <button type="button" class="btn btn-sm btn-secondary" id="addServiceRow">Thêm dòng</button>
+                        <button type="button" class="btn-add-row" id="addServiceRow">Thêm dòng</button>
                     </td>
                 </tr>
             </tfoot>
         </table>
     </div>
+            </div>
+        </div>
 
-    <div id="serviceItemsContainer"></div>
+        <div id="serviceItemsContainer"></div>
 
-    <button type="submit" class="btn btn-primary mt-2">Tạo đơn</button>
-</form>
+        <button type="submit" class="btn-gradient mt-3">Tạo đơn</button>
+    </form>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

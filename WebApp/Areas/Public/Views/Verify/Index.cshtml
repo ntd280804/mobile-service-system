@@ -3,11 +3,127 @@
     ViewData["Title"] = "Xác thực PDF hóa đơn";
 }
 
-<div class="row justify-content-center">
-    <div class="col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h3 class="card-title mb-3">Xác thực PDF hóa đơn đã ký</h3>
+<style>
+    .verify-page {
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);
+        min-height: 100vh;
+    }
+
+    .verify-card {
+        background: linear-gradient(135deg, 
+            rgba(255,255,255,0.95) 0%, 
+            rgba(249,250,251,0.95) 50%, 
+            rgba(255,255,255,0.95) 100%);
+        border: 1px solid rgba(59,130,246,0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08);
+        overflow: hidden;
+    }
+
+    .verify-header {
+        background: linear-gradient(135deg, 
+            rgba(59,130,246,0.8) 0%, 
+            rgba(139,92,246,0.8) 100%);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+
+    .verify-header h3 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.25rem;
+    }
+
+    .verify-body {
+        padding: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid rgba(59,130,246,0.3);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        outline: none;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+        color: white;
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(22,163,74,0.1) 100%);
+        color: #059669;
+        border-left: 4px solid #10b981;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(220,38,38,0.1) 100%);
+        color: #dc2626;
+        border-left: 4px solid #ef4444;
+    }
+
+    .form-text {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    @@media (max-width: 768px) {
+        .verify-page {
+            padding: 1rem;
+        }
+        
+        .verify-body {
+            padding: 1.5rem;
+        }
+        
+        .verify-header {
+            padding: 1rem;
+        }
+        
+        .btn-gradient {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="verify-page">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="verify-card">
+                <div class="verify-header">
+                    <h3><i class="bi bi-shield-check me-2"></i>Xác thực PDF hóa đơn đã ký</h3>
+                </div>
+                <div class="verify-body">
                 <form asp-action="Index"
                       asp-area="Public"
                       asp-controller="Verify"
@@ -21,26 +137,32 @@
                             Hệ thống sẽ tự đọc mã hóa đơn từ file (ví dụ: <strong>Invoice_4.pdf</strong>).
                         </div>
                     </div>
-                    <button class="btn btn-primary w-100" type="submit">Xác thực</button>
+                    <button class="btn btn-gradient w-100" type="submit">
+                        <i class="bi bi-shield-check me-2"></i>Xác thực
+                    </button>
                 </form>
 
                 @if (ViewData["Result"] != null)
                 {
                     <div class="alert alert-success mt-3">
-                        @ViewData["Result"]
+                        <i class="bi bi-check-circle-fill me-2"></i>@ViewData["Result"]
                     </div>
                 }
 
                 @if (ViewData["Error"] != null)
                 {
                     <div class="alert alert-danger mt-3">
-                        @ViewData["Error"]
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewData["Error"]
                     </div>
                 }
 
-                <p class="small text-muted mt-3 mb-0">
-                    Lưu ý: hệ thống chỉ so sánh hash SHA-256 giữa file bạn tải lên và bản lưu trong cơ sở dữ liệu.
-                </p>
+                <div class="mt-3 p-3 rounded" style="background: rgba(59,130,246,0.05); border-left: 4px solid #3b82f6;">
+                    <p class="small text-muted mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Lưu ý:</strong> hệ thống chỉ so sánh hash SHA-256 giữa file bạn tải lên và bản lưu trong cơ sở dữ liệu.
+                    </p>
+                </div>
+                </div>
             </div>
         </div>
     </div>

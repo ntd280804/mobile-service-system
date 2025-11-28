@@ -25,23 +25,41 @@ namespace WebApp.Areas.Admin.Controllers
 
         // --- Index: lấy danh sách đơn hàng ---
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, string customerPhone = null, string orderType = null, string status = null)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+            
+            const int pageSize = 10;
+            
             try
             {
-
                 var response = await _httpClient.GetAsync("api/Admin/Order");
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var employees = await response.Content.ReadFromJsonAsync<List<OrderDto>>();
-                    return View(employees);
+                    var orders = await response.Content.ReadFromJsonAsync<List<OrderDto>>();
+                    
+                    // Client-side filtering
+                    var filtered = orders ?? new List<OrderDto>();
+                    
+                    if (!string.IsNullOrWhiteSpace(customerPhone))
+                        filtered = filtered.Where(o => o.CustomerPhone != null && o.CustomerPhone.Contains(customerPhone)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(orderType))
+                        filtered = filtered.Where(o => o.OrderType != null && o.OrderType.Equals(orderType, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(status))
+                        filtered = filtered.Where(o => o.Status != null && o.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    var paginatedList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                        filtered, 
+                        page, 
+                        pageSize);
+                    return View(paginatedList);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    // Session Oracle bị kill → redirect login
                     TempData["Error"] = "Phiên làm việc hết hạn, vui lòng đăng nhập lại.";
                     HttpContext.Session.Clear();
                     return RedirectToAction("Login", "Employee", new { area = "Admin" });
@@ -49,13 +67,21 @@ namespace WebApp.Areas.Admin.Controllers
                 else
                 {
                     TempData["Error"] = "Không thể tải danh sách đơn hàng: " + response.ReasonPhrase;
-                    return View(new List<OrderDto>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                        new List<OrderDto>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<OrderDto>());
+                var emptyList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                    new List<OrderDto>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 
@@ -146,20 +172,38 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
         [HttpGet]
-        public async Task<IActionResult> WarrantyIndex()
+        public async Task<IActionResult> WarrantyIndex(int page = 1, string customerPhone = null, string status = null, string receivedDate = null)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
 
+            const int pageSize = 10;
+
             try
             {
-                // Lấy danh sách đơn hàng theo order type "WARRANTY"
                 var response = await _httpClient.GetAsync("api/Admin/Order/by-order-type?orderType=WARRANTY");
 
                 if (response.IsSuccessStatusCode)
                 {
                     var orders = await response.Content.ReadFromJsonAsync<List<OrderDto>>();
-                    return View(orders);
+                    
+                    // Client-side filtering
+                    var filtered = orders ?? new List<OrderDto>();
+                    
+                    if (!string.IsNullOrWhiteSpace(customerPhone))
+                        filtered = filtered.Where(o => o.CustomerPhone != null && o.CustomerPhone.Contains(customerPhone)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(status))
+                        filtered = filtered.Where(o => o.Status != null && o.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(receivedDate) && DateTime.TryParse(receivedDate, out var searchDate))
+                        filtered = filtered.Where(o => o.ReceivedDate.Date == searchDate.Date).ToList();
+                    
+                    var paginatedList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                        filtered, 
+                        page, 
+                        pageSize);
+                    return View(paginatedList);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -170,30 +214,56 @@ namespace WebApp.Areas.Admin.Controllers
                 else
                 {
                     TempData["Error"] = "Không thể tải danh sách đơn hàng: " + response.ReasonPhrase;
-                    return View(new List<OrderDto>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                        new List<OrderDto>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<OrderDto>());
+                var emptyList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                    new List<OrderDto>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
         [HttpGet]
-        public async Task<IActionResult> RepairIndex()
+        public async Task<IActionResult> RepairIndex(int page = 1, string customerPhone = null, string status = null, string receivedDate = null)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
 
+            const int pageSize = 10;
+
             try
             {
-                // Lấy danh sách đơn hàng theo order type "REPAIR"
                 var response = await _httpClient.GetAsync("api/Admin/Order/by-order-type?orderType=REPAIR");
 
                 if (response.IsSuccessStatusCode)
                 {
                     var orders = await response.Content.ReadFromJsonAsync<List<OrderDto>>();
-                    return View(orders);
+                    
+                    // Client-side filtering
+                    var filtered = orders ?? new List<OrderDto>();
+                    
+                    if (!string.IsNullOrWhiteSpace(customerPhone))
+                        filtered = filtered.Where(o => o.CustomerPhone != null && o.CustomerPhone.Contains(customerPhone)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(status))
+                        filtered = filtered.Where(o => o.Status != null && o.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(receivedDate) && DateTime.TryParse(receivedDate, out var searchDate))
+                        filtered = filtered.Where(o => o.ReceivedDate.Date == searchDate.Date).ToList();
+                    
+                    var paginatedList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                        filtered, 
+                        page, 
+                        pageSize);
+                    return View(paginatedList);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -204,13 +274,21 @@ namespace WebApp.Areas.Admin.Controllers
                 else
                 {
                     TempData["Error"] = "Không thể tải danh sách đơn hàng: " + response.ReasonPhrase;
-                    return View(new List<OrderDto>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                        new List<OrderDto>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<OrderDto>());
+                var emptyList = WebApp.Models.Common.PaginatedList<OrderDto>.Create(
+                    new List<OrderDto>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
         // GET: Form tạo đơn

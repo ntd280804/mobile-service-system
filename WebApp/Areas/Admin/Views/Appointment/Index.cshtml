@@ -1,32 +1,327 @@
-﻿@model List<WebApp.Models.Appointment.AppointmentViewModel>
+﻿@model WebApp.Models.Common.PaginatedList<WebApp.Models.Appointment.AppointmentViewModel>
 
-<h2>Danh sách lịch hẹn</h2>
+@{
+    ViewData["Title"] = "Danh sách lịch hẹn";
+}
+
+<style>
+    .appointment-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-left: 4px solid #3b82f6;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .appointment-header h2 {
+        margin: 0;
+        color: #1e40af;
+        font-weight: 600;
+    }
+
+    .table-container {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.2) 0%, 
+            rgba(224, 242, 254, 0.18) 25%,
+            rgba(186, 230, 253, 0.2) 50%,
+            rgba(224, 242, 254, 0.18) 75%,
+            rgba(240, 253, 255, 0.2) 100%);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid rgba(125, 211, 252, 0.3);
+    }
+
+    .appointment-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: collapse;
+    }
+
+    .appointment-table thead {
+        background: linear-gradient(135deg, 
+            rgba(59, 130, 246, 0.8) 0%,
+            rgba(37, 99, 235, 0.85) 25%,
+            rgba(139, 92, 246, 0.9) 50%,
+            rgba(168, 85, 247, 0.85) 75%,
+            rgba(192, 132, 252, 0.8) 100%);
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .appointment-table thead th {
+        padding: 1rem;
+        font-weight: 600;
+        text-align: left;
+        font-size: 0.875rem;
+        letter-spacing: 0.025em;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .appointment-table tbody tr {
+        border-bottom: 1px solid rgba(186, 230, 253, 0.25);
+        transition: background 0.3s ease, box-shadow 0.3s ease;
+        background: linear-gradient(90deg, 
+            rgba(240, 253, 255, 0.1) 0%,
+            rgba(224, 242, 254, 0.12) 50%,
+            rgba(240, 253, 255, 0.1) 100%);
+    }
+
+    .appointment-table tbody tr:hover {
+        background: linear-gradient(90deg, 
+            rgba(147, 197, 253, 0.25) 0%,
+            rgba(96, 165, 250, 0.22) 25%, 
+            rgba(168, 85, 247, 0.2) 50%,
+            rgba(96, 165, 250, 0.22) 75%,
+            rgba(147, 197, 253, 0.25) 100%);
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+    }
+
+    .appointment-table tbody tr:last-child {
+        border-bottom: none;    
+    }
+
+    .appointment-table tbody td {
+        padding: 1rem;
+        color: #475569;
+        font-size: 0.875rem;
+        vertical-align: middle;
+        border: none;
+    }
+
+    .appointment-table tbody td:first-child {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+
+    .filter-form {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.5) 0%, 
+            rgba(224, 242, 254, 0.45) 25%,
+            rgba(186, 230, 253, 0.5) 50%,
+            rgba(224, 242, 254, 0.45) 75%,
+            rgba(240, 253, 255, 0.5) 100%);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(125, 211, 252, 0.3);
+    }
+
+    .filter-form .form-control,
+    .filter-form .form-select {
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .filter-form .form-control:focus,
+    .filter-form .form-select:focus {
+        border-color: rgba(59, 130, 246, 0.5);
+        box-shadow: 0 0 0 0.2rem rgba(96, 165, 250, 0.25);
+    }
+
+    .btn-search {
+        background: linear-gradient(135deg, 
+            rgba(59, 130, 246, 0.8) 0%,
+            rgba(37, 99, 235, 0.85) 25%,
+            rgba(139, 92, 246, 0.9) 50%,
+            rgba(168, 85, 247, 0.85) 75%,
+            rgba(192, 132, 252, 0.8) 100%);
+        border: none;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(96, 165, 250, 0.3);
+    }
+
+    .btn-search:hover {
+        background: linear-gradient(135deg, 
+            rgba(37, 99, 235, 0.9) 0%,
+            rgba(29, 78, 216, 0.95) 25%,
+            rgba(124, 58, 237, 1) 50%,
+            rgba(139, 92, 246, 0.95) 75%,
+            rgba(168, 85, 247, 0.9) 100%);
+        box-shadow: 0 6px 12px rgba(96, 165, 250, 0.4);
+        color: white;
+    }
+
+    .btn-reset {
+        background: linear-gradient(135deg, 
+            rgba(148, 163, 184, 0.7) 0%,
+            rgba(100, 116, 139, 0.75) 50%,
+            rgba(71, 85, 105, 0.7) 100%);
+        border: none;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(100, 116, 139, 0.3);
+    }
+
+    .btn-reset:hover {
+        background: linear-gradient(135deg, 
+            rgba(100, 116, 139, 0.8) 0%,
+            rgba(71, 85, 105, 0.85) 50%,
+            rgba(51, 65, 85, 0.8) 100%);
+        box-shadow: 0 6px 12px rgba(100, 116, 139, 0.4);
+        color: white;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 991.98px) {
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .appointment-table {
+            min-width: 700px;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .appointment-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .appointment-table thead {
+            display: none;
+        }
+
+        .appointment-table,
+        .appointment-table tbody,
+        .appointment-table tr,
+        .appointment-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .appointment-table {
+            min-width: unset;
+        }
+
+        .appointment-table tbody tr {
+            margin-bottom: 1rem;
+            border: 1px solid rgba(125, 211, 252, 0.3);
+            border-radius: 0.5rem;
+            background: linear-gradient(135deg,
+                rgba(240, 253, 255, 0.15) 0%,
+                rgba(224, 242, 254, 0.2) 100%);
+        }
+
+        .appointment-table tbody td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(186, 230, 253, 0.2);
+            position: relative;
+            padding-left: 50%;
+        }
+
+        .appointment-table tbody td:last-child {
+            border-bottom: none;
+        }
+
+        .appointment-table tbody td:before {
+            content: attr(data-label);
+            position: absolute;
+            left: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+    }
+</style>
+
+<div class="appointment-header">
+    <h2>Danh sách lịch hẹn</h2>
+</div>
 
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Số điện thoại</th>
-            <th>Ngày hẹn</th>
-            <th>Trạng thái</th>
-            <th>Mô tả</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
+<!-- Filter/Search form -->
+<form class="filter-form" method="get">
+    <div class="row g-3">
+        <div class="col-lg-4 col-md-6 col-sm-6">
+            <input class="form-control" type="text" name="phone" placeholder="Số điện thoại" value="@Context.Request.Query["phone"]" />
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-6">
+            <input class="form-control" type="date" name="appointmentDate" placeholder="Ngày hẹn" value="@Context.Request.Query["appointmentDate"]" />
+        </div>
+        <div class="col-lg-4 col-md-6 col-sm-6">
+            <select class="form-select" name="status">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="PENDING" selected="@(Context.Request.Query["status"] == "PENDING" ? "selected" : null)">Chờ xử lý</option>
+                <option value="CONFIRMED" selected="@(Context.Request.Query["status"] == "CONFIRMED" ? "selected" : null)">Đã xác nhận</option>
+                <option value="COMPLETED" selected="@(Context.Request.Query["status"] == "COMPLETED" ? "selected" : null)">Hoàn thành</option>
+                <option value="CANCELLED" selected="@(Context.Request.Query["status"] == "CANCELLED" ? "selected" : null)">Đã hủy</option>
+            </select>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-6">
+            <button class="btn btn-search w-100" type="submit">
+                <i class="bi bi-search"></i> Tìm kiếm
+            </button>
+        </div>
+        <div class="col-lg-6 col-md-6 col-sm-6">
+            <a href="@Url.Action("Index","Appointment",new { area="Admin"})" class="btn btn-reset w-100">
+                Đặt lại
+            </a>
+        </div>
+    </div>
+</form>
+
+<div class="table-container">
+    <table class="appointment-table">
+        <thead>
             <tr>
-                <td>@item.AppointmentId</td>
-                <td>@item.CustomerPhone</td>
-                <td>@item.AppointmentDate.ToString("yyyy-MM-dd HH:mm")</td>
-                <td>@item.Status</td>
-                <td>@item.Description</td>
+                <th>ID</th>
+                <th>Số điện thoại</th>
+                <th>Ngày hẹn</th>
+                <th>Trạng thái</th>
+                <th>Mô tả</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @if (Model?.Items != null && Model.Items.Any())
+            {
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td data-label="ID">@item.AppointmentId</td>
+                        <td data-label="Số điện thoại">@item.CustomerPhone</td>
+                        <td data-label="Ngày hẹn">@item.AppointmentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td data-label="Trạng thái">@item.Status</td>
+                        <td data-label="Mô tả">@item.Description</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5" class="no-data">Không có lịch hẹn nào.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@* Pagination Component *@
+@if (Model != null && Model.TotalPages > 0)
+{
+    <partial name="_Pagination" model="Model" />
+}

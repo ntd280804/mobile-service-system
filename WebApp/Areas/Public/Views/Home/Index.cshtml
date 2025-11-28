@@ -14,18 +14,27 @@
             cập nhật trạng thái theo thời gian thực và quản lý chứng từ điện tử.
         </p>
         <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
-            <a class="btn btn-warning btn-lg text-uppercase fw-bold"
-               asp-area="Public" asp-controller="Customer" asp-action="Login">
-                Đăng nhập khách hàng
-            </a>
+            @{
+                var username = Context.Session.GetString("CUsername");
+            }
+            @if (string.IsNullOrEmpty(username))
+            {
+                <a class="btn btn-warning btn-lg text-uppercase fw-bold"
+                   asp-area="Public" asp-controller="Customer" asp-action="Login">
+                    Đăng nhập khách hàng
+                </a>
+            }
             <a class="btn btn-outline-light btn-lg text-uppercase fw-bold"
                asp-area="Public" asp-controller="Verify" asp-action="Index">
                 Xác thực PDF hóa đơn đã ký
             </a>
-            <a class="btn btn-outline-light btn-lg text-uppercase fw-bold"
-               asp-area="Public" asp-controller="Customer" asp-action="MobileQrLogin">
-                Tạo mã đăng nhập Mobile
-            </a>
+            @if (!string.IsNullOrEmpty(username))
+            {
+                <a class="btn btn-outline-light btn-lg text-uppercase fw-bold"
+                   asp-area="Public" asp-controller="Customer" asp-action="MobileQrLogin">
+                    Tạo mã đăng nhập Mobile
+                </a>
+            }
         </div>
     </div>
 </section>
@@ -73,30 +82,68 @@
     </div>
 </section>
 
-<section class="py-5">
+<section class="py-5" style="background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);">
     <div class="container">
-        <div class="row align-items-center g-4">
+        <div class="row align-items-center g-5">
             <div class="col-lg-6">
-                <img src="https://images.unsplash.com/photo-1512499617640-c2f999098c01?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
-                     alt="Technician"
-                     class="img-fluid rounded shadow" />
+                <div class="position-relative">
+                    <img src="~/images/kt.png"
+                         alt="Technician"
+                         class="img-fluid rounded-4 shadow-lg" 
+                         style="border: 3px solid rgba(59,130,246,0.2);" />
+                    <div class="position-absolute top-0 start-0 w-100 h-100 rounded-4"
+                         style="background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);"></div>
+                </div>
             </div>
             <div class="col-lg-6">
-                <h2 class="fw-bold mb-3">Quy trình bảo hành trong 4 bước</h2>
-                <ol class="list-group list-group-numbered shadow-sm">
-                    <li class="list-group-item">
-                        <strong>Tiếp nhận &amp; chẩn đoán:</strong> ghi nhận lỗi, ước lượng chi phí.
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Đặt linh kiện chính hãng:</strong> được phê duyệt qua hệ thống.
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Sửa chữa &amp; kiểm thử:</strong> kỹ thuật viên nhập kết quả trực tuyến.
-                    </li>
-                    <li class="list-group-item">
-                        <strong>Bàn giao &amp; ký số hóa đơn:</strong> khách hàng nhận PDF và QR xác thực.
-                    </li>
-                </ol>
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold mb-3" style="color: #1e40af; font-size: 2.5rem;">
+                        Quy trình bảo hành 4 bước
+                    </h2>
+                    <div class="mx-auto" style="width: 80px; height: 4px; background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); border-radius: 2px;"></div>
+                </div>
+                
+                <div class="process-steps">
+                    <div class="step-item mb-4 p-4 rounded-3 shadow-sm position-relative" 
+                         style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,250,251,0.95) 100%); border-left: 4px solid #3b82f6;">
+                        <div class="step-number position-absolute top-0 start-0 mt-2 ms-n3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 32px; height: 32px; font-weight: bold; font-size: 0.9rem;">1</div>
+                        <h5 class="fw-bold mb-2" style="color: #3b82f6; margin-left: 1rem;">
+                            <i class="bi bi-clipboard-check me-2"></i>Tiếp nhận & chẩn đoán
+                        </h5>
+                        <p class="mb-0 text-muted" style="margin-left: 1rem;">Ghi nhận lỗi, ước lượng chi phí một cách chính xác và minh bạch.</p>
+                    </div>
+                    
+                    <div class="step-item mb-4 p-4 rounded-3 shadow-sm position-relative" 
+                         style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,250,251,0.95) 100%); border-left: 4px solid #8b5cf6;">
+                        <div class="step-number position-absolute top-0 start-0 mt-2 ms-n3 text-white rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 32px; height: 32px; font-weight: bold; font-size: 0.9rem; background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);">2</div>
+                        <h5 class="fw-bold mb-2" style="color: #8b5cf6; margin-left: 1rem;">
+                            <i class="bi bi-gear me-2"></i>Đặt linh kiện chính hãng
+                        </h5>
+                        <p class="mb-0 text-muted" style="margin-left: 1rem;">Được phê duyệt qua hệ thống, đảm bảo chất lượng và độ tin cậy.</p>
+                    </div>
+                    
+                    <div class="step-item mb-4 p-4 rounded-3 shadow-sm position-relative" 
+                         style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,250,251,0.95) 100%); border-left: 4px solid #10b981;">
+                        <div class="step-number position-absolute top-0 start-0 mt-2 ms-n3 bg-success text-white rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 32px; height: 32px; font-weight: bold; font-size: 0.9rem;">3</div>
+                        <h5 class="fw-bold mb-2" style="color: #10b981; margin-left: 1rem;">
+                            <i class="bi bi-tools me-2"></i>Sửa chữa & kiểm thử
+                        </h5>
+                        <p class="mb-0 text-muted" style="margin-left: 1rem;">Kỹ thuật viên chuyên nghiệp nhập kết quả trực tuyến, minh bạch quy trình.</p>
+                    </div>
+                    
+                    <div class="step-item mb-0 p-4 rounded-3 shadow-sm position-relative" 
+                         style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,250,251,0.95) 100%); border-left: 4px solid #f59e0b;">
+                        <div class="step-number position-absolute top-0 start-0 mt-2 ms-n3 bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" 
+                             style="width: 32px; height: 32px; font-weight: bold; font-size: 0.9rem;">4</div>
+                        <h5 class="fw-bold mb-2" style="color: #f59e0b; margin-left: 1rem;">
+                            <i class="bi bi-file-earmark-pdf me-2"></i>Bàn giao & ký số hóa đơn
+                        </h5>
+                        <p class="mb-0 text-muted" style="margin-left: 1rem;">Khách hàng nhận PDF và QR xác thực, đảm bảo tính pháp lý cao nhất.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

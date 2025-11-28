@@ -4,7 +4,140 @@
     ViewData["Title"] = "FGA Audit";
 }
 
-<h2>@ViewData["Title"]</h2>
+<style>
+    .audit-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-left: 4px solid #3b82f6;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .audit-header h2 {
+        margin: 0;
+        color: #1e40af;
+        font-weight: 600;
+    }
+
+    .table-container {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.2) 0%, 
+            rgba(224, 242, 254, 0.18) 25%,
+            rgba(186, 230, 253, 0.2) 50%,
+            rgba(224, 242, 254, 0.18) 75%,
+            rgba(240, 253, 255, 0.2) 100%);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .audit-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: collapse;
+        font-size: 0.9em;
+    }
+
+    .audit-table thead {
+        background: linear-gradient(135deg, 
+            rgba(59, 130, 246, 0.8) 0%,
+            rgba(37, 99, 235, 0.85) 25%,
+            rgba(139, 92, 246, 0.9) 50%,
+            rgba(168, 85, 247, 0.85) 75%,
+            rgba(192, 132, 252, 0.8) 100%);
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .audit-table thead th {
+        padding: 1rem;
+        font-weight: 600;
+        text-align: left;
+        font-size: 0.875rem;
+        letter-spacing: 0.025em;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .audit-table tbody tr {
+        border-bottom: 1px solid rgba(186, 230, 253, 0.25);
+        transition: background 0.3s ease, box-shadow 0.3s ease;
+        background: linear-gradient(90deg, 
+            rgba(240, 253, 255, 0.1) 0%,
+            rgba(224, 242, 254, 0.12) 50%,
+            rgba(240, 253, 255, 0.1) 100%);
+    }
+
+    .audit-table tbody tr:hover {
+        background: linear-gradient(90deg, 
+            rgba(147, 197, 253, 0.25) 0%,
+            rgba(96, 165, 250, 0.22) 25%, 
+            rgba(168, 85, 247, 0.2) 50%,
+            rgba(96, 165, 250, 0.22) 75%,
+            rgba(147, 197, 253, 0.25) 100%);
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+    }
+
+    .audit-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .audit-table tbody td {
+        padding: 1rem;
+        color: #475569;
+        font-size: 0.875rem;
+        vertical-align: middle;
+        border: none;
+        max-width: 400px;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .audit-table tbody td:first-child {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 1199.98px) {
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .audit-table {
+            min-width: 1100px;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .audit-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .audit-table {
+            min-width: 1000px;
+        }
+    }
+</style>
+
+<div class="audit-header">
+    <h2>@ViewData["Title"]</h2>
+</div>
 
 @* Hiển thị trạng thái *@
 @if (Model?.Status != null)
@@ -19,12 +152,6 @@
         else
         {
             <span class="badge bg-secondary">Đang tắt (DISABLED)</span>
-        }
-        @if (!string.IsNullOrWhiteSpace(status.Note))
-        {
-            <span class="ms-3">
-                <small>@status.Note</small>
-            </span>
         }
     </div>
 }
@@ -70,9 +197,9 @@ else
 
 @if (Model?.Logs != null && Model.Logs.Any())
 {
-    <div class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
-        <table class="table table-bordered table-striped table-hover mt-3" style="font-size: 0.9em;">
-            <thead class="table-dark sticky-top">
+    <div class="table-container">
+        <table class="audit-table">
+            <thead>
                 <tr>
                     <th>Thời gian</th>
                     <th>DB User</th>

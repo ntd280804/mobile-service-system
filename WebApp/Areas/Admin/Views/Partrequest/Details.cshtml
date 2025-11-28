@@ -5,99 +5,420 @@
     var parts = ViewBag.Parts as List<PartDto> ?? new List<PartDto>();
 }
 
-<h2>Chi tiết yêu cầu linh kiện #@Model.REQUEST_ID</h2>
+<style>
+    .detail-page {
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);
+        min-height: 100vh;
+    }
 
-<div class="card mb-3">
-    <div class="card-body">
-        <dl class="row">
-            <dt class="col-sm-3">ORDER_ID</dt>
-            <dd class="col-sm-9"><a asp-area="Admin"
-                       asp-controller="Order"
-                       asp-action="Details"
-                       asp-route-id="@Model.ORDER_ID"
-                       class="text-decoration-none fw-bold text-primary">
-                        @Model.ORDER_ID
-                    </a></dd>
+    .detail-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
 
-            <dt class="col-sm-3">EMPLOYEE USERNAME</dt>
-            <dd class="col-sm-9">@Model.EmpUsername</dd>
+    .detail-header h2 {
+        color: #1e40af;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.75rem;
+    }
 
-            <dt class="col-sm-3">REQUEST_DATE</dt>
-            <dd class="col-sm-9">@Model.REQUEST_DATE.ToString("yyyy-MM-dd HH:mm")</dd>
+    .detail-card {
+        background: linear-gradient(135deg, 
+            rgba(255,255,255,0.95) 0%, 
+            rgba(249,250,251,0.95) 50%, 
+            rgba(255,255,255,0.95) 100%);
+        border: 1px solid rgba(59,130,246,0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
 
-            <dt class="col-sm-3">STATUS</dt>
-            <dd class="col-sm-9">@Model.STATUS</dd>
-        </dl>
+    .detail-card-header {
+        background: linear-gradient(135deg, 
+            rgba(59,130,246,0.8) 0%, 
+            rgba(37,99,235,0.85) 25%,
+            rgba(59,130,246,0.8) 50%,
+            rgba(139,92,246,0.85) 75%,
+            rgba(192,132,252,0.8) 100%);
+        background-size: 200% 100%;
+        padding: 1rem 1.5rem;
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
 
-        <div class="mt-3">
-            @if (@Model.STATUS == "Đang chờ")
-            {
-                <a class="btn btn-success"
-                asp-area="Admin"
-                asp-controller="Partrequest"
-                asp-action="Accept"
-                asp-route-id="@Model.REQUEST_ID">Duyệt yêu cầu</a>
+    .detail-card-body {
+        padding: 2rem;
+    }
 
-                <a class="btn btn-danger ms-2"
-                asp-area="Admin"
-                asp-controller="Partrequest"
-                asp-action="Deny"
-                asp-route-id="@Model.REQUEST_ID">Từ chối</a>
-            }
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
 
-            <a class="btn btn-secondary ms-2" asp-action="Index">Quay lại</a>
-        </div>
+    .info-item {
+        padding: 0;
+    }
+
+    .info-item label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-item .info-value {
+        font-size: 1rem;
+        font-weight: 500;
+        color: #1f2937;
+        padding: 0.75rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);
+        border-radius: 6px;
+        border: 1px solid rgba(59,130,246,0.1);
+    }
+
+    .info-item .info-value a {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .info-item .info-value a:hover {
+        color: #2563eb;
+        text-decoration: underline;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .detail-table {
+        margin: 0;
+    }
+
+    .detail-table thead {
+        background: linear-gradient(135deg, 
+            rgba(59,130,246,0.8) 0%, 
+            rgba(37,99,235,0.85) 25%,
+            rgba(59,130,246,0.8) 50%,
+            rgba(139,92,246,0.85) 75%,
+            rgba(192,132,252,0.8) 100%);
+        color: white;
+    }
+
+    .detail-table thead th {
+        font-weight: 600;
+        border: none;
+        padding: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .detail-table tbody tr {
+        border-bottom: 1px solid rgba(59,130,246,0.1);
+        transition: all 0.2s ease;
+    }
+
+    .detail-table tbody tr:hover {
+        background: linear-gradient(135deg, rgba(59,130,246,0.03) 0%, rgba(139,92,246,0.03) 100%);
+    }
+
+    .detail-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+        color: white;
+    }
+
+    .btn-success-gradient {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-success-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16,185,129,0.4);
+        color: white;
+    }
+
+    .btn-danger-gradient {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-danger-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239,68,68,0.4);
+        color: white;
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-back:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(107,114,128,0.4);
+        color: white;
+    }
+
+    .status-badge {
+        padding: 0.375rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .status-badge.status-pending {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        color: white;
+    }
+
+    .status-badge.status-approved {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .status-badge.status-rejected {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+
+    @@media (max-width: 768px) {
+        .detail-page {
+            padding: 1rem;
+        }
+
+        .detail-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .detail-card-body {
+            padding: 1rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-table {
+            font-size: 0.875rem;
+        }
+
+        .detail-table thead th,
+        .detail-table tbody td {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .btn-gradient, .btn-success-gradient, .btn-danger-gradient, .btn-back {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .detail-table thead {
+            display: none;
+        }
+
+        .detail-table tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .detail-table tbody td {
+            display: block;
+            text-align: right;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(59,130,246,0.1);
+        }
+
+        .detail-table tbody td:last-child {
+            border-bottom: none;
+        }
+
+        .detail-table tbody td::before {
+            content: attr(data-label);
+            float: left;
+            font-weight: 600;
+            color: #4b5563;
+        }
+    }
+</style>
+
+<div class="detail-page">
+    <div class="detail-header">
+        <h2>Chi tiết yêu cầu linh kiện #@Model.REQUEST_ID</h2>
     </div>
-</div>
 
-@if (parts.Any())
-{
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Danh sách linh kiện được yêu cầu</h5>
+    <div class="detail-card">
+        <div class="detail-card-header">
+            Thông tin yêu cầu
         </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Mã linh kiện</th>
-                            <th>Tên linh kiện</th>
-                            <th>Nhà sản xuất</th>
-                            <th>Serial</th>
-                            <th>Trạng thái</th>
-                            <th>Giá</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var part in parts)
-                        {
-                            <tr>
-                                <td>@part.PartId</td>
-                                <td>@part.Name</td>
-                                <td>@(string.IsNullOrEmpty(part.Manufacturer) ? "-" : part.Manufacturer)</td>
-                                <td>
-                                    <a asp-area="Admin"
-                                       asp-controller="Part"
-                                       asp-action="Details"
-                                       asp-route-serial="@part.Serial"
-                                       class="text-decoration-none fw-bold text-primary">
-                                        @part.Serial
-                                    </a>
-                                </td>
-                                <td>@part.Status</td>
-                                <td>@(part.Price.HasValue ? part.Price.Value.ToString("N0") + " đ" : "-")</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <div class="detail-card-body">
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Order ID</label>
+                    <div class="info-value">
+                        <a asp-area="Admin"
+                           asp-controller="Order"
+                           asp-action="Details"
+                           asp-route-id="@Model.ORDER_ID">
+                            @Model.ORDER_ID
+                        </a>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label>Employee Username</label>
+                    <div class="info-value">@Model.EmpUsername</div>
+                </div>
+                <div class="info-item">
+                    <label>Request Date</label>
+                    <div class="info-value">@Model.REQUEST_DATE.ToString("yyyy-MM-dd HH:mm")</div>
+                </div>
+                <div class="info-item">
+                    <label>Status</label>
+                    <div class="info-value">
+                        <span class="status-badge @(Model.STATUS == "Đang chờ" ? "status-pending" : Model.STATUS == "Đồng ý" ? "status-approved" : "status-rejected")">
+                            @Model.STATUS
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                @if (@Model.STATUS == "Đang chờ")
+                {
+                    <a class="btn-success-gradient"
+                       asp-area="Admin"
+                       asp-controller="Partrequest"
+                       asp-action="Accept"
+                       asp-route-id="@Model.REQUEST_ID">
+                        <i class="bi bi-check-circle"></i> Duyệt yêu cầu
+                    </a>
+
+                    <a class="btn-danger-gradient ms-2"
+                       asp-area="Admin"
+                       asp-controller="Partrequest"
+                       asp-action="Deny"
+                       asp-route-id="@Model.REQUEST_ID">
+                        <i class="bi bi-x-circle"></i> Từ chối
+                    </a>
+                }
+
+                <a class="btn-back ms-2" asp-action="Index">
+                    <i class="bi bi-arrow-left"></i> Quay lại
+                </a>
             </div>
         </div>
     </div>
-}
-else
-{
-    <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i> Yêu cầu này chưa có linh kiện nào.
-    </div>
-}
+
+    @if (parts.Any())
+    {
+        <div class="detail-card">
+            <div class="detail-card-header">
+                Danh sách linh kiện được yêu cầu
+            </div>
+            <div class="detail-card-body">
+                <div class="table-container">
+                    <table class="table detail-table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Mã linh kiện</th>
+                                <th>Tên linh kiện</th>
+                                <th>Nhà sản xuất</th>
+                                <th>Serial</th>
+                                <th>Trạng thái</th>
+                                <th>Giá</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var part in parts)
+                            {
+                                <tr>
+                                    <td data-label="Mã linh kiện">@part.PartId</td>
+                                    <td data-label="Tên linh kiện">@part.Name</td>
+                                    <td data-label="Nhà sản xuất">@(string.IsNullOrEmpty(part.Manufacturer) ? "-" : part.Manufacturer)</td>
+                                    <td data-label="Serial">
+                                        <a asp-area="Admin"
+                                           asp-controller="Part"
+                                           asp-action="Details"
+                                           asp-route-serial="@part.Serial"
+                                           class="text-decoration-none fw-bold text-primary">
+                                            @part.Serial
+                                        </a>
+                                    </td>
+                                    <td data-label="Trạng thái">@part.Status</td>
+                                    <td data-label="Giá">@(part.Price.HasValue ? part.Price.Value.ToString("N0") + " đ" : "-")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Yêu cầu này chưa có linh kiện nào.
+        </div>
+    }
+</div>
