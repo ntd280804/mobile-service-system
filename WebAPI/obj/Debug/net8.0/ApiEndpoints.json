@@ -1119,7 +1119,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.AppointmentController",
     "Method": "GetAll",
-    "RelativePath": "api/Public/Appointment/all",
+    "RelativePath": "api/public/appointments",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -1129,7 +1129,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.AppointmentController",
     "Method": "Create",
-    "RelativePath": "api/Public/Appointment/create",
+    "RelativePath": "api/public/appointments",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1145,7 +1145,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "ChangePassword",
-    "RelativePath": "api/Public/Customer/change-password",
+    "RelativePath": "api/public/customers/change-password",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1171,7 +1171,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "ChangePasswordSecureEncrypted",
-    "RelativePath": "api/Public/Customer/change-password-secure-encrypted",
+    "RelativePath": "api/public/customers/change-password/secure",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1197,7 +1197,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "GenerateOtpForForgotPassword",
-    "RelativePath": "api/Public/Customer/forgot-password/generate-otp",
+    "RelativePath": "api/public/customers/forgot-password/otp",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1213,7 +1213,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "ResetPasswordWithOtp",
-    "RelativePath": "api/Public/Customer/forgot-password/reset",
+    "RelativePath": "api/public/customers/forgot-password/reset",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1229,7 +1229,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "Login",
-    "RelativePath": "api/Public/Customer/login",
+    "RelativePath": "api/public/customers/login",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1255,7 +1255,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "LoginSecureEncrypted",
-    "RelativePath": "api/Public/Customer/login-secure-encrypted",
+    "RelativePath": "api/public/customers/login/secure",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1281,7 +1281,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "Logout",
-    "RelativePath": "api/Public/Customer/logout",
+    "RelativePath": "api/public/customers/logout",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1291,7 +1291,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.CustomerController",
     "Method": "Register",
-    "RelativePath": "api/Public/Customer/register",
+    "RelativePath": "api/public/customers/register",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
@@ -1323,7 +1323,7 @@
   {
     "ContainingType": "WebAPI.Areas.Public.Controllers.OrderController",
     "Method": "GetByPhone",
-    "RelativePath": "api/Public/Order/all",
+    "RelativePath": "api/public/orders",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,

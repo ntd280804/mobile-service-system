@@ -5,7 +5,7 @@
     "version": "1.0"
   },
   "paths": {
-    "/api/Public/Appointment/all": {
+    "/api/public/appointments": {
       "get": {
         "tags": [
           "Appointment"
@@ -15,9 +15,7 @@
             "description": "OK"
           }
         }
-      }
-    },
-    "/api/Public/Appointment/create": {
+      },
       "post": {
         "tags": [
           "Appointment"
@@ -192,7 +190,7 @@
         }
       }
     },
-    "/api/Public/Customer/login": {
+    "/api/public/customers/login": {
       "post": {
         "tags": [
           "Customer"
@@ -240,7 +238,7 @@
         }
       }
     },
-    "/api/Public/Customer/login-secure-encrypted": {
+    "/api/public/customers/login/secure": {
       "post": {
         "tags": [
           "Customer"
@@ -288,7 +286,7 @@
         }
       }
     },
-    "/api/Public/Customer/register": {
+    "/api/public/customers/register": {
       "post": {
         "tags": [
           "Customer"
@@ -319,7 +317,7 @@
         }
       }
     },
-    "/api/Public/Customer/logout": {
+    "/api/public/customers/logout": {
       "post": {
         "tags": [
           "Customer"
@@ -331,7 +329,7 @@
         }
       }
     },
-    "/api/Public/Customer/change-password": {
+    "/api/public/customers/change-password": {
       "post": {
         "tags": [
           "Customer"
@@ -379,7 +377,7 @@
         }
       }
     },
-    "/api/Public/Customer/change-password-secure-encrypted": {
+    "/api/public/customers/change-password/secure": {
       "post": {
         "tags": [
           "Customer"
@@ -427,7 +425,7 @@
         }
       }
     },
-    "/api/Public/Customer/forgot-password/generate-otp": {
+    "/api/public/customers/forgot-password/otp": {
       "post": {
         "tags": [
           "Customer"
@@ -458,7 +456,7 @@
         }
       }
     },
-    "/api/Public/Customer/forgot-password/reset": {
+    "/api/public/customers/forgot-password/reset": {
       "post": {
         "tags": [
           "Customer"
@@ -1375,7 +1373,7 @@
         }
       }
     },
-    "/api/Public/Order/all": {
+    "/api/public/orders": {
       "get": {
         "tags": [
           "Order"
