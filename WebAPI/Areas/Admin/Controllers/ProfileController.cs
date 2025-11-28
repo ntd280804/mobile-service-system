@@ -194,33 +194,13 @@ namespace WebAPI.Areas.Admin.Controllers
             {
             try
             {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "APP.UPDATE_PROFILE";
-                cmd.CommandType = System.Data.CommandType.StoredProcedure;
-
-                cmd.Parameters.Add("p_profile_name", OracleDbType.Varchar2, profileName.Trim().ToUpper(), System.Data.ParameterDirection.Input);
-                
-                var idleTimeParam = new OracleParameter("p_idle_time", OracleDbType.Varchar2);
-                idleTimeParam.Value = string.IsNullOrWhiteSpace(request.IdleTime) ? DBNull.Value : (object)request.IdleTime.Trim().ToUpper();
-                cmd.Parameters.Add(idleTimeParam);
-
-                var connectTimeParam = new OracleParameter("p_connect_time", OracleDbType.Varchar2);
-                connectTimeParam.Value = string.IsNullOrWhiteSpace(request.ConnectTime) ? DBNull.Value : (object)request.ConnectTime.Trim().ToUpper();
-                cmd.Parameters.Add(connectTimeParam);
-
-                var failedLoginParam = new OracleParameter("p_failed_login", OracleDbType.Varchar2);
-                failedLoginParam.Value = string.IsNullOrWhiteSpace(request.FailedLogin) ? DBNull.Value : (object)request.FailedLogin.Trim().ToUpper();
-                cmd.Parameters.Add(failedLoginParam);
-
-                var lockTimeParam = new OracleParameter("p_lock_time", OracleDbType.Varchar2);
-                lockTimeParam.Value = string.IsNullOrWhiteSpace(request.LockTime) ? DBNull.Value : (object)request.LockTime.Trim().ToUpper();
-                cmd.Parameters.Add(lockTimeParam);
-
-                var inactiveAccountTimeParam = new OracleParameter("p_inactive_account_time", OracleDbType.Varchar2);
-                inactiveAccountTimeParam.Value = string.IsNullOrWhiteSpace(request.InactiveAccountTime) ? DBNull.Value : (object)request.InactiveAccountTime.Trim().ToUpper();
-                cmd.Parameters.Add(inactiveAccountTimeParam);
-
-                cmd.ExecuteNonQuery();
+                OracleHelper.ExecuteNonQuery(conn, "APP.UPDATE_PROFILE",
+                    ("p_profile_name", OracleDbType.Varchar2, profileName.Trim().ToUpper()),
+                    ("p_idle_time", OracleDbType.Varchar2, string.IsNullOrWhiteSpace(request.IdleTime) ? DBNull.Value : (object)request.IdleTime.Trim().ToUpper()),
+                    ("p_connect_time", OracleDbType.Varchar2, string.IsNullOrWhiteSpace(request.ConnectTime) ? DBNull.Value : (object)request.ConnectTime.Trim().ToUpper()),
+                    ("p_failed_login", OracleDbType.Varchar2, string.IsNullOrWhiteSpace(request.FailedLogin) ? DBNull.Value : (object)request.FailedLogin.Trim().ToUpper()),
+                    ("p_lock_time", OracleDbType.Varchar2, string.IsNullOrWhiteSpace(request.LockTime) ? DBNull.Value : (object)request.LockTime.Trim().ToUpper()),
+                    ("p_inactive_account_time", OracleDbType.Varchar2, string.IsNullOrWhiteSpace(request.InactiveAccountTime) ? DBNull.Value : (object)request.InactiveAccountTime.Trim().ToUpper()));
 
                 return Ok(new { message = $"Profile '{profileName}' updated successfully" });
             }

@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Oracle.ManagedDataAccess.Client;
-using System.Data;
 using WebAPI.Helpers;
 using WebAPI.Models.Appointment;
-
+using System.Data;
 namespace WebAPI.Areas.Public.Controllers
 {
     [Area("Public")]
@@ -18,41 +17,7 @@ namespace WebAPI.Areas.Public.Controllers
         {
             _helper = helper;
         }
-
-        [HttpGet("all")]
-        [Authorize]
-        public IActionResult GetAll()
-        {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
-            {
-                using var cmd = new OracleCommand("APP.GET_ALL_APPOINTMENTS", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
-
-                var cursorParam = new OracleParameter("p_cursor", OracleDbType.RefCursor)
-                { Direction = ParameterDirection.Output };
-                cmd.Parameters.Add(cursorParam);
-
-                using var reader = cmd.ExecuteReader();
-
-                var list = new List<AppointmentDto>();
-                while (reader.Read())
-                {
-                    list.Add(new AppointmentDto
-                    {
-                        AppointmentId = reader.GetInt32(reader.GetOrdinal("APPOINTMENT_ID")),
-                        CustomerPhone = reader.GetString(reader.GetOrdinal("CUSTOMER_PHONE")),
-                        AppointmentDate = reader.GetDateTime(reader.GetOrdinal("APPOINTMENT_DATE")),
-                        Status = reader.IsDBNull(reader.GetOrdinal("STATUS")) ? null : reader.GetString(reader.GetOrdinal("STATUS")),
-                        Description = reader.IsDBNull(reader.GetOrdinal("DESCRIPTION")) ? null : reader.GetString(reader.GetOrdinal("DESCRIPTION"))
-                    });
-                }
-
-                return Ok(list);
-            }, "Lỗi khi lấy danh sách lịch hẹn");
-        }
-
-
-        [HttpPost("create")]
+        [HttpPost]
         [Authorize]
         public IActionResult Create([FromBody] CreateAppointmentDto dto)
         {
@@ -61,20 +26,18 @@ namespace WebAPI.Areas.Public.Controllers
 
             return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = new OracleCommand("APP.CREATE_APPOINTMENT", conn);
-                cmd.CommandType = CommandType.StoredProcedure;
+                var outputs = OracleHelper.ExecuteNonQueryWithOutputs(
+                    conn,
+                    "APP.CREATE_APPOINTMENT",
+                    new[]
+                    {
+                        ("p_customer_phone", OracleDbType.Varchar2, (object?)dto.CustomerPhone ?? ""),
+                        ("p_appointment_date", OracleDbType.Date, dto.AppointmentDate),
+                        ("p_description", OracleDbType.Varchar2, dto.Description ?? (object)DBNull.Value)
+                    },
+                    new[] { ("p_status", OracleDbType.Varchar2) });
 
-                cmd.Parameters.Add("p_customer_phone", OracleDbType.Varchar2).Value = dto.CustomerPhone;
-                cmd.Parameters.Add("p_appointment_date", OracleDbType.Date).Value = dto.AppointmentDate;
-                cmd.Parameters.Add("p_description", OracleDbType.Varchar2).Value = dto.Description ?? (object)DBNull.Value;
-
-                var outStatusParam = new OracleParameter("p_status", OracleDbType.Varchar2, 20)
-                { Direction = ParameterDirection.Output };
-                cmd.Parameters.Add(outStatusParam);
-
-                cmd.ExecuteNonQuery();
-
-                var status = outStatusParam.Value?.ToString() ?? "SCHEDULED";
+                var status = outputs["p_status"]?.ToString() ?? "SCHEDULED";
 
                 return Ok(new
                 {

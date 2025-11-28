@@ -38,7 +38,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         // GET: api/admin/export/getallexport
-        [HttpGet("getallexport")]
+        [HttpGet]
         [Authorize]
         public IActionResult GetAllExports()
         {
@@ -61,7 +61,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
 
-        [HttpGet("invoice/{stockoutId}")]
+        [HttpGet("{stockoutId}/invoice")]
         [Authorize]
         public IActionResult GetSignedExportInvoicePdf(int stockoutId)
         {
@@ -81,7 +81,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
 
-        [HttpGet("details/{stockoutId}")]
+        [HttpGet("{stockoutId}/details")]
         [Authorize]
         public IActionResult GetExportDetails(int stockoutId)
         {
@@ -129,7 +129,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
 
-        [HttpGet("verifysign/{stockoutId}")]
+        [HttpGet("{stockoutId}/verify")]
         [Authorize]
         public IActionResult VerifyStockOutSignature(int stockoutId)
         {
@@ -306,7 +306,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi tạo phiếu xuất");
         }
 
-        [HttpPost("create-secure-encrypted")]
+        [HttpPost("create/secure")]
         [Authorize]
         public ActionResult<ApiResponse<EncryptedPayload>> CreateExportFromOrderSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {

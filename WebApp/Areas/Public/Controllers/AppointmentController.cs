@@ -1,10 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using WebApp.Helpers;
 using WebApp.Models.Appointment;
 
@@ -80,7 +74,7 @@ namespace WebApp.Areas.Public.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync("api/Admin/Appointment/all");
+                var response = await _httpClient.GetAsync("api/Common/Appointment");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();

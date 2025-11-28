@@ -3,20 +3,20 @@
   "WorkspaceRootPath": "D:\\DOCUMENT\\mobile-service-system\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\public\\controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\public\\controllers\\appointmentcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\services\\oracleconnectionmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\services\\oracleconnectionmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\services\\pdfservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\services\\pdfservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\helpers\\oracleclienthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\helpers\\oracleclienthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\services\\proxyloginservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\services\\proxyloginservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\public\\controllers\\customercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\admin\\controllers\\exportcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\admin\\controllers\\exportcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\admin\\controllers\\employeecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\admin\\controllers\\employeecontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,8 +26,60 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "OracleConnectionManager.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Services\\OracleConnectionManager.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Services\\OracleConnectionManager.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Services\\OracleConnectionManager.cs",
+              "RelativeToolTip": "WebAPI\\Services\\OracleConnectionManager.cs",
+              "ViewState": "AgIAAIoAAAAAAAAAAAAxwBwBAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-28T18:14:24.071Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CustomerController.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "RelativeToolTip": "WebApp\\Areas\\Public\\Controllers\\CustomerController.cs",
+              "ViewState": "AgIAACUAAAAAAAAAAAAAADsAAABXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-28T18:12:26.564Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "EmployeeController.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\EmployeeController.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Areas\\Admin\\Controllers\\EmployeeController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Admin\\Controllers\\EmployeeController.cs",
+              "RelativeToolTip": "WebAPI\\Areas\\Admin\\Controllers\\EmployeeController.cs",
+              "ViewState": "AgIAAB4CAAAAAAAAAAArwDQCAABjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-28T18:11:11.018Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "OracleClientHelper.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Helpers\\OracleClientHelper.cs",
+              "RelativeDocumentMoniker": "WebApp\\Helpers\\OracleClientHelper.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Helpers\\OracleClientHelper.cs",
+              "RelativeToolTip": "WebApp\\Helpers\\OracleClientHelper.cs",
+              "ViewState": "AgIAAC0AAAAAAAAAAAArwEMAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-28T18:10:40.202Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
@@ -47,58 +99,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "AppointmentController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "RelativeToolTip": "WebAPI\\Areas\\Public\\Controllers\\AppointmentController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-28T11:26:34.886Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "ProxyLoginService.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Services\\ProxyLoginService.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Services\\ProxyLoginService.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Services\\ProxyLoginService.cs",
-              "RelativeToolTip": "WebAPI\\Services\\ProxyLoginService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-28T11:25:46.705Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "ExportController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Controllers\\ExportController.cs",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Admin\\Controllers\\ExportController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Admin\\Controllers\\ExportController.cs",
-              "RelativeToolTip": "WebApp\\Areas\\Admin\\Controllers\\ExportController.cs",
-              "ViewState": "AgIAADYAAAAAAAAAAAAYwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-28T11:14:37.701Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "PdfService.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Services\\PdfService.cs",
-              "RelativeDocumentMoniker": "WebAPI\\Services\\PdfService.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Services\\PdfService.cs",
-              "RelativeToolTip": "WebAPI\\Services\\PdfService.cs",
-              "ViewState": "AgIAABYAAAAAAAAAAAAkwIwAAAA4AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-28T11:12:41.897Z",
-              "EditorCaption": ""
             }
           ]
         }

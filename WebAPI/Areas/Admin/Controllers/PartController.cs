@@ -44,7 +44,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi lấy danh sách linh kiện trong kho");
         }
 
-        [HttpGet("detail-by-serial/{serial}")]
+        [HttpGet("{serial}/details")]
         [Authorize]
         public IActionResult GetPartBySerial(string serial)
         {
@@ -61,24 +61,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi lấy chi tiết linh kiện");
         }
 
-        [HttpGet("details/{serial}")]
-        [Authorize]
-        public IActionResult GetPartDetails(string serial)
-        {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
-            {
-                var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_PART_BY_SERIAL", "p_cursor",
-                    reader => MapPart(reader),
-                    ("p_serial", OracleDbType.Varchar2, serial));
-
-                if (list.Count == 0)
-                    return NotFound(new { message = $"serial ID {serial} not found" });
-
-                return Ok(list[0]);
-            }, "Lỗi khi lấy chi tiết linh kiện");
-        }
-
-        [HttpGet("by-order-id/{orderId}")]
+        [HttpGet("{orderId}/by-order-id")]
         [Authorize]
         public IActionResult GetPartsByOrderId(int orderId)
         {
@@ -91,7 +74,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi lấy danh sách linh kiện theo order");
         }
 
-        [HttpGet("by-part-request/{orderId}")]
+        [HttpGet("{orderId}/by-part-request")]
         [Authorize]
         public IActionResult GetPartsByPartRequest(int orderId)
         {

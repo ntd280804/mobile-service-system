@@ -30,7 +30,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Gọi API lấy tất cả appointment
-                var response = await _httpClient.GetAsync("api/Admin/Appointment/all");
+                var response = await _httpClient.GetAsync("api/Common/Appointment");
 
                 if (!response.IsSuccessStatusCode)
                 {

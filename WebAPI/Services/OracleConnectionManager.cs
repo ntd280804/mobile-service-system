@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Data;
 using Microsoft.AspNetCore.SignalR;
 using WebAPI.Hubs;
+using Microsoft.Extensions.Logging;
+using WebAPI.Helpers;
 
 namespace WebAPI.Services
 {
@@ -10,10 +12,16 @@ namespace WebAPI.Services
     {
         private readonly IHubContext<NotificationHub> _hubContext;
         private readonly IConfiguration _configuration;
-        public OracleConnectionManager(IHubContext<NotificationHub> hubContext, IConfiguration configuration)
+        private readonly ILogger<OracleConnectionManager> _logger;
+        
+        public OracleConnectionManager(
+            IHubContext<NotificationHub> hubContext, 
+            IConfiguration configuration,
+            ILogger<OracleConnectionManager> logger)
         {
             _hubContext = hubContext;
             _configuration = configuration;
+            _logger = logger;
         }
         private record OracleConnInfo(OracleConnection Conn, string OracleSid);
         // Key: (username, platform, sessionId)
@@ -27,16 +35,59 @@ namespace WebAPI.Services
             try
             {
                 if (info.Conn.State != ConnectionState.Open)
-                    throw new Exception("Connection closed");
+                {
+                    _logger.LogWarning(
+                        "Connection state is {State} for user {Username}, platform {Platform}, session {SessionId}",
+                        info.Conn.State, username, platform, sessionId);
+                    RemoveConnection(username, platform, sessionId).Wait();
+                    return null;
+                }
 
+                // Kiểm tra connection còn sống bằng cách chạy query đơn giản
                 using var cmd = info.Conn.CreateCommand();
                 cmd.CommandText = "SELECT 1 FROM DUAL";
-                cmd.ExecuteScalar();
+                cmd.CommandTimeout = 5; // Timeout ngắn để phát hiện nhanh
+                var result = cmd.ExecuteScalar();
+                
+                if (result == null || result.ToString() != "1")
+                {
+                    _logger.LogWarning(
+                        "Invalid query result for user {Username}, platform {Platform}, session {SessionId}",
+                        username, platform, sessionId);
+                    RemoveConnection(username, platform, sessionId).Wait();
+                    return null;
+                }
 
                 return info.Conn;
             }
-            catch
+            catch (OracleException ex)
             {
+                // Error 28 = session killed
+                // Error 1012 = not logged on
+                // Error 1017 = invalid username/password
+                // Error 12154 = TNS could not resolve service name
+                // Error 12571 = TNS packet writer failure
+                if (ex.Number == 28 || ex.Number == 1012 || ex.Number == 1017 || ex.Number == 12154 || ex.Number == 12571)
+                {
+                    _logger.LogError(ex,
+                        "Oracle session killed or connection lost. Error {ErrorNumber} for user {Username}, platform {Platform}, session {SessionId}. Message: {Message}",
+                        ex.Number, username, platform, sessionId, ex.Message);
+                }
+                else
+                {
+                    _logger.LogWarning(ex,
+                        "OracleException in GetConnectionIfExists. Error {ErrorNumber} for user {Username}, platform {Platform}, session {SessionId}. Message: {Message}",
+                        ex.Number, username, platform, sessionId, ex.Message);
+                }
+                
+                RemoveConnection(username, platform, sessionId).Wait();
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "General exception in GetConnectionIfExists for user {Username}, platform {Platform}, session {SessionId}. Type: {ExceptionType}, Message: {Message}",
+                    username, platform, sessionId, ex.GetType().Name, ex.Message);
                 RemoveConnection(username, platform, sessionId).Wait();
                 return null;
             }
@@ -88,6 +139,36 @@ namespace WebAPI.Services
         public async Task RemoveConnection(string username, string platform, string sessionId)
         {
             var key = (username, platform, sessionId);
+            
+            // Kill Oracle session bằng procedure trước khi remove connection
+            try
+            {
+                using var defaultConn = CreateDefaultConnection();
+                var killResult = OracleHelper.ExecuteNonQueryWithOutputs(
+                    defaultConn,
+                    "APP.KILL_SESSION_BY_CLIENT_ID",
+                    new[]
+                    {
+                        ("p_client_identifier", OracleDbType.Varchar2, (object)sessionId)
+                    },
+                    new[]
+                    {
+                        ("p_result", OracleDbType.Varchar2)
+                    });
+
+                var resultMessage = killResult["p_result"]?.ToString() ?? "Unknown";
+                _logger.LogInformation(
+                    "Killed Oracle session for user {Username}, platform {Platform}, session {SessionId}. Result: {Result}",
+                    username, platform, sessionId, resultMessage);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Failed to kill Oracle session for user {Username}, platform {Platform}, session {SessionId}. Error: {Error}",
+                    username, platform, sessionId, ex.Message);
+                // Continue with removal even if kill failed
+            }
+
             if (_connections.TryRemove(key, out var info))
             {
                 var conn = info.Conn;
@@ -98,13 +179,17 @@ namespace WebAPI.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[RemoveConnection] Error closing {key}: {ex.Message}");
+                    _logger.LogWarning(ex,
+                        "Error closing connection for user {Username}, platform {Platform}, session {SessionId}",
+                        username, platform, sessionId);
                 }
                 finally
                 {
                     try { OracleConnection.ClearPool(conn); } catch { }
                     conn.Dispose();
-                    Console.WriteLine($"[RemoveConnection] Closed and disposed {key} (SID={info.OracleSid})");
+                    _logger.LogInformation(
+                        "Closed and disposed connection for user {Username}, platform {Platform}, session {SessionId}, Oracle SID: {OracleSid}",
+                        username, platform, sessionId, info.OracleSid);
                 }
 
                 // Send SignalR logout message to group (sessionId)
@@ -138,7 +223,79 @@ namespace WebAPI.Services
             {
                 var conn = GetConnectionIfExists(key.username, key.platform, key.sessionId);
                 if (conn == null)
-                    Console.WriteLine($"[CleanupDeadConnections] Removed dead session {key}");
+                {
+                    _logger.LogInformation(
+                        "Removed dead session during cleanup for user {Username}, platform {Platform}, session {SessionId}",
+                        key.username, key.platform, key.sessionId);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Kiểm tra và refresh session nếu cần (keep-alive)
+        /// </summary>
+        public bool TryRefreshSession(string username, string platform, string sessionId)
+        {
+            var key = (username, platform, sessionId);
+            if (!_connections.TryGetValue(key, out var info))
+            {
+                _logger.LogDebug(
+                    "Session not found for refresh: user {Username}, platform {Platform}, session {SessionId}",
+                    username, platform, sessionId);
+                return false;
+            }
+
+            try
+            {
+                if (info.Conn.State != ConnectionState.Open)
+                {
+                    _logger.LogWarning(
+                        "Connection state is {State} during refresh for user {Username}, platform {Platform}, session {SessionId}",
+                        info.Conn.State, username, platform, sessionId);
+                    return false;
+                }
+
+                // Chạy query đơn giản để refresh session
+                using var cmd = info.Conn.CreateCommand();
+                cmd.CommandText = "SELECT SYS_CONTEXT('USERENV', 'SESSIONID') FROM DUAL";
+                cmd.CommandTimeout = 3;
+                var sessionIdFromDb = cmd.ExecuteScalar()?.ToString();
+                
+                if (string.IsNullOrEmpty(sessionIdFromDb))
+                {
+                    _logger.LogWarning(
+                        "Invalid session ID from DB during refresh for user {Username}, platform {Platform}, session {SessionId}",
+                        username, platform, sessionId);
+                    return false;
+                }
+
+                _logger.LogDebug(
+                    "Session refreshed successfully for user {Username}, platform {Platform}, session {SessionId}",
+                    username, platform, sessionId);
+                return true;
+            }
+            catch (OracleException ex)
+            {
+                _logger.LogError(ex,
+                    "OracleException during session refresh. Error {ErrorNumber} for user {Username}, platform {Platform}, session {SessionId}. Message: {Message}",
+                    ex.Number, username, platform, sessionId, ex.Message);
+                
+                if (ex.Number == 28 || ex.Number == 1012)
+                {
+                    // Session killed, remove it
+                    _logger.LogWarning(
+                        "Session killed (Error {ErrorNumber}), removing connection for user {Username}, platform {Platform}, session {SessionId}",
+                        ex.Number, username, platform, sessionId);
+                    RemoveConnection(username, platform, sessionId).Wait();
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Exception during session refresh for user {Username}, platform {Platform}, session {SessionId}. Type: {ExceptionType}, Message: {Message}",
+                    username, platform, sessionId, ex.GetType().Name, ex.Message);
+                return false;
             }
         }
 

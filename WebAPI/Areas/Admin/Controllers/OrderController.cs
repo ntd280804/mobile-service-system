@@ -35,19 +35,6 @@ namespace WebAPI.Areas.Admin.Controllers
                 return Ok(list);
             }, "Lỗi khi lấy danh sách dịch vụ");
             }
-
-        [HttpGet]
-        [Authorize]
-        public IActionResult GetAllOrders()
-        {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
-            {
-                var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_ORDERS", "cur_out",
-                    reader => MapOrder(reader));
-                return Ok(list);
-            }, "Lỗi khi lấy danh sách đơn hàng");
-            }
-
         [HttpGet("by-order-type")]
         [Authorize]
         public IActionResult GetByOrderType([FromQuery] string orderType)
@@ -99,7 +86,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi tạo đơn hàng");
         }
 
-        [HttpGet("details/{orderId}")]
+        [HttpGet("{orderId}/details")]
         [Authorize]
         public IActionResult GetOrderDetails(int orderId)
         {
@@ -116,7 +103,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi lấy chi tiết đơn hàng");
         }
 
-        [HttpGet("details/{orderId}/services")]
+        [HttpGet("{orderId}/services")]
         [Authorize]
         public IActionResult GetOrderServices(int orderId)
         {
@@ -160,23 +147,22 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi lấy danh sách username nhân viên");
             }
 
-        [HttpPost("cancel/{orderId}")]
+        [HttpPost("{orderId}/cancel")]
         [Authorize]
         public IActionResult CancelOrder(int orderId)
         {
             return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = "APP.CANCEL_ORDER";
-                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                var result = OracleHelper.ExecuteScalar<string>(
+                    conn,
+                    "APP.CANCEL_ORDER",
+                    "p_result",
+                    null,
+                    ("p_order_id", OracleDbType.Int32, orderId));
 
-                cmd.Parameters.Add("p_order_id", OracleDbType.Int32).Value = orderId;
-                var pResult = new OracleParameter("p_result", OracleDbType.Varchar2, 4000, null, System.Data.ParameterDirection.Output);
-                cmd.Parameters.Add(pResult);
+                if (string.IsNullOrEmpty(result))
+                    return BadRequest(new { message = "Không nhận được kết quả từ procedure" });
 
-                cmd.ExecuteNonQuery();
-
-                string result = pResult.Value?.ToString() ?? "";
                 if (result.Contains("Lỗi") || result.Contains("không tồn tại") || result.Contains("đã được hủy"))
                     return BadRequest(new { message = result });
 

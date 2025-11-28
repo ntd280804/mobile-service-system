@@ -81,7 +81,7 @@ namespace WebApp.Areas.Admin.Controllers
             {
                 
 
-                var response = await _httpClient.PostAsync($"api/Admin/Role/createrole/{Uri.EscapeDataString(roleName)}", null);
+                var response = await _httpClient.PostAsync($"api/Admin/Role/{Uri.EscapeDataString(roleName)}/create", null);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -114,7 +114,7 @@ namespace WebApp.Areas.Admin.Controllers
             {
                 
 
-                var response = await _httpClient.DeleteAsync($"api/Admin/Role/deleterole/{Uri.EscapeDataString(roleName)}");
+                var response = await _httpClient.DeleteAsync($"api/Admin/Role/{Uri.EscapeDataString(roleName)}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -218,7 +218,7 @@ namespace WebApp.Areas.Admin.Controllers
                 
 
                 var result = await _httpClient.GetFromJsonAsync<List<RoleDto>>(
-                    $"api/Admin/Role/roles-of-user/{Uri.EscapeDataString(username)}"
+                    $"api/Admin/Role/{Uri.EscapeDataString(username)}/roles"
                 );
 
                 if (result == null)

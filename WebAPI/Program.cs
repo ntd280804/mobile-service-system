@@ -1,22 +1,29 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MobileServiceSystem.Signing;
+using QuestPDF.Infrastructure;
 using System.Text;
 using WebAPI.Helpers;
 using WebAPI.Hubs;
 using WebAPI.Services;
-using QuestPDF.Infrastructure;
-using MobileServiceSystem.Signing;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // QuestPDF license configuration
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+var keyFolder = Path.Combine(AppContext.BaseDirectory, "DataProtection-Keys");
+Directory.CreateDirectory(keyFolder); // đảm bảo folder tồn tại
 
 // --- Add services --- 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keyFolder))
+    .SetApplicationName("MyWebAPI"); // giữ ApplicationName cố định
+
 
 // --- DbContext Oracle ---
 var username = builder.Configuration.GetConnectionString("DefaultUsername");      
@@ -33,7 +40,7 @@ builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
-    options.Cookie.Name = ".WebAPI.Session"; // single cookie
+    options.Cookie.Name = ".WebAPI.Session.new"; // single cookie
 });
 
 

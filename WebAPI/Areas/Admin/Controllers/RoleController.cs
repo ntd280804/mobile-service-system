@@ -42,7 +42,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi lấy danh sách role");
         }
 
-        [HttpGet("roles-of-user/{Username}")]
+        [HttpGet("{Username}/roles")]
         [Authorize]
         public IActionResult GetRoleOfUser(string Username)
         {
@@ -55,7 +55,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Failed to get roles of user");
         }
 
-        [HttpPost("createrole/{roleName}")]
+        [HttpPost("{roleName}/create")]
         [Authorize]
         public IActionResult CreateRole(string roleName)
         {
@@ -74,7 +74,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Failed to create role.");
         }
 
-        [HttpDelete("deleterole/{roleName}")]
+        [HttpDelete("{roleName}")]
         [Authorize]
         public IActionResult DeleteRole(string roleName)
         {

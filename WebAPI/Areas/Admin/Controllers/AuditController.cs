@@ -26,8 +26,6 @@ namespace WebAPI.Areas.Admin.Controllers
         {
             _helper = helper;
         }
-
-        [HttpGet]
         [HttpGet("trigger")]
         [Authorize]
         public IActionResult GetAllAuditLog()
@@ -193,18 +191,11 @@ namespace WebAPI.Areas.Admin.Controllers
                     }
                 }
 
-                // Check Trigger Audit status
-                int triggerAuditCount = 0;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.GET_ENABLED_TRIGGERS_COUNT";
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    var pCount = new OracleParameter("p_count", OracleDbType.Int32, ParameterDirection.Output);
-                    cmd.Parameters.Add(pCount);
-                    cmd.ExecuteNonQuery();
-                    if (pCount.Value != DBNull.Value && pCount.Value is OracleDecimal oracleDecimal)
-                        triggerAuditCount = oracleDecimal.ToInt32();
-                }
+                // Check Trigger Audit status (dùng helper để giữ nguyên procedure cũ)
+                int triggerAuditCount = OracleHelper.ExecuteScalar<int>(
+                    conn,
+                    "APP.GET_ENABLED_TRIGGERS_COUNT",
+                    "p_count");
 
                 // FGA - tạm để đó, trả về false
                 bool fgaEnabled = false;
@@ -213,9 +204,9 @@ namespace WebAPI.Areas.Admin.Controllers
                 {
                     StandardAudit = new
                     {
-                        Enabled = standardAuditCount == 18,
+                        Enabled = standardAuditCount == 17,
                         Count = standardAuditCount,
-                        ExpectedCount = 18
+                        ExpectedCount = 17
                     },
                     TriggerAudit = new
                     {
@@ -243,10 +234,8 @@ namespace WebAPI.Areas.Admin.Controllers
                     return failureResult;
                 }
 
-                using var cmd = conn.CreateCommand();
-                cmd.CommandText = procedureName;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.ExecuteNonQuery();
+                // Gọi procedure cũ thông qua OracleHelper để chuẩn hoá
+                OracleHelper.ExecuteNonQuery(conn, procedureName);
 
                 return Ok(new { message = successMessage });
             }, $"Lỗi khi thực thi {procedureName}");

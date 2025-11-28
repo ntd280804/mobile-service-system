@@ -54,34 +54,6 @@ namespace WebAPI.Areas.Public.Controllers
             _rsaKeyService.SaveClientPublicKey(request.ClientId, request.ClientPublicKeyBase64);
             return Ok(ApiResponse<string>.Ok("registered"));
         }
-
-        [HttpPost("encrypt-for-client")] 
-        public ActionResult<ApiResponse<EncryptForClientResponse>> EncryptForClient([FromBody] EncryptForClientRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.ClientId) || request.Plaintext == null)
-                return BadRequest(ApiResponse<EncryptForClientResponse>.Fail("clientId and plaintext are required."));
-
-            if (!_rsaKeyService.TryGetClientPublicKey(request.ClientId, out string? publicKeyBase64) || string.IsNullOrWhiteSpace(publicKeyBase64))
-                return NotFound(ApiResponse<EncryptForClientResponse>.Fail("Unknown clientId."));
-
-            try
-            {
-                var encrypted = _rsaKeyService.EncryptForClient(request.ClientId, request.Plaintext);
-                    return Ok(ApiResponse<EncryptForClientResponse>.Ok(new EncryptForClientResponse
-                    {
-                    EncryptedKeyBlockBase64 = encrypted.EncryptedKeyBlockBase64,
-                    CipherDataBase64 = encrypted.CipherDataBase64
-                    }));
-                }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(ApiResponse<EncryptForClientResponse>.Fail(ex.Message));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ApiResponse<EncryptForClientResponse>.Fail($"Encryption failed: {ex.Message}"));
-            }
-        }
         private bool TryResolveAdminPublicKey(RegisterClientKeyRequest request, out string publicKey, out ActionResult<ApiResponse<string>>? errorResult)
         {
             publicKey = string.Empty;

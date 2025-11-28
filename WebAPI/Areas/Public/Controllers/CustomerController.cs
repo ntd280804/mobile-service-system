@@ -46,26 +46,10 @@ namespace WebAPI.Areas.Public.Controllers
                 string platform = dto.Platform;
                 string sessionId = Guid.NewGuid().ToString();
                 var conn = _connManager.CreateDefaultConnection();
-                string hashedPwd;
-                using (var cmd1 = new OracleCommand("HASH_PASSWORD_20CHARS", conn))
-                {
-                    cmd1.CommandType = CommandType.StoredProcedure; // function cũng dùng StoredProcedure
-
-                    // Tham số RETURN
-                    var returnParam = new OracleParameter("returnVal", OracleDbType.Varchar2, 50)
-                    {
-                        Direction = ParameterDirection.ReturnValue
-                    };
-                    cmd1.Parameters.Add(returnParam);
-
-                    // Tham số input
-                    cmd1.Parameters.Add("p_password", OracleDbType.Varchar2).Value = dto.Password;
-
-                    cmd1.ExecuteNonQuery();
-
-                    hashedPwd = returnParam.Value?.ToString();
-
-                }
+                string hashedPwd = OracleHelper.ExecuteFunctionString(
+                    conn,
+                    "HASH_PASSWORD_20CHARS",
+                    ("p_password", OracleDbType.Varchar2, (object?)dto.Password ?? ""));
                 conn = _connManager.CreateConnection(dto.Username, hashedPwd, platform, sessionId);
                 using (var setRoleCmd = new OracleCommand("BEGIN APP.APP_CTX_PKG.set_role(:p_role); END;", conn))
                 {
@@ -127,7 +111,7 @@ namespace WebAPI.Areas.Public.Controllers
             }
         }
 
-        [HttpPost("login-secure-encrypted")]
+        [HttpPost("login/secure")]
         public ActionResult<ApiResponse<EncryptedPayload>> LoginSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {
             if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
@@ -243,7 +227,7 @@ namespace WebAPI.Areas.Public.Controllers
                 return StatusCode(500, ApiResponse<string>.Fail(ex.Message));
             }
         }
-        [HttpPost("change-password-secure-encrypted")]
+        [HttpPost("change-password/secure")]
         [Authorize]
         public ActionResult<ApiResponse<EncryptedPayload>> ChangePasswordSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {

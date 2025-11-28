@@ -74,6 +74,8 @@ namespace WebApp.Helpers
             httpContext.Session.Remove($"{prefix}Username");
             httpContext.Session.Remove($"{prefix}Platform");
             httpContext.Session.Remove($"{prefix}SessionId");
+            httpContext.Session.Remove($"{prefix}PrivateKeyBase64");
+            httpContext.Session.Remove($"{prefix}PrivateKeyBase");
         }
 
         

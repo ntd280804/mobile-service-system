@@ -54,7 +54,7 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 // Lấy audit logs
-                var response = await _httpClient.GetAsync("api/admin/audit");
+                var response = await _httpClient.GetAsync("api/admin/audit/trigger");
 
                 if (response.StatusCode == HttpStatusCode.Forbidden)
                 {

@@ -181,6 +181,35 @@ namespace WebAPI.Helpers
         }
 
         
+        /// Execute a PL/SQL function (exposed as StoredProcedure) that returns a VARCHAR2 via ReturnValue.
+        /// Commonly used for utility functions like HASH_PASSWORD_20CHARS or GET_EMPLOYEE_ROLES_BY_USERNAME.
+        
+        public static string? ExecuteFunctionString(
+            OracleConnection conn,
+            string functionName,
+            params (string name, OracleDbType dbType, object value)[] inputParams)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = functionName;
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            var returnParam = new OracleParameter("returnVal", OracleDbType.Varchar2, 4000, null, ParameterDirection.ReturnValue);
+            cmd.Parameters.Add(returnParam);
+
+            foreach (var (name, dbType, value) in inputParams)
+            {
+                cmd.Parameters.Add(name, dbType, ParameterDirection.Input).Value = value ?? DBNull.Value;
+            }
+
+            cmd.ExecuteNonQuery();
+
+            if (returnParam.Value == null || returnParam.Value == DBNull.Value)
+                return null;
+
+            return returnParam.Value.ToString();
+        }
+
+        
         /// Safely get a string value from reader, returning empty string if null.
         
         public static string GetStringSafe(this OracleDataReader reader, int ordinal)
@@ -292,6 +321,35 @@ namespace WebAPI.Helpers
                 return null;
 
             using var blob = (Oracle.ManagedDataAccess.Types.OracleBlob)outputParam.Value;
+            return blob?.Value;
+        }
+
+        
+        /// Execute a SELECT query that returns a single BLOB value from the first row, first column.
+        /// Useful for simple queries like "SELECT PDF FROM APP.INVOICE WHERE INVOICE_ID = :p_id".
+        
+        public static byte[]? ExecuteBlobQuery(
+            OracleConnection conn,
+            string query,
+            params (string name, OracleDbType dbType, object value)[] parameters)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = query;
+            cmd.CommandType = CommandType.Text;
+
+            foreach (var (name, dbType, value) in parameters)
+            {
+                cmd.Parameters.Add(name, dbType, ParameterDirection.Input).Value = value ?? DBNull.Value;
+            }
+
+            using var reader = cmd.ExecuteReader();
+            if (!reader.Read())
+                return null;
+
+            if (reader.IsDBNull(0))
+                return null;
+
+            using var blob = reader.GetOracleBlob(0);
             return blob?.Value;
         }
     }

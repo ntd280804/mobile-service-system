@@ -83,7 +83,7 @@ namespace WebApp.Areas.Public.Controllers
                 
                 // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
                 var apiResult = await _securityClient.PostEncryptedAndGetEncryptedAsync<object, LoginResultEnvelope>(
-                    "api/Public/Customer/login-secure-encrypted", loginData);
+                    "api/Public/Customer/login/secure", loginData);
 
                 if (apiResult.Result == "SUCCESS")
                 {
@@ -391,7 +391,7 @@ namespace WebApp.Areas.Public.Controllers
                 // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
                 // PostEncryptedAndGetEncryptedAsync sẽ tự động giải mã và trả về Data từ ApiResponse
                 await _securityClient.PostEncryptedAndGetEncryptedAsync<object, string>(
-                    "api/Public/Customer/change-password-secure-encrypted", payload);
+                    "api/Public/Customer/change-password/secure", payload);
 
                 TempData["Message"] = "Đổi mật khẩu thành công.";
                 return RedirectToAction("Index", "Home", new { area = "Public" });

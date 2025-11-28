@@ -99,7 +99,7 @@ namespace WebApp.Areas.Admin.Controllers
                 // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
                 // PostEncryptedAndGetEncryptedAsync sẽ tự động giải mã và trả về Data từ ApiResponse
                 await _securityClient.PostEncryptedAndGetEncryptedAsync<object, string>(
-                    "api/Admin/Employee/change-password-secure-encrypted", payload);
+                    "api/Admin/Employee/change-password/secure", payload);
 
                 TempData["Message"] = "Đổi mật khẩu thành công.";
                 return RedirectToAction("Index", "Home", new { area = "Admin" });
@@ -197,7 +197,7 @@ namespace WebApp.Areas.Admin.Controllers
                 
                 // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
                 var apiResult = await _securityClient.PostEncryptedAndGetEncryptedAsync<object, LoginResultEnvelope>(
-                    "api/Admin/Employee/login-secure-encrypted", loginData);
+                    "api/Admin/Employee/login/secure", loginData);
 
                 if (apiResult.Result == "SUCCESS")
                 {
@@ -374,7 +374,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
                 var responseObj = await _securityClient.PostEncryptedAndGetEncryptedAsync<EmployeeRegisterDto, RegisterSecureResponse>(
-                    "api/admin/employee/register-secure-encrypted", dto);
+                    "api/admin/employee/register/secure", dto);
 
                 // Xử lý response
                 if (responseObj != null && responseObj.Success)

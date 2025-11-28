@@ -21,7 +21,7 @@ namespace WebAPI.Areas.Admin.Controllers
             _qrGenerator = qrGenerator;
         }
 
-        [HttpGet("getallpartrequest")]
+        [HttpGet]
         [Authorize]
         public IActionResult GetAllImports()
         {
@@ -40,7 +40,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Internal Server Error");
         }
 
-        [HttpPost("accept/{requestId}")]
+        [HttpPost("{requestId}/accept")]
         [Authorize]
         public IActionResult AcceptPartRequest(int requestId)
         {
@@ -52,7 +52,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Internal Server Error");
         }
 
-        [HttpPost("deny/{requestId}")]
+        [HttpPost("{requestId}/deny")]
         [Authorize]
         public IActionResult DenyPartRequest(int requestId)
         {
@@ -64,7 +64,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Internal Server Error");
         }
 
-        [HttpGet("by-request-id/{requestId}")]
+        [HttpGet("{requestId}/by-request-id")]
         [Authorize]
         public IActionResult GetPartsByRequestId(int requestId)
         {

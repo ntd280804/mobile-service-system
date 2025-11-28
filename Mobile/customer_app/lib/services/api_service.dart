@@ -367,7 +367,7 @@ class ApiService {
   Future<Map<String, dynamic>> getImportDetails(int stockInId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.getImportDetails}/$stockInId');
+      final resp = await _dio.get('${ApiConfig.getImportDetails}/$stockInId/details');
       return resp.data as Map<String, dynamic>;
     } catch (e) {
       throw 'Không thể tải chi tiết: $e';
@@ -377,7 +377,7 @@ class ApiService {
   Future<Map<String, dynamic>> getExportDetails(int stockOutId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.getExportDetails}/$stockOutId');
+      final resp = await _dio.get('${ApiConfig.getExportDetails}/$stockOutId/details');
       return resp.data as Map<String, dynamic>;
     } catch (e) {
       throw 'Không thể tải chi tiết: $e';
@@ -387,7 +387,7 @@ class ApiService {
   Future<Map<String, dynamic>> getInvoiceDetails(int invoiceId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.getInvoiceDetails}/$invoiceId');
+      final resp = await _dio.get('${ApiConfig.getInvoiceDetails}/$invoiceId/details');
       return resp.data as Map<String, dynamic>;
     } catch (e) {
       throw 'Không thể tải chi tiết: $e';
@@ -399,7 +399,7 @@ class ApiService {
     await _ensureInterceptors();
     try {
       final resp = await _dio.get(
-        '${ApiConfig.getImportInvoice}/$stockInId',
+        '${ApiConfig.getImportInvoice}/$stockInId/invoice',
         options: Options(responseType: ResponseType.bytes),
       );
       return resp.data as List<int>;
@@ -412,7 +412,7 @@ class ApiService {
     await _ensureInterceptors();
     try {
       final resp = await _dio.get(
-        '${ApiConfig.getExportInvoice}/$stockOutId',
+        '${ApiConfig.getExportInvoice}/$stockOutId/invoice',
         options: Options(responseType: ResponseType.bytes),
       );
       return resp.data as List<int>;
@@ -438,7 +438,7 @@ class ApiService {
   Future<Map<String, dynamic>> verifyImportSign(int stockInId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.verifyImportSign}/$stockInId');
+      final resp = await _dio.get('${ApiConfig.verifyImportSign}/$stockInId/verify');
       final data = resp.data as Map<String, dynamic>;
       // Normalize isValid to boolean - handle both isValid and IsValid, both boolean and int
       dynamic isValidValue = data['isValid'] ?? data['IsValid'] ?? false;
@@ -463,7 +463,7 @@ class ApiService {
   Future<Map<String, dynamic>> verifyExportSign(int stockOutId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.verifyExportSign}/$stockOutId');
+      final resp = await _dio.get('${ApiConfig.verifyExportSign}/$stockOutId/verify');
       final data = resp.data as Map<String, dynamic>;
       // Normalize isValid to boolean - handle both isValid and IsValid, both boolean and int
       dynamic isValidValue = data['isValid'] ?? data['IsValid'] ?? false;
@@ -607,7 +607,7 @@ class ApiService {
   Future<List<Part>> getPartsByOrderId(int orderId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.getPartsByOrderId}/$orderId');
+      final resp = await _dio.get('${ApiConfig.getPartsByOrderId}/$orderId/by-order-id');
       if (resp.data is List) {
         return (resp.data as List)
             .map((e) => Part.fromJson(Map<String, dynamic>.from(e)))
@@ -623,7 +623,7 @@ class ApiService {
   Future<List<Part>> getPartsByPartRequest(int orderId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.getPartsByPartRequest}/$orderId');
+      final resp = await _dio.get('${ApiConfig.getPartsByPartRequest}/$orderId/by-part-request');
       if (resp.data is List) {
         return (resp.data as List)
             .map((e) => Part.fromJson(Map<String, dynamic>.from(e)))
@@ -639,7 +639,7 @@ class ApiService {
   Future<List<Part>> getPartsByRequestId(int requestId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.getPartsByRequestId}/$requestId');
+      final resp = await _dio.get('${ApiConfig.getPartsByRequestId}/$requestId/by-request-id');
       if (resp.data is List) {
         return (resp.data as List)
             .map((e) => Part.fromJson(Map<String, dynamic>.from(e)))
@@ -655,7 +655,7 @@ class ApiService {
   Future<Map<String, dynamic>> getOrderDetails(int orderId) async {
     await _ensureInterceptors();
     try {
-      final resp = await _dio.get('${ApiConfig.getOrderDetails}/$orderId');
+      final resp = await _dio.get('${ApiConfig.getOrderDetails}/$orderId/details');
       return resp.data as Map<String, dynamic>;
     } catch (e) {
       throw 'Không thể tải chi tiết đơn hàng: $e';

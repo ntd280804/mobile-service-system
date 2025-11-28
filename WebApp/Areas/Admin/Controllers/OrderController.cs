@@ -32,7 +32,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
 
-                var response = await _httpClient.GetAsync("api/Admin/Order");
+                var response = await _httpClient.GetAsync("api/Common/Order");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -68,7 +68,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Lấy thông tin đơn hàng
-                var response = await _httpClient.GetAsync($"api/admin/order/details/{id}");
+                var response = await _httpClient.GetAsync($"api/admin/Order/{id}/details");
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -91,7 +91,7 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 // Lấy danh sách dịch vụ của đơn hàng
-                var servicesResponse = await _httpClient.GetAsync($"api/admin/order/details/{id}/services");
+                var servicesResponse = await _httpClient.GetAsync($"api/admin/Order/{id}/services");
                 List<OrderServiceDto> services = new List<OrderServiceDto>();
                 if (servicesResponse.IsSuccessStatusCode)
                 {
@@ -101,7 +101,7 @@ namespace WebApp.Areas.Admin.Controllers
                 // Lấy danh sách parts được gán với order
                 try
                 {
-                    var partsResponse = await _httpClient.GetAsync($"api/admin/part/by-order-id/{id}");
+                    var partsResponse = await _httpClient.GetAsync($"api/admin/Part/{id}/by-order-id");
                     if (partsResponse.IsSuccessStatusCode)
                     {
                         var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
@@ -120,7 +120,7 @@ namespace WebApp.Areas.Admin.Controllers
                 // Lấy danh sách parts từ part request
                 try
                 {
-                    var partsRequestResponse = await _httpClient.GetAsync($"api/admin/part/by-part-request/{id}");
+                    var partsRequestResponse = await _httpClient.GetAsync($"api/admin/Part/{id}/by-part-request");
                     if (partsRequestResponse.IsSuccessStatusCode)
                     {
                         var partsRequest = await partsRequestResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
@@ -231,7 +231,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Load customer phones for dropdown
-                var phonesResponse = await _httpClient.GetAsync("api/admin/order/customer-phones");
+                var phonesResponse = await _httpClient.GetAsync("api/admin/Order/customer-phones");
                 if (phonesResponse.IsSuccessStatusCode)
                 {
                     var phones = await phonesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
@@ -239,7 +239,7 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 // Load handler usernames for dropdown
-                var usernamesResponse = await _httpClient.GetAsync("api/admin/order/handler-usernames");
+                var usernamesResponse = await _httpClient.GetAsync("api/admin/Order/handler-usernames");
                 if (usernamesResponse.IsSuccessStatusCode)
                 {
                     var usernames = await usernamesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
@@ -247,7 +247,7 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 // Load services list for dynamic selection
-                var servicesResponse = await _httpClient.GetAsync("api/admin/order/services");
+                var servicesResponse = await _httpClient.GetAsync("api/admin/Order/services");
                 if (servicesResponse.IsSuccessStatusCode)
                 {
                     var services = await servicesResponse.Content.ReadFromJsonAsync<List<ServiceDto>>() ?? new List<ServiceDto>();
@@ -281,21 +281,21 @@ namespace WebApp.Areas.Admin.Controllers
             // Reload dropdowns for any return to view
             try
             {
-                var phonesResponse = await _httpClient.GetAsync("api/admin/order/customer-phones");
+                var phonesResponse = await _httpClient.GetAsync("api/admin/Order/customer-phones");
                 if (phonesResponse.IsSuccessStatusCode)
                 {
                     var phones = await phonesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
                     ViewBag.CustomerPhones = phones.Select(p => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = p, Text = p }).ToList();
                 }
 
-                var usernamesResponse = await _httpClient.GetAsync("api/admin/order/handler-usernames");
+                var usernamesResponse = await _httpClient.GetAsync("api/admin/Order/handler-usernames");
                 if (usernamesResponse.IsSuccessStatusCode)
                 {
                     var usernames = await usernamesResponse.Content.ReadFromJsonAsync<List<string>>() ?? new List<string>();
                     ViewBag.HandlerUsernames = usernames.Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem { Value = u, Text = u }).ToList();
                 }
 
-                var servicesResponse = await _httpClient.GetAsync("api/admin/order/services");
+                var servicesResponse = await _httpClient.GetAsync("api/admin/Order/services");
                 if (servicesResponse.IsSuccessStatusCode)
                 {
                     var services = await servicesResponse.Content.ReadFromJsonAsync<List<ServiceDto>>() ?? new List<ServiceDto>();
@@ -359,7 +359,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsync($"api/Admin/Order/cancel/{orderId}", null);
+                var response = await _httpClient.PostAsync($"api/Admin/Order/{orderId}/cancel", null);
 
                 if (response.IsSuccessStatusCode)
                 {

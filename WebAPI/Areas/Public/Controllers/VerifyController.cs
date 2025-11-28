@@ -7,6 +7,7 @@ using UglyToad.PdfPig;
 using WebAPI.Models;
 using WebAPI.Models.Public;
 using WebAPI.Services;
+using WebAPI.Helpers;
 
 namespace WebAPI.Areas.Public.Controllers
 {
@@ -16,10 +17,12 @@ namespace WebAPI.Areas.Public.Controllers
     public class VerifyController : ControllerBase
     {
         private readonly OracleConnectionManager _connManager;
+        private readonly ControllerHelper _helper;
 
-        public VerifyController(OracleConnectionManager connManager)
+        public VerifyController(OracleConnectionManager connManager, ControllerHelper helper)
         {
             _connManager = connManager;
+            _helper = helper;
         }
 
         [HttpPost("verify-invoice")]
@@ -51,23 +54,22 @@ namespace WebAPI.Areas.Public.Controllers
                 return BadRequest(ApiResponse<bool>.Fail("Không xác định được mã hóa đơn từ nội dung PDF."));
             }
 
+            // Note: VerifyController cần connection với role ROLE_VERIFY, không dùng session thông thường
+            // Nên tạo connection riêng và bọc trong try-catch để xử lý lỗi
             try
             {
-            byte[] dbBytes;
+                byte[]? dbBytes;
                 using (var conn = CreateVerifyConnection())
-                using (var cmd = new OracleCommand("SELECT PDF FROM APP.INVOICE WHERE INVOICE_ID = :p_id", conn))
                 {
-                    cmd.Parameters.Add("p_id", OracleDbType.Decimal).Value = invoiceId;
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        if (!reader.Read())
-                        {
-                            return NotFound(ApiResponse<bool>.Fail("Không tìm thấy dữ liệu INVOICE."));
-                        }
-
-                        using var blob = reader.GetOracleBlob(0);
-                            dbBytes = blob.Value;
+                    dbBytes = OracleHelper.ExecuteBlobQuery(
+                        conn,
+                        "SELECT PDF FROM APP.INVOICE WHERE INVOICE_ID = :p_id",
+                        ("p_id", OracleDbType.Decimal, invoiceId));
                 }
+
+                if (dbBytes == null || dbBytes.Length == 0)
+                        {
+                    return NotFound(ApiResponse<bool>.Fail("Không tìm thấy dữ liệu INVOICE hoặc PDF rỗng."));
             }
 
             var uploadedHash = ComputeSha256(uploadedBytes);

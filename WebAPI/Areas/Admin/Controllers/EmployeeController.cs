@@ -108,7 +108,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, ApiResponse<string>.Fail(ex.Message));
             }
         }
-        [HttpPost("change-password-secure-encrypted")]
+        [HttpPost("change-password/secure")]
         [Authorize]
         public ActionResult<ApiResponse<EncryptedPayload>> ChangePasswordSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {
@@ -377,7 +377,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 return StatusCode(500, ApiResponse<EmployeeLoginResult>.Fail(ex.Message));
             }
         }
-        [HttpPost("login-secure-encrypted")]
+        [HttpPost("login/secure")]
         public ActionResult<ApiResponse<EncryptedPayload>> LoginSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {
             if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
@@ -453,7 +453,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi thêm nhân viên");
         }
 
-        [HttpPost("register-secure-encrypted")]
+        [HttpPost("register/secure")]
         [Authorize]
         public ActionResult<ApiResponse<EncryptedPayload>> RegisterSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {

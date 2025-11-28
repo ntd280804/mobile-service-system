@@ -35,7 +35,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Gọi WebAPI endpoint verify chữ ký
-                var response = await _httpClient.GetAsync($"api/admin/export/verifysign/{id}");
+                var response = await _httpClient.GetAsync($"api/admin/Export/{id}/verify");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();
@@ -80,7 +80,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 
-                var response = await _httpClient.GetAsync("api/admin/export/getallexport");
+                var response = await _httpClient.GetAsync("api/admin/Export");
                 if (!response.IsSuccessStatusCode)
                 {
                     // Try to read error details from API response
@@ -109,7 +109,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Gọi WebAPI để lấy chi tiết export
-                var response = await _httpClient.GetAsync($"api/admin/export/details/{id}");
+                var response = await _httpClient.GetAsync($"api/admin/Export/{id}/details");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();
@@ -224,7 +224,7 @@ namespace WebApp.Areas.Admin.Controllers
 
                 // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
                 var responseObj = await _securityClient.PostEncryptedAndGetEncryptedAsync<object, ExportSecureResponse>(
-                    "api/admin/export/create-secure-encrypted", createExportDto);
+                    "api/admin/Export/create/secure", createExportDto);
 
                 // Xử lý response
                 if (responseObj != null)
@@ -275,7 +275,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/export/invoice/{id}");
+                var response = await _httpClient.GetAsync($"api/admin/Export/{id}/invoice");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();

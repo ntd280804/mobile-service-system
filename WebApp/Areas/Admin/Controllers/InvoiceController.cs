@@ -27,7 +27,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/invoice/{id}/verify");
+                var response = await _httpClient.GetAsync($"api/admin/Invoice/{id}/verify");
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
@@ -65,7 +65,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync("api/admin/invoice");
+                var response = await _httpClient.GetAsync("api/admin/Invoice");
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
@@ -91,7 +91,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/invoice/{id}");
+                var response = await _httpClient.GetAsync($"api/admin/Invoice/{id}/details");
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
@@ -123,7 +123,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/invoice/{id}/pdf");
+                var response = await _httpClient.GetAsync($"api/admin/Invoice/{id}/pdf");
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();

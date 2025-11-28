@@ -87,7 +87,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/part/details/{serial}");
+                var response = await _httpClient.GetAsync($"api/admin/Part/{serial}/details");
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -114,7 +114,7 @@ namespace WebApp.Areas.Admin.Controllers
                 {
                     try
                     {
-                        var partsRequestResponse = await _httpClient.GetAsync($"api/admin/part/by-part-request/{part.OrderId.Value}");
+                        var partsRequestResponse = await _httpClient.GetAsync($"api/admin/Part/{part.OrderId.Value}/by-part-request");
                         if (partsRequestResponse.IsSuccessStatusCode)
                         {
                             var partsRequest = await partsRequestResponse.Content.ReadFromJsonAsync<List<PartDto>>() ?? new List<PartDto>();

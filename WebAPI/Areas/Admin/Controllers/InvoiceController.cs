@@ -33,58 +33,42 @@ namespace WebAPI.Areas.Admin.Controllers
             return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 // 1. lấy chữ ký từ INVOICE
-                string signature;
-                using (var cmdSig = conn.CreateCommand())
-                {
-                    cmdSig.CommandText = "APP.GET_INVOICE_SIGNATURE";
-                    cmdSig.CommandType = CommandType.StoredProcedure;
-                    cmdSig.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId;
-                    var pSignature = new OracleParameter("p_signature", OracleDbType.Clob, ParameterDirection.Output);
-                    cmdSig.Parameters.Add(pSignature);
-                    cmdSig.ExecuteNonQuery();
+                string? signature = OracleHelper.ExecuteClobOutput(
+                    conn,
+                    "APP.GET_INVOICE_SIGNATURE",
+                    "p_signature",
+                    ("p_invoice_id", OracleDbType.Int32, invoiceId));
 
-                    if (pSignature.Value == DBNull.Value || pSignature.Value == null)
+                if (string.IsNullOrEmpty(signature))
                         return NotFound(new { message = $"Signature của Invoice ID {invoiceId} không tồn tại" });
-
-                    var clobSig = (OracleClob)pSignature.Value;
-                    signature = clobSig.Value;
-                }
 
                 // 2. lấy EMP_ID từ INVOICE
                 string empIdStr = signature.Split('-')[0];  // Lấy phần trước dấu "-"
                 int empId = int.Parse(empIdStr);            // Chuyển sang int
                 signature = signature.Split('-')[1];
-                string publicKey;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.GET_EMPLOYEE_PUBLIC_KEY";
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_emp_id", OracleDbType.Int32, ParameterDirection.Input).Value = empId;
-                    var pPubKey = new OracleParameter("p_pub_key", OracleDbType.Clob, ParameterDirection.Output);
-                    cmd.Parameters.Add(pPubKey);
-                    cmd.ExecuteNonQuery();
+                
+                string? publicKey = OracleHelper.ExecuteClobOutput(
+                    conn,
+                    "APP.GET_EMPLOYEE_PUBLIC_KEY",
+                    "p_pub_key",
+                    ("p_emp_id", OracleDbType.Int32, empId));
 
-                    if (pPubKey.Value == DBNull.Value || pPubKey.Value == null)
+                if (string.IsNullOrEmpty(publicKey))
                         return NotFound(new { message = $"Public key của Employee ID {empId} không tồn tại" });
 
-                    var clobKey = (OracleClob)pPubKey.Value;
-                    publicKey = clobKey.Value;
-                }
+                // 3. verify
+                var verifyOutput = OracleHelper.ExecuteNonQueryWithOutputs(
+                    conn,
+                    "APP.VERIFY_INVOICE_SIGNATURE",
+                    new[]
+                    {
+                        ("p_invoice_id", OracleDbType.Int32, (object)invoiceId),
+                        ("p_public_key", OracleDbType.Varchar2, publicKey),
+                        ("p_signature", OracleDbType.Clob, signature)
+                    },
+                    new[] { ("p_is_valid", OracleDbType.Int32) });
 
-                // 4. verify
-                int isValid;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.VERIFY_INVOICE_SIGNATURE";
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId;
-                    cmd.Parameters.Add("p_public_key", OracleDbType.Varchar2, ParameterDirection.Input).Value = publicKey;
-                    cmd.Parameters.Add("p_signature", OracleDbType.Clob, ParameterDirection.Input).Value = signature;
-                    var pIsValid = new OracleParameter("p_is_valid", OracleDbType.Int32, ParameterDirection.Output);
-                    cmd.Parameters.Add(pIsValid);
-                    cmd.ExecuteNonQuery();
-                    isValid = ((OracleDecimal)pIsValid.Value).ToInt32();
-                }
+                int isValid = ((OracleDecimal)verifyOutput["p_is_valid"]).ToInt32();
 
                 return Ok(new
                 {
@@ -115,7 +99,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Internal Server Error");
         }
 
-        [HttpGet("{invoiceId}")]
+        [HttpGet("{invoiceId}/details")]
         [Authorize]
         public IActionResult GetInvoiceDetails(int invoiceId)
         {
@@ -135,26 +119,14 @@ namespace WebAPI.Areas.Admin.Controllers
         {
             return _helper.ExecuteWithConnection(HttpContext, conn =>
             {
-                byte[] pdfBytes = null;
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = "APP.GET_INVOICE_PDF";
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.Add("p_invoice_id", OracleDbType.Int32, ParameterDirection.Input).Value = invoiceId;
-                    var pPdf = new OracleParameter("p_pdf", OracleDbType.Blob, ParameterDirection.Output);
-                    cmd.Parameters.Add(pPdf);
-
-                    cmd.ExecuteNonQuery();
-
-                    if (pPdf.Value == null || pPdf.Value == DBNull.Value)
-                        return NotFound(new { message = $"Signed PDF for Invoice ID {invoiceId} not found" });
-
-                    using var blob = (OracleBlob)pPdf.Value;
-                    pdfBytes = blob?.Value;
-                }
+                byte[]? pdfBytes = OracleHelper.ExecuteBlobOutput(
+                    conn,
+                    "APP.GET_INVOICE_PDF",
+                    "p_pdf",
+                    ("p_invoice_id", OracleDbType.Int32, invoiceId));
 
                 if (pdfBytes == null || pdfBytes.Length == 0)
-                    return NotFound(new { message = $"Signed PDF for Invoice ID {invoiceId} is empty" });
+                    return NotFound(new { message = $"Signed PDF for Invoice ID {invoiceId} not found or empty" });
 
                 return File(pdfBytes, "application/pdf", $"Invoice_{invoiceId}.pdf");
             }, "Lỗi khi lấy PDF hóa đơn");

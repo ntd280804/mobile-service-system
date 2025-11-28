@@ -28,7 +28,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
 
-                var response = await _httpClient.GetAsync("api/admin/partrequest/getallpartrequest");
+                var response = await _httpClient.GetAsync("api/admin/Partrequest");
                 if (!response.IsSuccessStatusCode)
                 {
                     // Try to read error details from API response
@@ -56,7 +56,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync("api/admin/partrequest/getallpartrequest");
+                var response = await _httpClient.GetAsync("api/admin/Partrequest");
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -82,7 +82,7 @@ namespace WebApp.Areas.Admin.Controllers
                 // Lấy danh sách parts từ yêu cầu
                 try
                 {
-                    var partsResponse = await _httpClient.GetAsync($"api/admin/partrequest/by-request-id/{id}");
+                    var partsResponse = await _httpClient.GetAsync($"api/admin/Partrequest/{id}/by-request-id");
                     if (partsResponse.IsSuccessStatusCode)
                     {
                         var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
@@ -115,7 +115,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsync($"api/admin/partrequest/accept/{id}", null);
+                var response = await _httpClient.PostAsync($"api/admin/Partrequest/{id}/accept", null);
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -149,7 +149,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsync($"api/admin/partrequest/deny/{id}", null);
+                var response = await _httpClient.PostAsync($"api/admin/Partrequest/{id}/deny", null);
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -194,7 +194,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Load parts for dropdown (only IN_STOCK parts)
-                var partsResponse = await _httpClient.GetAsync("api/admin/part/in-stock");
+                var partsResponse = await _httpClient.GetAsync("api/admin/Part/in-stock");
                 if (partsResponse.IsSuccessStatusCode)
                 {
                     var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
@@ -231,7 +231,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("api/admin/partrequest/post", model);
+                var response = await _httpClient.PostAsJsonAsync("api/admin/Partrequest/post", model);
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["Success"] = "Tạo yêu cầu linh kiện thành công";
@@ -257,7 +257,7 @@ namespace WebApp.Areas.Admin.Controllers
         {
             try
             {
-                var partsResponse = await _httpClient.GetAsync("api/admin/part/in-stock");
+                var partsResponse = await _httpClient.GetAsync("api/admin/Part/in-stock");
                 if (partsResponse.IsSuccessStatusCode)
                 {
                     var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();

@@ -38,7 +38,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
 
         // GET: api/admin/import/getallimport
-        [HttpGet("getallimport")]
+        [HttpGet]
         [Authorize]
         public IActionResult GetAllImports()
         {
@@ -59,7 +59,7 @@ namespace WebAPI.Areas.Admin.Controllers
                 return Ok(result);
             }, "Lỗi khi lấy danh sách phiếu nhập");
         }
-        [HttpGet("verifysign/{stockinId}")]
+        [HttpGet("{stockinId}/verify")]
         [Authorize]
         public IActionResult VerifyStockInSignature(int stockinId)
         {
@@ -111,7 +111,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi xác thực chữ ký phiếu nhập");
         }
 
-        [HttpGet("invoice/{stockinId}")]
+        [HttpGet("{stockinId}/invoice")]
         [Authorize]
         public IActionResult GetSignedImportInvoicePdf(int stockinId)
         {
@@ -130,7 +130,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi lấy file PDF đã ký phiếu nhập");
         }
 
-        [HttpGet("details/{stockinid}")]
+        [HttpGet("{stockinid}/details")]
         [Authorize]
         public IActionResult GetImportDetails(int stockinid)
         {
@@ -318,7 +318,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi nhập kho");
         }
 
-        [HttpPost("post-secure-encrypted")]
+        [HttpPost("create/secure")]
         [Authorize]
         public ActionResult<ApiResponse<EncryptedPayload>> ImportStockSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {

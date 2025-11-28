@@ -5,17 +5,7 @@
     "version": "1.0"
   },
   "paths": {
-    "/api/public/appointments": {
-      "get": {
-        "tags": [
-          "Appointment"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      },
+    "/api/Public/Appointment": {
       "post": {
         "tags": [
           "Appointment"
@@ -46,7 +36,7 @@
         }
       }
     },
-    "/api/Admin/Appointment/all": {
+    "/api/Common/Appointment": {
       "get": {
         "tags": [
           "Appointment"
@@ -59,18 +49,6 @@
       }
     },
     "/api/admin/Audit/trigger": {
-      "get": {
-        "tags": [
-          "Audit"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/admin/Audit": {
       "get": {
         "tags": [
           "Audit"
@@ -190,7 +168,7 @@
         }
       }
     },
-    "/api/public/customers/login": {
+    "/api/Public/Customer/login": {
       "post": {
         "tags": [
           "Customer"
@@ -238,7 +216,7 @@
         }
       }
     },
-    "/api/public/customers/login/secure": {
+    "/api/Public/Customer/login/secure": {
       "post": {
         "tags": [
           "Customer"
@@ -286,7 +264,7 @@
         }
       }
     },
-    "/api/public/customers/register": {
+    "/api/Public/Customer/register": {
       "post": {
         "tags": [
           "Customer"
@@ -317,7 +295,7 @@
         }
       }
     },
-    "/api/public/customers/logout": {
+    "/api/Public/Customer/logout": {
       "post": {
         "tags": [
           "Customer"
@@ -329,7 +307,7 @@
         }
       }
     },
-    "/api/public/customers/change-password": {
+    "/api/Public/Customer/change-password": {
       "post": {
         "tags": [
           "Customer"
@@ -377,7 +355,7 @@
         }
       }
     },
-    "/api/public/customers/change-password/secure": {
+    "/api/Public/Customer/change-password/secure": {
       "post": {
         "tags": [
           "Customer"
@@ -425,7 +403,7 @@
         }
       }
     },
-    "/api/public/customers/forgot-password/otp": {
+    "/api/Public/Customer/forgot-password/generate-otp": {
       "post": {
         "tags": [
           "Customer"
@@ -456,7 +434,7 @@
         }
       }
     },
-    "/api/public/customers/forgot-password/reset": {
+    "/api/Public/Customer/forgot-password/reset": {
       "post": {
         "tags": [
           "Customer"
@@ -621,7 +599,7 @@
         }
       }
     },
-    "/api/Admin/Employee/change-password-secure-encrypted": {
+    "/api/Admin/Employee/change-password/secure": {
       "post": {
         "tags": [
           "Employee"
@@ -740,7 +718,7 @@
         }
       }
     },
-    "/api/Admin/Employee/login-secure-encrypted": {
+    "/api/Admin/Employee/login/secure": {
       "post": {
         "tags": [
           "Employee"
@@ -831,7 +809,7 @@
         }
       }
     },
-    "/api/Admin/Employee/register-secure-encrypted": {
+    "/api/Admin/Employee/register/secure": {
       "post": {
         "tags": [
           "Employee"
@@ -941,7 +919,7 @@
         }
       }
     },
-    "/api/admin/Export/getallexport": {
+    "/api/admin/Export": {
       "get": {
         "tags": [
           "Export"
@@ -953,30 +931,7 @@
         }
       }
     },
-    "/api/admin/Export/invoice/{stockoutId}": {
-      "get": {
-        "tags": [
-          "Export"
-        ],
-        "parameters": [
-          {
-            "name": "stockoutId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/admin/Export/details/{stockoutId}": {
+    "/api/admin/Export/{stockoutId}/invoice": {
       "get": {
         "tags": [
           "Export"
@@ -999,7 +954,30 @@
         }
       }
     },
-    "/api/admin/Export/verifysign/{stockoutId}": {
+    "/api/admin/Export/{stockoutId}/details": {
+      "get": {
+        "tags": [
+          "Export"
+        ],
+        "parameters": [
+          {
+            "name": "stockoutId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/Export/{stockoutId}/verify": {
       "get": {
         "tags": [
           "Export"
@@ -1053,7 +1031,7 @@
         }
       }
     },
-    "/api/admin/Export/create-secure-encrypted": {
+    "/api/admin/Export/create/secure": {
       "post": {
         "tags": [
           "Export"
@@ -1132,7 +1110,7 @@
         }
       }
     },
-    "/api/admin/Import/getallimport": {
+    "/api/admin/Import": {
       "get": {
         "tags": [
           "Import"
@@ -1144,30 +1122,7 @@
         }
       }
     },
-    "/api/admin/Import/verifysign/{stockinId}": {
-      "get": {
-        "tags": [
-          "Import"
-        ],
-        "parameters": [
-          {
-            "name": "stockinId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/admin/Import/invoice/{stockinId}": {
+    "/api/admin/Import/{stockinId}/verify": {
       "get": {
         "tags": [
           "Import"
@@ -1190,7 +1145,30 @@
         }
       }
     },
-    "/api/admin/Import/details/{stockinid}": {
+    "/api/admin/Import/{stockinId}/invoice": {
+      "get": {
+        "tags": [
+          "Import"
+        ],
+        "parameters": [
+          {
+            "name": "stockinId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/admin/Import/{stockinid}/details": {
       "get": {
         "tags": [
           "Import"
@@ -1244,7 +1222,7 @@
         }
       }
     },
-    "/api/admin/Import/post-secure-encrypted": {
+    "/api/admin/Import/create/secure": {
       "post": {
         "tags": [
           "Import"
@@ -1327,7 +1305,7 @@
         }
       }
     },
-    "/api/admin/Invoice/{invoiceId}": {
+    "/api/admin/Invoice/{invoiceId}/details": {
       "get": {
         "tags": [
           "Invoice"
@@ -1373,7 +1351,7 @@
         }
       }
     },
-    "/api/public/orders": {
+    "/api/Common/Order": {
       "get": {
         "tags": [
           "Order"
@@ -1397,17 +1375,28 @@
         }
       }
     },
-    "/api/Admin/Order": {
+    "/api/Admin/Order/by-order-type": {
       "get": {
         "tags": [
           "Order"
+        ],
+        "parameters": [
+          {
+            "name": "orderType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
           "200": {
             "description": "OK"
           }
         }
-      },
+      }
+    },
+    "/api/Admin/Order": {
       "post": {
         "tags": [
           "Order"
@@ -1438,28 +1427,7 @@
         }
       }
     },
-    "/api/Admin/Order/by-order-type": {
-      "get": {
-        "tags": [
-          "Order"
-        ],
-        "parameters": [
-          {
-            "name": "orderType",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Admin/Order/details/{orderId}": {
+    "/api/Admin/Order/{orderId}/details": {
       "get": {
         "tags": [
           "Order"
@@ -1482,7 +1450,7 @@
         }
       }
     },
-    "/api/Admin/Order/details/{orderId}/services": {
+    "/api/Admin/Order/{orderId}/services": {
       "get": {
         "tags": [
           "Order"
@@ -1529,7 +1497,7 @@
         }
       }
     },
-    "/api/Admin/Order/cancel/{orderId}": {
+    "/api/Admin/Order/{orderId}/cancel": {
       "post": {
         "tags": [
           "Order"
@@ -1576,7 +1544,7 @@
         }
       }
     },
-    "/api/Admin/Part/detail-by-serial/{serial}": {
+    "/api/Admin/Part/{serial}/details": {
       "get": {
         "tags": [
           "Part"
@@ -1598,29 +1566,7 @@
         }
       }
     },
-    "/api/Admin/Part/details/{serial}": {
-      "get": {
-        "tags": [
-          "Part"
-        ],
-        "parameters": [
-          {
-            "name": "serial",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/api/Admin/Part/by-order-id/{orderId}": {
+    "/api/Admin/Part/{orderId}/by-order-id": {
       "get": {
         "tags": [
           "Part"
@@ -1643,7 +1589,7 @@
         }
       }
     },
-    "/api/Admin/Part/by-part-request/{orderId}": {
+    "/api/Admin/Part/{orderId}/by-part-request": {
       "get": {
         "tags": [
           "Part"
@@ -1666,7 +1612,7 @@
         }
       }
     },
-    "/api/Admin/Partrequest/getallpartrequest": {
+    "/api/Admin/Partrequest": {
       "get": {
         "tags": [
           "Partrequest"
@@ -1678,7 +1624,7 @@
         }
       }
     },
-    "/api/Admin/Partrequest/accept/{requestId}": {
+    "/api/Admin/Partrequest/{requestId}/accept": {
       "post": {
         "tags": [
           "Partrequest"
@@ -1701,7 +1647,7 @@
         }
       }
     },
-    "/api/Admin/Partrequest/deny/{requestId}": {
+    "/api/Admin/Partrequest/{requestId}/deny": {
       "post": {
         "tags": [
           "Partrequest"
@@ -1724,7 +1670,7 @@
         }
       }
     },
-    "/api/Admin/Partrequest/by-request-id/{requestId}": {
+    "/api/Admin/Partrequest/{requestId}/by-request-id": {
       "get": {
         "tags": [
           "Partrequest"
@@ -2083,7 +2029,7 @@
         }
       }
     },
-    "/api/Admin/Role/roles-of-user/{Username}": {
+    "/api/Admin/Role/{Username}/roles": {
       "get": {
         "tags": [
           "Role"
@@ -2105,7 +2051,7 @@
         }
       }
     },
-    "/api/Admin/Role/createrole/{roleName}": {
+    "/api/Admin/Role/{roleName}/create": {
       "post": {
         "tags": [
           "Role"
@@ -2127,7 +2073,7 @@
         }
       }
     },
-    "/api/Admin/Role/deleterole/{roleName}": {
+    "/api/Admin/Role/{roleName}": {
       "delete": {
         "tags": [
           "Role"
@@ -2281,54 +2227,6 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StringApiResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/Public/Security/encrypt-for-client": {
-      "post": {
-        "tags": [
-          "Security"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EncryptForClientRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/EncryptForClientRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/EncryptForClientRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/EncryptForClientResponseApiResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EncryptForClientResponseApiResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EncryptForClientResponseApiResponse"
                 }
               }
             }
@@ -2883,50 +2781,6 @@
             "nullable": true
           },
           "phone": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "EncryptForClientRequest": {
-        "type": "object",
-        "properties": {
-          "clientId": {
-            "type": "string",
-            "nullable": true
-          },
-          "plaintext": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "EncryptForClientResponse": {
-        "type": "object",
-        "properties": {
-          "encryptedKeyBlockBase64": {
-            "type": "string",
-            "nullable": true
-          },
-          "cipherDataBase64": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "EncryptForClientResponseApiResponse": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "data": {
-            "$ref": "#/components/schemas/EncryptForClientResponse"
-          },
-          "error": {
             "type": "string",
             "nullable": true
           }
