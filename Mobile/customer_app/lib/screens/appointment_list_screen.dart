@@ -246,9 +246,10 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                         icon: const Icon(Icons.date_range),
                         label: const Text('Chọn ngày'),
                         onPressed: () async {
+                          final pickerContext = context; // capture before await
                           final now = DateTime.now();
                           final picked = await showDatePicker(
-                            context: context,
+                            context: pickerContext,
                             initialDate: selectedDate ?? now,
                             firstDate: DateTime(now.year, now.month, now.day),
                             lastDate: DateTime(now.year + 1),
@@ -287,30 +288,31 @@ class _AppointmentListScreenState extends State<AppointmentListScreen> {
                         );
                         final onlyToday = DateTime(today.year, today.month, today.day);
                         if (onlyDate.isBefore(onlyToday)) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Ngày hẹn phải từ hôm nay trở đi')),
-                            );
-                          }
+                          final messenger = ScaffoldMessenger.of(context);
+                          messenger.showSnackBar(
+                            const SnackBar(content: Text('Ngày hẹn phải từ hôm nay trở đi')),
+                          );
                           return;
                         }
 
+                        // Capture navigation and messenger before any await
+                        final nav = Navigator.of(context);
+                        final messenger = ScaffoldMessenger.of(context);
                         try {
                           await _api.createAppointment(onlyDate, description: descController.text);
                           if (!mounted) return;
-                          Navigator.of(context).pop();
+                          nav.pop();
                           setState(() {
                             _appointmentsFuture = _api.getAppointments();
                           });
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                             const SnackBar(content: Text('Đặt lịch thành công')),
                           );
                         } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(e.toString())),
-                            );
-                          }
+                          if (!mounted) return;
+                          messenger.showSnackBar(
+                            SnackBar(content: Text(e.toString())),
+                          );
                         }
                       },
                     ),
