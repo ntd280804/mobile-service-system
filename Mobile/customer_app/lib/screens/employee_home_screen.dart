@@ -6,6 +6,9 @@ import 'employee_import_list_screen.dart';
 import 'employee_export_list_screen.dart';
 import 'employee_invoice_list_screen.dart';
 import 'qr_scan_screen.dart';
+import '../services/signalr_service.dart';
+import '../services/api_service.dart';
+
 class EmployeeHomeScreen extends StatefulWidget {
   const EmployeeHomeScreen({super.key});
 
@@ -15,6 +18,8 @@ class EmployeeHomeScreen extends StatefulWidget {
 
 class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
   int _currentIndex = 0;
+  final _api = ApiService();
+  final _signalR = SignalRService();
 
   final List<Widget> _screens = [
     const EmployeeDashboardScreen(),
@@ -24,6 +29,57 @@ class _EmployeeHomeScreenState extends State<EmployeeHomeScreen> {
     const EmployeeExportListScreen(),
     const EmployeeInvoiceListScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Listen to logout event from SignalR
+    _signalR.onLogoutReceived = _handleRemoteLogout;
+    // Listen to connection closed event
+    _signalR.onConnectionClosed = _handleConnectionClosed;
+  }
+
+  void _handleRemoteLogout() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bạn đã đăng xuất')),
+      );
+      _logout();
+    }
+  }
+
+  void _handleConnectionClosed() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mất kết nối với server. Đang đăng xuất...')),
+      );
+      _logout();
+    }
+  }
+
+  Future<void> _logout() async {
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _signalR.disconnect();
+      await _api.logout();
+      if (!mounted) return;
+      nav.pushNamedAndRemoveUntil('/login', (route) => false);
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Đăng xuất thất bại: $e')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _signalR.onLogoutReceived = null;
+    _signalR.onConnectionClosed = null;
+    super.dispose();
+  }
+
   Future<void> _openQrScanner() async {
     final code = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const QrScanScreen()),

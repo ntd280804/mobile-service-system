@@ -8,6 +8,7 @@ import 'order_list_screen.dart';
 import 'employee_home_screen.dart';
 import 'customer_dashboard_screen.dart';
 import 'qr_scan_screen.dart';
+import 'profile_screen.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -30,6 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Listen to logout event from SignalR
     _signalR.onLogoutReceived = _handleRemoteLogout;
+    // Listen to connection closed event
+    _signalR.onConnectionClosed = _handleConnectionClosed;
     _checkUserRole();
   }
 
@@ -44,13 +47,22 @@ class _HomeScreenState extends State<HomeScreen> {
   bool get _isEmployee {
     if (_userRole == null) return false;
     final roleLower = _userRole!.toLowerCase();
-    return roleLower.contains('role_nhanvien') || roleLower.contains('role_admin');
+    return !roleLower.contains('role_khachhang');
   }
 
   void _handleRemoteLogout() {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Bạn đã đăng xuất')),
+      );
+      _logout();
+    }
+  }
+
+  void _handleConnectionClosed() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mất kết nối với server. Đang đăng xuất...')),
       );
       _logout();
     }
@@ -81,19 +93,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     try {
       await _signalR.disconnect();
       await _api.logout();
       if (!mounted) return;
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      nav.pushNamedAndRemoveUntil('/login', (route) => false);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng xuất thất bại: ${e.toString()}')),
+      messenger.showSnackBar(
+        SnackBar(content: Text('Đăng xuất thất bại: $e')),
       );
     }
   }
-
   Future<void> _openQrScanner() async {
     final code = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const QrScanScreen()),
@@ -153,9 +166,11 @@ class _HomeScreenState extends State<HomeScreen> {
               final oldPass = oldController.text.trim();
               final newPass = newController.text.trim();
               final confirmPass = confirmController.text.trim();
+              final messenger = ScaffoldMessenger.of(context);
+              final navCtx = Navigator.of(ctx);
 
               if (newPass != confirmPass) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Mật khẩu mới không khớp')),
                 );
                 return;
@@ -164,16 +179,15 @@ class _HomeScreenState extends State<HomeScreen> {
               try {
                 await _api.changePassword(oldPass, newPass);
                 if (!mounted) return;
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
+                navCtx.pop();
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Đổi mật khẩu thành công')),
                 );
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi: $e')),
-                  );
-                }
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Lỗi: $e')),
+                );
               }
             },
             child: const Text('Đổi mật khẩu'),
@@ -186,6 +200,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _signalR.onLogoutReceived = null;
+    _signalR.onConnectionClosed = null;
     super.dispose();
   }
 
@@ -207,6 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const CustomerDashboardScreen(),
       const OrderListScreen(),
       const AppointmentListScreen(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
@@ -249,6 +265,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.calendar_today_outlined),
             selectedIcon: Icon(Icons.calendar_today),
             label: 'Lịch hẹn',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Tài khoản',
           ),
         ],
       ),

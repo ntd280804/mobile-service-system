@@ -4,9 +4,144 @@
     ViewData["Title"] = "Danh sách đơn hàng của tôi";
 }
 
-<h2>@ViewData["Title"]</h2>
+<style>
+    .order-page {
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);
+        min-height: 100vh;
+    }
 
-@if (TempData["Error"] != null)
+    .order-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .order-header h2 {
+        color: #1e40af;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.75rem;
+    }
+
+    .order-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08);
+        border: 1px solid rgba(59,130,246,0.2);
+    }
+
+    .order-table thead {
+        background: linear-gradient(135deg, rgba(59,130,246,0.8) 0%, rgba(139,92,246,0.8) 100%);
+        color: white;
+    }
+
+    .order-table thead th {
+        font-weight: 600;
+        border: none;
+        padding: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .order-table tbody tr {
+        border-bottom: 1px solid rgba(59,130,246,0.1);
+        transition: all 0.2s ease;
+    }
+
+    .order-table tbody tr:hover {
+        background: linear-gradient(135deg, rgba(59,130,246,0.03) 0%, rgba(139,92,246,0.03) 100%);
+    }
+
+    .order-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-info:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(6,182,212,0.3);
+        color: white;
+    }
+
+    .badge {
+        padding: 0.5rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(220,38,38,0.1) 100%);
+        color: #dc2626;
+        border-left: 4px solid #ef4444;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(22,163,74,0.1) 100%);
+        color: #059669;
+        border-left: 4px solid #10b981;
+    }
+
+    @@media (max-width: 768px) {
+        .order-page {
+            padding: 1rem;
+            min-height: calc(100vh - 60px);
+        }
+        .order-header {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .order-header h2 {
+            font-size: 1.5rem;
+        }
+        .order-table {
+            font-size: 0.9rem;
+        }
+        .order-table th,
+        .order-table td {
+            padding: 0.5rem;
+        }
+    }
+    
+    @@media (max-width: 576px) {
+        .order-page {
+            padding: 0.5rem;
+            min-height: calc(100vh - 50px);
+        }
+        .order-table {
+            font-size: 0.85rem;
+        }
+        .order-table th,
+        .order-table td {
+            padding: 0.3rem;
+        }
+    }
+</style>
+
+<div class="order-page">
+    <div class="order-header">
+        <h2>@ViewData["Title"]</h2>
+    </div>
+
+    @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger">
         @TempData["Error"]
@@ -20,19 +155,20 @@
     </div>
 }
 
-<table class="table table-bordered table-striped mt-3">
-    <thead class="table-dark">
-        <tr>
-            <th>Mã đơn</th>
-            <th>Loại đơn</th>
-            <th>Ngày tiếp nhận</th>
-            <th>Trạng thái</th>
-            <th>Nhân viên tiếp nhận</th>
-            <th>Nhân viên xử lý</th>
-            <th>Hành động</th>
-        </tr>
-    </thead>
-    <tbody>
+    <div class="order-table">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Loại đơn</th>
+                    <th>Ngày tiếp nhận</th>
+                    <th>Trạng thái</th>
+                    <th>Nhân viên tiếp nhận</th>
+                    <th>Nhân viên xử lý</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
         @if (Model != null && Model.Any())
         {
             foreach (var order in Model)
@@ -48,22 +184,22 @@
                     </td>
                     <td>@order.ReceiverEmpName</td>
                     <td>@order.HandlerEmpName</td>
-                    <td>
-                        <a class="btn btn-sm btn-info"
-                           asp-area="Public"
-                           asp-controller="Order"
-                           asp-action="Details"
-                           asp-route-id="@order.OrderId">Xem chi tiết</a>
-                    </td>
                 </tr>
             }
         }
         else
         {
             <tr>
-                <td colspan="7" class="text-center">Bạn chưa có đơn hàng nào.</td>
+                <td colspan="7" class="text-center py-4">
+                    <div class="text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        <p class="mb-0">Không có đơn hàng nào</p>
+                    </div>
+                </td>
             </tr>
         }
-    </tbody>
-</table>
+            </tbody>
+        </table>
+    </div>
+</div>
 

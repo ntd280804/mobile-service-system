@@ -21,29 +21,42 @@ namespace WebApp.Areas.Admin.Controllers
         }
         // GET: /Admin/partrequest
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+            
+            const int pageSize = 10;
+            
             try
             {
-
-                var response = await _httpClient.GetAsync("api/admin/Partrequest");
+                var response = await _httpClient.GetAsync("api/admin/partrequest");
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Try to read error details from API response
                     var errorContent = await response.Content.ReadAsStringAsync();
                     TempData["Error"] = $"Không thể tải danh sách part request: {response.ReasonPhrase} - {errorContent}";
-                    return View(new List<PartRequestViewModel>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<PartRequestViewModel>.Create(
+                        new List<PartRequestViewModel>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
 
                 var list = await response.Content.ReadFromJsonAsync<List<PartRequestViewModel>>() ?? new List<PartRequestViewModel>();
-                return View(list);
+                var paginatedList = WebApp.Models.Common.PaginatedList<PartRequestViewModel>.Create(
+                    list, 
+                    page, 
+                    pageSize);
+                return View(paginatedList);
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<PartRequestViewModel>());
+                var emptyList = WebApp.Models.Common.PaginatedList<PartRequestViewModel>.Create(
+                    new List<PartRequestViewModel>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
         
@@ -56,7 +69,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync("api/admin/Partrequest");
+                var response = await _httpClient.GetAsync("api/admin/partrequest");
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -194,7 +207,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Load parts for dropdown (only IN_STOCK parts)
-                var partsResponse = await _httpClient.GetAsync("api/admin/Part/in-stock");
+                var partsResponse = await _httpClient.GetAsync("api/admin/part/in-stock");
                 if (partsResponse.IsSuccessStatusCode)
                 {
                     var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();
@@ -231,7 +244,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("api/admin/Partrequest/post", model);
+                var response = await _httpClient.PostAsJsonAsync("api/admin/partrequest/post", model);
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["Success"] = "Tạo yêu cầu linh kiện thành công";
@@ -257,7 +270,7 @@ namespace WebApp.Areas.Admin.Controllers
         {
             try
             {
-                var partsResponse = await _httpClient.GetAsync("api/admin/Part/in-stock");
+                var partsResponse = await _httpClient.GetAsync("api/admin/part/in-stock");
                 if (partsResponse.IsSuccessStatusCode)
                 {
                     var parts = await partsResponse.Content.ReadFromJsonAsync<List<WebApp.Models.Part.PartDto>>() ?? new List<WebApp.Models.Part.PartDto>();

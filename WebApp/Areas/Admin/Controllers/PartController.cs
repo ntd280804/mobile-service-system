@@ -26,12 +26,15 @@ namespace WebApp.Areas.Admin.Controllers
         // Price được đổi từ long sang decimal? để khớp với kiểu trả về từ API (decimal).
         
 
-        // --- Index: lấy danh sách nhân viên ---
+        // --- Index: lấy danh sách linh kiện ---
         [HttpGet]
-        public async Task<IActionResult> Index(string name = null, string serial = null, string manufacturer = null, string status = null, decimal? priceMin = null, decimal? priceMax = null)
+        public async Task<IActionResult> Index(int page = 1, string name = null, string serial = null, string manufacturer = null, string status = null, decimal? priceMin = null, decimal? priceMax = null)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+            
+            const int pageSize = 10;
+            
             try
             {
                 var response = await _httpClient.GetAsync("api/Admin/Part");
@@ -46,19 +49,18 @@ namespace WebApp.Areas.Admin.Controllers
                         parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Serial) && p.Serial.Contains(serial, StringComparison.OrdinalIgnoreCase)).ToList();
                     if (!string.IsNullOrWhiteSpace(manufacturer))
                         parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Manufacturer) && p.Manufacturer.Contains(manufacturer, StringComparison.OrdinalIgnoreCase)).ToList();
-                    if (!string.IsNullOrWhiteSpace(status) && !status.Equals("Tất cả", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Lọc các phần có Status khác null/whitespace và bằng với status (không phân biệt chữ hoa/thường)
-                        parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Status) &&
-                                                 p.Status.Equals(status, StringComparison.OrdinalIgnoreCase))
-                                     .ToList();
-                    }
+                    if (!string.IsNullOrWhiteSpace(status))
+                        parts = parts.Where(p => !string.IsNullOrWhiteSpace(p.Status) && p.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
                     if (priceMin.HasValue)
                         parts = parts.Where(p => p.Price.HasValue && p.Price.Value >= priceMin.Value).ToList();
                     if (priceMax.HasValue)
                         parts = parts.Where(p => p.Price.HasValue && p.Price.Value <= priceMax.Value).ToList();
 
-                    return View(parts);
+                    var paginatedList = WebApp.Models.Common.PaginatedList<PartDto>.Create(
+                        parts ?? new List<PartDto>(), 
+                        page, 
+                        pageSize);
+                    return View(paginatedList);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -69,13 +71,21 @@ namespace WebApp.Areas.Admin.Controllers
                 else
                 {
                     TempData["Error"] = "Không thể tải danh sách linh kiện: " + response.ReasonPhrase;
-                    return View(new List<PartDto>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<PartDto>.Create(
+                        new List<PartDto>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<PartDto>());
+                var emptyList = WebApp.Models.Common.PaginatedList<PartDto>.Create(
+                    new List<PartDto>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 
@@ -87,7 +97,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/Part/{serial}/details");
+                var response = await _httpClient.GetAsync($"api/admin/part/details/{serial}");
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -114,7 +124,7 @@ namespace WebApp.Areas.Admin.Controllers
                 {
                     try
                     {
-                        var partsRequestResponse = await _httpClient.GetAsync($"api/admin/Part/{part.OrderId.Value}/by-part-request");
+                        var partsRequestResponse = await _httpClient.GetAsync($"api/admin/part/by-part-request/{part.OrderId.Value}");
                         if (partsRequestResponse.IsSuccessStatusCode)
                         {
                             var partsRequest = await partsRequestResponse.Content.ReadFromJsonAsync<List<PartDto>>() ?? new List<PartDto>();

@@ -40,9 +40,9 @@ namespace WebAPI.Areas.Admin.Controllers
         // GET: api/admin/export/getallexport
         [HttpGet]
         [Authorize]
-        public IActionResult GetAllExports()
+        public async Task<IActionResult> GetAllExports()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var result = OracleHelper.ExecuteRefCursor(
                     conn,
@@ -63,9 +63,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{stockoutId}/invoice")]
         [Authorize]
-        public IActionResult GetSignedExportInvoicePdf(int stockoutId)
+        public async Task<IActionResult> GetSignedExportInvoicePdf(int stockoutId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 byte[]? pdfBytes = OracleHelper.ExecuteBlobOutput(
                     conn,
@@ -83,9 +83,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{stockoutId}/details")]
         [Authorize]
-        public IActionResult GetExportDetails(int stockoutId)
+        public async Task<IActionResult> GetExportDetails(int stockoutId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var rows = OracleHelper.ExecuteRefCursor(
                     conn,
@@ -131,9 +131,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{stockoutId}/verify")]
         [Authorize]
-        public IActionResult VerifyStockOutSignature(int stockoutId)
+        public async Task<IActionResult> VerifyStockOutSignature(int stockoutId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 
 
@@ -183,7 +183,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("create")]
         [Authorize]
-        public IActionResult CreateExportFromOrder([FromBody] CreateExportFromOrderDto dto)
+        public async Task<IActionResult> CreateExportFromOrder([FromBody] CreateExportFromOrderDto dto)
         {
             if (dto.OrderId <= 0)
                 return BadRequest("Missing OrderId");
@@ -201,7 +201,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
             var certificatePassword = dto.CertificatePassword ?? "";
 
-            return _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
+            return await _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
             {
                 // 1. Get employee ID
                 var empIdOutput = OracleHelper.ExecuteNonQueryWithOutputs(

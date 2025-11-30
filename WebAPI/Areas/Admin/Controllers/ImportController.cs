@@ -40,9 +40,9 @@ namespace WebAPI.Areas.Admin.Controllers
         // GET: api/admin/import/getallimport
         [HttpGet]
         [Authorize]
-        public IActionResult GetAllImports()
+        public async Task<IActionResult> GetAllImports()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var result = OracleHelper.ExecuteRefCursor(
                     conn,
@@ -61,9 +61,9 @@ namespace WebAPI.Areas.Admin.Controllers
         }
         [HttpGet("{stockinId}/verify")]
         [Authorize]
-        public IActionResult VerifyStockInSignature(int stockinId)
+        public async Task<IActionResult> VerifyStockInSignature(int stockinId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 
 
@@ -113,9 +113,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{stockinId}/invoice")]
         [Authorize]
-        public IActionResult GetSignedImportInvoicePdf(int stockinId)
+        public async Task<IActionResult> GetSignedImportInvoicePdf(int stockinId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 byte[]? pdfBytes = OracleHelper.ExecuteBlobOutput(
                     conn,
@@ -132,9 +132,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{stockinid}/details")]
         [Authorize]
-        public IActionResult GetImportDetails(int stockinid)
+        public async Task<IActionResult> GetImportDetails(int stockinid)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var rows = OracleHelper.ExecuteRefCursor(
                     conn,
@@ -178,7 +178,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
         [HttpPost("post")]
         [Authorize]
-        public IActionResult ImportStockStepByStepWithTransaction([FromBody] ImportStockDto dto)
+        public async Task<IActionResult> ImportStockStepByStepWithTransaction([FromBody] ImportStockDto dto)
         {
             if (dto.Items == null || dto.Items.Count == 0)
                 return BadRequest("No items to import");
@@ -196,7 +196,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
             var certificatePassword = dto.CertificatePassword ?? "";
 
-            return _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
+            return await _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
             {
                 // 1. Get employee ID
                 var empIdOutput = OracleHelper.ExecuteNonQueryWithOutputs(

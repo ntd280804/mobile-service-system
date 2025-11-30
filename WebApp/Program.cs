@@ -4,19 +4,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient("WebApiClient", client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["WebApi:BaseUrl"]);
-    client.Timeout = TimeSpan.FromSeconds(30);
-})
-.ConfigurePrimaryHttpMessageHandler(() =>
-    new HttpClientHandler
-    {
-        // Bỏ qua validation certificate (chỉ dev, LAN)
-        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-    });
-
-
 // --- Thêm session ---
 builder.Services.AddDistributedMemoryCache(); // Lưu session trên RAM
 builder.Services.AddSession(options =>
@@ -36,7 +23,18 @@ builder.Services.AddSingleton<OracleClientHelper>();
 builder.Services.AddHttpClient<WebApp.Services.SecurityClient>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["WebApi:BaseUrl"]);
-    client.Timeout = TimeSpan.FromMinutes(2);
+    client.Timeout = TimeSpan.FromMinutes(5);
+}).ConfigurePrimaryHttpMessageHandler(() =>
+    new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    });
+
+// Register named HttpClient "WebApiClient" for controllers
+builder.Services.AddHttpClient("WebApiClient", client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["WebApi:BaseUrl"]);
+    client.Timeout = TimeSpan.FromMinutes(5);
 }).ConfigurePrimaryHttpMessageHandler(() =>
     new HttpClientHandler
     {

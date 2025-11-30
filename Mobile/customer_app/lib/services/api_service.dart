@@ -3,7 +3,6 @@ import 'dart:io'; // ✅ Import để bypass SSL
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart'; // ✅ Import adapter
-import 'dart:convert';
 
 import '../config/api_config.dart';
 import 'storage_service.dart';
@@ -513,7 +512,7 @@ class ApiService {
     await _ensureInterceptors();
     try {
       await _dio.post(
-        ApiConfig.ChangePass,
+        ApiConfig.changePassword,
         data: {
           'oldPassword': oldPassword,
           'newPassword': newPassword,
@@ -555,9 +554,7 @@ class ApiService {
         throw 'Không tìm thấy username trong bộ nhớ';
       }
 
-      final resp = await _dio.get(
-        '${ApiConfig.getAppointments}',
-      );
+      final resp = await _dio.get(ApiConfig.getAppointments);
       if (resp.data is List) {
         return (resp.data as List)
             .map((e) => Map<String, dynamic>.from(e))
@@ -566,7 +563,6 @@ class ApiService {
         return [];
       }
     } catch (e) {
-      print('Lỗi getAppointments: $e');
       return [];
     }
   }
@@ -615,7 +611,6 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('Lỗi getPartsByOrderId: $e');
       return [];
     }
   }
@@ -631,7 +626,6 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('Lỗi getPartsByPartRequest: $e');
       return [];
     }
   }
@@ -647,7 +641,6 @@ class ApiService {
       }
       return [];
     } catch (e) {
-      print('Lỗi getPartsByRequestId: $e');
       return [];
     }
   }

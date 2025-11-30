@@ -1,7 +1,7 @@
 ﻿@model WebApp.Models.Appointment.CreateAppointmentDto
 @inject IHttpContextAccessor HttpContextAccessor
 @{
-    ViewData["Title"] = "Import Stock";
+    ViewData["Title"] = "Đặt lịch";
     var username = HttpContextAccessor.HttpContext.Session.GetString("CUsername");
     if (string.IsNullOrEmpty(Model.CustomerPhone))
     {
@@ -10,10 +10,185 @@
 }
 @{
     Layout = "~/Areas/Public/Views/Shared/_Layout.cshtml";
-    ViewData["Title"] = "Đặt lịch";
 }
 
-<h2>@ViewData["Title"]</h2>
+<style>
+    .booking-page {
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);
+        min-height: 100vh;
+    }
+
+    .booking-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .booking-header h2 {
+        color: #1e40af;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.75rem;
+    }
+
+    .booking-card {
+        background: linear-gradient(135deg, 
+            rgba(255,255,255,0.95) 0%, 
+            rgba(249,250,251,0.95) 50%, 
+            rgba(255,255,255,0.95) 100%);
+        border: 1px solid rgba(59,130,246,0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08);
+        padding: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-control {
+        border: 1px solid rgba(59,130,246,0.3);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        outline: none;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+        color: white;
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(220,38,38,0.1) 100%);
+        color: #dc2626;
+        border-left: 4px solid #ef4444;
+    }
+
+    @@media (max-width: 768px) {
+        .booking-page {
+            padding: 1rem;
+            min-height: calc(100vh - 60px);
+        }
+        .booking-header {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .booking-header h2 {
+            font-size: 1.5rem;
+        }
+        .booking-card {
+            padding: 1.5rem;
+        }
+        .btn-gradient {
+            width: 100%;
+        }
+    }
+    
+    @@media (max-width: 576px) {
+        .booking-page {
+            padding: 0.5rem;
+            min-height: calc(100vh - 50px);
+        }
+        .booking-card {
+            padding: 1rem;
+        }
+        .booking-header {
+            padding: 0.75rem;
+        }
+    }
+
+    /* Toast notification styles */
+    .toast-container {
+        position: fixed;
+        top: 80px; /* Below header */
+        right: 20px;
+        z-index: 1040; /* Below header z-index */
+    }
+
+    .custom-toast {
+        background: linear-gradient(135deg, rgba(34,197,94,0.95) 0%, rgba(22,163,74,0.95) 100%);
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(34,197,94,0.3);
+        min-width: 300px;
+        animation: slideInRight 0.5s ease-out;
+    }
+
+    .custom-toast .toast-header {
+        background: transparent;
+        border: none;
+        color: white;
+        font-weight: 600;
+    }
+
+    .custom-toast .toast-body {
+        color: white;
+        font-weight: 500;
+    }
+
+    .custom-toast .btn-close {
+        filter: brightness(0) invert(1);
+    }
+
+    @@keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+<!-- Toast container -->
+<div class="toast-container">
+    @if (TempData["Success"] != null)
+    {
+        <div class="toast custom-toast show" role="alert" data-bs-autohide="true" data-bs-delay="3000">
+            <div class="toast-body text-center py-3">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                Đặt lịch thành công !
+            </div>
+        </div>
+    }
+</div>
+
+<div class="booking-page">
+    <div class="booking-header">
+        <h2>@ViewData["Title"]</h2>
+    </div>
+
+    <div class="booking-card">
 
 @if (TempData["Error"] != null)
 {
@@ -52,10 +227,30 @@
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Đặt lịch</button>
+    <div class="d-grid">
+        <button type="submit" class="btn btn-gradient">
+            <i class="bi bi-calendar-check"></i> Đặt lịch
+        </button>
+    </div>
 </form>
-
+    </div>
+</div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        // Initialize toast notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+            var toastList = toastElList.map(function (toastEl) {
+                return new bootstrap.Toast(toastEl);
+            });
+            
+            // Show all toasts
+            toastList.forEach(function(toast) {
+                toast.show();
+            });
+        });
+    </script>
 }

@@ -190,7 +190,7 @@ class _EmployeeImportDetailScreenState extends State<EmployeeImportDetailScreen>
                                       ],
                                     ),
                                   );
-                                }).toList(),
+                                }),
                               ],
                             ),
                           ),

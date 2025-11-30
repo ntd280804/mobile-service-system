@@ -1091,6 +1091,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "WebAPI.Areas.Common.Controllers.OrderController",
+    "Method": "GetOrderDetails",
+    "RelativePath": "api/Common/Order/{orderId}/details",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "orderId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "WebAPI.Areas.Public.Controllers.AppointmentController",
     "Method": "Create",
     "RelativePath": "api/Public/Appointment",

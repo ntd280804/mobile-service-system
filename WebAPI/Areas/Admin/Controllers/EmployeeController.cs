@@ -42,9 +42,9 @@ namespace WebAPI.Areas.Admin.Controllers
         // =====================
         [HttpGet]
         [Authorize]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var result = OracleHelper.ExecuteRefCursor(
                     conn,
@@ -66,7 +66,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
         [HttpPost("change-password")]
         [Authorize]
-        public ActionResult<ApiResponse<string>> ChangePassword([FromBody] ChangePasswordDto dto)
+        public async Task<ActionResult<ApiResponse<string>>> ChangePassword([FromBody] ChangePasswordDto dto)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.OldPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
                 return BadRequest(ApiResponse<string>.Fail("Thiếu mật khẩu cũ hoặc mật khẩu mới."));
@@ -92,7 +92,7 @@ namespace WebAPI.Areas.Admin.Controllers
             catch (OracleException ex) when (ex.Number == 28)
             {
                 _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-                _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+                await _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
                 return Unauthorized(ApiResponse<string>.Fail("Phiên Oracle đã bị kill. Vui lòng đăng nhập lại."));
             }
             catch (OracleException ex) when (ex.Number == 20001)
@@ -110,7 +110,7 @@ namespace WebAPI.Areas.Admin.Controllers
         }
         [HttpPost("change-password/secure")]
         [Authorize]
-        public ActionResult<ApiResponse<EncryptedPayload>> ChangePasswordSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
+        public async Task<ActionResult<ApiResponse<EncryptedPayload>>> ChangePasswordSecureEncrypted([FromServices] RsaKeyService rsaKeyService, [FromBody] EncryptedPayload payload)
         {
             if (payload == null || string.IsNullOrWhiteSpace(payload.EncryptedKeyBlockBase64) || string.IsNullOrWhiteSpace(payload.CipherDataBase64))
                 return BadRequest(ApiResponse<EncryptedPayload>.Fail("Invalid encrypted payload"));
@@ -122,8 +122,8 @@ namespace WebAPI.Areas.Admin.Controllers
                     return BadRequest(ApiResponse<EncryptedPayload>.Fail("Cannot parse payload"));
 
                 // Xử lý change password
-                var changePasswordResult = ChangePassword(dto);
-                var apiResp = ControllerResponseHelper.ExtractApiResponse(changePasswordResult, "Change password failed");
+                var changePasswordResult = await ChangePassword(dto);
+                var apiResp = ControllerResponseHelper.ExtractApiResponse<string>(changePasswordResult, "Change password failed");
                 
                 // Lấy clientId từ session headers
                 var username = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
@@ -198,9 +198,9 @@ namespace WebAPI.Areas.Admin.Controllers
         // =====================
         [HttpGet("{id}")]
         [Authorize]
-        public IActionResult Get(decimal id)
+        public async Task<IActionResult> Get(decimal id)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var rows = OracleHelper.ExecuteRefCursor(
                     conn,
@@ -391,7 +391,7 @@ namespace WebAPI.Areas.Admin.Controllers
 
                 // Xử lý login
                 var loginResult = Login(dto);
-                var apiResp = ControllerResponseHelper.ExtractApiResponse(loginResult, "Đăng nhập thất bại.");
+                var apiResp = ControllerResponseHelper.ExtractApiResponse<EmployeeLoginResult>(loginResult, "Đăng nhập thất bại.");
 
                 // Mã hóa response (cả success và error đều được mã hóa)
                 // Login dùng clientId = username + platform (RSA tự động generate, KHÔNG dùng "admin-")
@@ -413,10 +413,10 @@ namespace WebAPI.Areas.Admin.Controllers
         // =====================
         [HttpPost("logout")]
         [Authorize]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             _oracleSessionHelper.TryGetSession(HttpContext, out var username, out var platform, out var sessionId);
-            _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
+            await _oracleSessionHelper.HandleSessionKilled(HttpContext, _connManager, username, platform, sessionId);
 
             return Ok(new { message = "Đăng xuất thành công." });
         }
@@ -426,11 +426,11 @@ namespace WebAPI.Areas.Admin.Controllers
         // =====================
         [HttpPost("register")]
         [Authorize]
-        public IActionResult Register([FromBody] EmployeeRegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] EmployeeRegisterDto dto)
         {
             if (dto == null) return BadRequest("Invalid data");
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 string? privateKey = OracleHelper.ExecuteClobOutput(
                     conn,
@@ -587,12 +587,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("unlock")]
         [Authorize]
-        public IActionResult UnlockUser([FromBody] UnlockEmployeeDto dto)
+        public async Task<IActionResult> UnlockUser([FromBody] UnlockEmployeeDto dto)
         {
             if (dto == null || string.IsNullOrEmpty(dto.Username))
                 return BadRequest(new { message = "Username không hợp lệ." });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 OracleHelper.ExecuteNonQuery(
                     conn,
@@ -607,12 +607,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("lock")]
         [Authorize]
-        public IActionResult LockUser([FromBody] UnlockEmployeeDto dto)
+        public async Task<IActionResult> LockUser([FromBody] UnlockEmployeeDto dto)
         {
             if (dto == null || string.IsNullOrEmpty(dto.Username))
                 return BadRequest(new { message = "Username không hợp lệ." });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 OracleHelper.ExecuteNonQuery(
                     conn,

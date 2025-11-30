@@ -1,22 +1,196 @@
-@model WebApp.Models.Audit.TriggerAuditViewModel
+@model WebApp.Areas.Admin.Controllers.TriggerAuditViewModel
 
 @{
     ViewData["Title"] = "Trigger Audit";
 }
 
-<h2>@ViewData["Title"]</h2>
+<style>
+    .audit-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-left: 4px solid #3b82f6;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-@* Debug: Hiển thị thông tin Model *@
-@if (Model != null)
-{
-    <div class="alert alert-info">
-        <strong>Debug:</strong> Model is not null. Status is @(Model.Status != null ? "not null" : "NULL")
-        @if (Model.Status != null)
-        {
-            <div>Enabled: @Model.Status.Enabled, Count: @Model.Status.Count, Expected: @Model.Status.ExpectedCount</div>
+    .audit-header h2 {
+        margin: 0;
+        color: #1e40af;
+        font-weight: 600;
+    }
+
+    .table-container {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.2) 0%, 
+            rgba(224, 242, 254, 0.18) 25%,
+            rgba(186, 230, 253, 0.2) 50%,
+            rgba(224, 242, 254, 0.18) 75%,
+            rgba(240, 253, 255, 0.2) 100%);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        max-height: 80vh;
+        position: relative;
+    }
+    
+    /* Scroll indicator - removed */
+    .table-container::before {
+        display: none;
+        font-size: 0.75rem;
+        z-index: 20;
+        opacity: 0.8;
+        pointer-events: none;
+    }
+
+    .audit-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: collapse;
+        font-size: 0.9em;
+    }
+
+    .audit-table thead {
+        background: linear-gradient(135deg, 
+            rgba(59, 130, 246, 0.8) 0%,
+            rgba(37, 99, 235, 0.85) 25%,
+            rgba(139, 92, 246, 0.9) 50%,
+            rgba(168, 85, 247, 0.85) 75%,
+            rgba(192, 132, 252, 0.8) 100%);
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .audit-table thead th {
+        padding: 0.75rem 0.5rem;
+        font-weight: 600;
+        text-align: left;
+        font-size: 0.8125rem;
+        letter-spacing: 0.025em;
+        border: none;
+        white-space: nowrap;
+    }
+
+    .audit-table tbody tr {
+        border-bottom: 1px solid rgba(186, 230, 253, 0.25);
+        transition: background 0.3s ease, box-shadow 0.3s ease;
+        background: linear-gradient(90deg, 
+            rgba(240, 253, 255, 0.1) 0%,
+            rgba(224, 242, 254, 0.12) 50%,
+            rgba(240, 253, 255, 0.1) 100%);
+    }
+
+    .audit-table tbody tr:hover {
+        background: linear-gradient(90deg, 
+            rgba(147, 197, 253, 0.25) 0%,
+            rgba(96, 165, 250, 0.22) 25%, 
+            rgba(168, 85, 247, 0.2) 50%,
+            rgba(96, 165, 250, 0.22) 75%,
+            rgba(147, 197, 253, 0.25) 100%);
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.2);
+    }
+
+    .audit-table tbody tr:last-child {
+        border-bottom: none;
+    }
+
+    .audit-table tbody td {
+        padding: 0.75rem 0.5rem;
+        color: #475569;
+        font-size: 0.8125rem;
+        vertical-align: middle;
+        border: none;
+        max-width: 200px;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+
+    .audit-table tbody td:first-child {
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .no-data {
+        padding: 3rem;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 1rem;
+    }
+
+    /* Responsive Design - Cải thiện scroll ngang */
+    .table-container {
+        overflow-x: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+        width: 100%;
+    }
+
+    .audit-table {
+        min-width: 1800px; /* Tăng min-width để hiển thị đầy đủ các cột */
+        table-layout: fixed;
+    }
+
+    /* Đảm bảo các cột có width phù hợp */
+    .audit-table th:nth-child(1), .audit-table td:nth-child(1) { width: 80px; }  /* Log ID */
+    .audit-table th:nth-child(2), .audit-table td:nth-child(2) { width: 120px; } /* Thời gian */
+    .audit-table th:nth-child(3), .audit-table td:nth-child(3) { width: 100px; } /* DB User */
+    .audit-table th:nth-child(4), .audit-table td:nth-child(4) { width: 100px; } /* OS User */
+    .audit-table th:nth-child(5), .audit-table td:nth-child(5) { width: 120px; } /* Machine */
+    .audit-table th:nth-child(6), .audit-table td:nth-child(6) { width: 100px; } /* Module */
+    .audit-table th:nth-child(7), .audit-table td:nth-child(7) { width: 100px; } /* App Role */
+    .audit-table th:nth-child(8), .audit-table td:nth-child(8) { width: 80px; }  /* Emp ID */
+    .audit-table th:nth-child(9), .audit-table td:nth-child(9) { width: 120px; } /* Customer Phone */
+    .audit-table th:nth-child(10), .audit-table td:nth-child(10) { width: 150px; } /* Object Name */
+    .audit-table th:nth-child(11), .audit-table td:nth-child(11) { width: 200px; } /* Note */
+    .audit-table th:nth-child(12), .audit-table td:nth-child(12) { width: 100px; } /* DML Type */
+    .audit-table th:nth-child(13), .audit-table td:nth-child(13) { width: 150px; } /* Changed Columns */
+    .audit-table th:nth-child(14), .audit-table td:nth-child(14) { width: 200px; } /* Old Values */
+    .audit-table th:nth-child(15), .audit-table td:nth-child(15) { width: 200px; } /* New Values */
+
+    /* Scrollbar styling */
+    .table-container::-webkit-scrollbar {
+        height: 8px;
+        width: 8px;
+    }
+
+    .table-container::-webkit-scrollbar-track {
+        background: rgba(226, 232, 240, 0.5);
+        border-radius: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+    }
+
+    @@media (max-width: 1199.98px) {
+        .audit-header h2 {
+            font-size: 1.75rem;
         }
-    </div>
-}
+    }
+
+    @@media (max-width: 767.98px) {
+        .audit-header h2 {
+            font-size: 1.5rem;
+        }
+        
+        .audit-header {
+            padding: 0.75rem 1rem;
+        }
+    }
+</style>
+
+<div class="audit-header">
+    <h2>@ViewData["Title"]</h2>
+</div>
 
 @* Hiển thị trạng thái *@
 @if (Model?.Status != null)
@@ -96,9 +270,9 @@ else
 
 @if (Model?.Logs != null && Model.Logs.Any())
 {
-    <div class="table-responsive" style="max-height: 80vh; overflow-y: auto;">
-        <table class="table table-bordered table-striped table-hover mt-3" style="font-size: 0.9em;">
-            <thead class="table-dark sticky-top">
+    <div class="table-container">
+        <table class="audit-table">
+            <thead>
                 <tr>
                     <th>Log ID</th>
                     <th>Thời gian</th>

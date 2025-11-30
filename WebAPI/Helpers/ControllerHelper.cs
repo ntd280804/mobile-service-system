@@ -30,7 +30,7 @@ namespace WebAPI.Helpers
         /// <param name="action">The action to execute with the Oracle connection.</param>
         /// <param name="errorMessage">Custom error message for general exceptions.</param>
         /// <returns>The IActionResult from the action or an error result.</returns>
-        public IActionResult ExecuteWithConnection(
+        public async Task<IActionResult> ExecuteWithConnection(
             HttpContext httpContext,
             Func<OracleConnection, IActionResult> action,
             string errorMessage = "Lỗi xử lý yêu cầu")
@@ -44,7 +44,7 @@ namespace WebAPI.Helpers
             }
             catch (OracleException ex) when (ex.Number == 28)
             {
-                return HandleSessionKilled(httpContext);
+                return await HandleSessionKilled(httpContext);
             }
             catch (OracleException ex)
             {
@@ -79,7 +79,7 @@ namespace WebAPI.Helpers
             }
             catch (OracleException ex) when (ex.Number == 28)
             {
-                return HandleSessionKilled(httpContext);
+                return await HandleSessionKilled(httpContext);
             }
             catch (OracleException ex)
             {
@@ -100,10 +100,10 @@ namespace WebAPI.Helpers
         
         /// Handle session killed error (OracleException 28).
         
-        private IActionResult HandleSessionKilled(HttpContext httpContext)
+        private async Task<IActionResult> HandleSessionKilled(HttpContext httpContext)
         {
             _sessionHelper.TryGetSession(httpContext, out var username, out var platform, out var sessionId);
-            _sessionHelper.HandleSessionKilled(httpContext, _connManager, username, platform, sessionId);
+            await _sessionHelper.HandleSessionKilled(httpContext, _connManager, username, platform, sessionId);
             return new UnauthorizedObjectResult(new { message = "Phiên Oracle đã bị kill. Vui lòng đăng nhập lại." });
         }
 
@@ -132,7 +132,7 @@ namespace WebAPI.Helpers
         /// Execute an action within a transaction. Auto-rollback on error, auto-commit on success.
         /// Handles OracleException 28 (session killed) and business errors (20001-20999).
         
-        public IActionResult ExecuteWithTransaction(
+        public async Task<IActionResult> ExecuteWithTransaction(
             HttpContext httpContext,
             Func<OracleConnection, OracleTransaction, IActionResult> action,
             string errorMessage = "Lỗi xử lý yêu cầu")
@@ -150,7 +150,7 @@ namespace WebAPI.Helpers
             catch (OracleException ex) when (ex.Number == 28)
             {
                 transaction.Rollback();
-                return HandleSessionKilled(httpContext);
+                return await HandleSessionKilled(httpContext);
             }
             catch (OracleException ex) when (ex.Number >= 20001 && ex.Number <= 20999)
             {

@@ -20,9 +20,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("users")]
         [Authorize]
-        public IActionResult GetAllDBUser()
+        public async Task<IActionResult> GetAllDBUser()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_USERS", "p_cursor",
                     reader => new { Username = reader.GetString(0) });
@@ -32,9 +32,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("roles")]
         [Authorize]
-        public IActionResult GetAllRoles()
+        public async Task<IActionResult> GetAllRoles()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_ROLES", "p_cursor",
                     reader => new { Role = reader.GetString(0) });
@@ -44,9 +44,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{Username}/roles")]
         [Authorize]
-        public IActionResult GetRoleOfUser(string Username)
+        public async Task<IActionResult> GetRoleOfUser(string Username)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ROLES_OF_USER", "p_cursor",
                     reader => new { GrantedRole = reader.GetString(0) },
@@ -57,9 +57,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("{roleName}/create")]
         [Authorize]
-        public IActionResult CreateRole(string roleName)
+        public async Task<IActionResult> CreateRole(string roleName)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 try
                 {
@@ -76,9 +76,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpDelete("{roleName}")]
         [Authorize]
-        public IActionResult DeleteRole(string roleName)
+        public async Task<IActionResult> DeleteRole(string roleName)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 try
                 {
@@ -95,12 +95,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("assignrole")]
         [Authorize]
-        public IActionResult AssignRole([FromBody] AssignRoleRequest request)
+        public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.RoleName))
                 return BadRequest(new { message = "User or Role cannot be empty." });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 try
                 {
@@ -122,12 +122,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("revokerole")]
         [Authorize]
-        public IActionResult RevokeRole([FromBody] RevokeRoleRequest request)
+        public async Task<IActionResult> RevokeRole([FromBody] RevokeRoleRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.RoleName))
                 return BadRequest(new { message = "User or Role cannot be empty." });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 try
                 {

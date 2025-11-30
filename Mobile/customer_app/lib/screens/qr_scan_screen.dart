@@ -13,7 +13,7 @@ class QrScanScreen extends StatefulWidget {
     super.key,
     this.onSubmit,
     this.submitButtonLabel = 'Xác nhận đăng nhập',
-    this.successMessage = 'Đăng nhận Web đã được xác nhận.',
+    this.successMessage = 'Đăng nhập Web đã được xác nhận.',
   });
 
   @override
@@ -28,6 +28,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
     formats: const [BarcodeFormat.qrCode],
     facing: CameraFacing.back,
   );
+
   bool _scannerLocked = false;
   bool _isSubmitting = false;
   String? _cameraError;
@@ -48,8 +49,8 @@ class _QrScanScreenState extends State<QrScanScreen> {
         .map((value) => value.trim())
         .firstWhere(
           (value) => value.isNotEmpty,
-          orElse: () => '',
-        );
+      orElse: () => '',
+    );
 
     if (code.isEmpty) return;
 
@@ -299,9 +300,9 @@ class _QrScanScreenState extends State<QrScanScreen> {
   }
 
   String _formatScannerError(
-    MobileScannerException error, {
-    required String fallback,
-  }) {
+      MobileScannerException error, {
+        required String fallback,
+      }) {
     final details = error.errorDetails;
     if (details != null) {
       final msg = details.toString();

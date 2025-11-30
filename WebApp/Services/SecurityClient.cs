@@ -29,9 +29,9 @@ namespace WebApp.Services
             _httpClient = httpClient;
         }
 
-        
+        /// <summary>
         /// Set headers cho authenticated requests (JWT token và Oracle session headers)
-        
+        /// </summary>
         public void SetHeaders(string jwtToken, string username, string platform, string sessionId)
         {
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwtToken);
@@ -107,9 +107,9 @@ namespace WebApp.Services
             }
         }
 
-        
+        /// <summary>
         /// Lấy private key PEM để lưu vào session
-        
+        /// </summary>
         public string? GetPrivateKeyPem()
         {
             if (string.IsNullOrWhiteSpace(_clientPrivateKeyBase64))
@@ -219,14 +219,7 @@ namespace WebApp.Services
             }
             
             if (!apiResponse.Success)
-            {
-                var detailedMessage = apiResponse.Error;
-                if (string.IsNullOrWhiteSpace(detailedMessage))
-                {
-                    detailedMessage = TryExtractMessage(decryptedJson);
-                }
-                throw new InvalidOperationException(detailedMessage ?? "Request failed");
-            }
+                throw new InvalidOperationException(apiResponse.Error ?? "Request failed");
             
             if (apiResponse.Data == null)
             {
@@ -246,33 +239,6 @@ namespace WebApp.Services
             }
             
             return apiResponse.Data;
-        }
-
-        private static string? TryExtractMessage(string? json)
-        {
-            if (string.IsNullOrWhiteSpace(json))
-                return null;
-
-            try
-            {
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-
-                if (root.TryGetProperty("Error", out var errorProp) && errorProp.ValueKind == JsonValueKind.String)
-                    return errorProp.GetString();
-
-                if (root.TryGetProperty("Message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String)
-                    return messageProp.GetString();
-
-                if (root.TryGetProperty("Errors", out var errorsProp))
-                    return errorsProp.ToString();
-            }
-            catch
-            {
-                // ignore parsing errors
-            }
-
-            return null;
         }
 
         public class Envelope

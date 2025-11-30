@@ -1,32 +1,333 @@
 ﻿@model WebApp.Models.Part.ImportDetailViewModel
 
-<h2>Chi tiết Import #@Model.StockInId</h2>
+<style>
+    .detail-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-left: 4px solid #3b82f6;
+        padding: 1rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
 
-<div>
-    <p><strong>Employee Name:</strong> @Model.EmpUsername</p>
-    <p><strong>In Date:</strong> @Model.InDate</p>
-    <p><strong>Note:</strong> @Model.Note</p>
+    .detail-header h2 {
+        margin: 0;
+        color: #1e40af;
+        font-weight: 600;
+    }
+
+    .detail-card {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.2) 0%, 
+            rgba(224, 242, 254, 0.18) 25%,
+            rgba(186, 230, 253, 0.2) 50%,
+            rgba(224, 242, 254, 0.18) 75%,
+            rgba(240, 253, 255, 0.2) 100%);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(125, 211, 252, 0.3);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .detail-card-body {
+        padding: 1.5rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .info-item {
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 0.5rem;
+        border: 1px solid rgba(125, 211, 252, 0.2);
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #475569;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+        color: #1e293b;
+        font-size: 1rem;
+    }
+
+    .table-container {
+        background: linear-gradient(135deg, 
+            rgba(240, 253, 255, 0.2) 0%, 
+            rgba(224, 242, 254, 0.18) 25%,
+            rgba(186, 230, 253, 0.2) 50%,
+            rgba(224, 242, 254, 0.18) 75%,
+            rgba(240, 253, 255, 0.2) 100%);
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid rgba(125, 211, 252, 0.3);
+    }
+
+    .detail-table {
+        width: 100%;
+        margin: 0;
+        border-collapse: collapse;
+    }
+
+    .detail-table thead {
+        background: linear-gradient(135deg, 
+            rgba(59, 130, 246, 0.8) 0%,
+            rgba(37, 99, 235, 0.85) 25%,
+            rgba(139, 92, 246, 0.9) 50%,
+            rgba(168, 85, 247, 0.85) 75%,
+            rgba(192, 132, 252, 0.8) 100%);
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .detail-table thead th {
+        padding: 1rem;
+        font-weight: 600;
+        text-align: left;
+        font-size: 0.875rem;
+        border: none;
+    }
+
+    .detail-table tbody tr {
+        border-bottom: 1px solid rgba(186, 230, 253, 0.25);
+        transition: background 0.3s ease;
+        background: rgba(255, 255, 255, 0.5);
+    }
+
+    .detail-table tbody tr:hover {
+        background: linear-gradient(90deg, 
+            rgba(147, 197, 253, 0.25) 0%,
+            rgba(96, 165, 250, 0.22) 50%,
+            rgba(147, 197, 253, 0.25) 100%);
+    }
+
+    .detail-table tbody td {
+        padding: 1rem;
+        color: #475569;
+        font-size: 0.875rem;
+        border: none;
+    }
+
+    @@media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-table {
+            font-size: 0.8125rem;
+        }
+
+        .detail-table thead {
+            display: none;
+        }
+
+        .detail-table tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(125, 211, 252, 0.3);
+            border-radius: 0.5rem;
+        }
+
+        .detail-table tbody td {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(186, 230, 253, 0.2);
+        }
+
+        .detail-table tbody td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .detail-table tbody td:last-child {
+            border-bottom: none;
+        }
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16,185,129,0.4);
+        color: white;
+    }
+
+    .btn-warning-gradient {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .btn-warning-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(245,158,11,0.4);
+        color: white;
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+        border: none;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-back:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(107,114,128,0.4);
+        color: white;
+    }
+</style>
+
+<div class="detail-header">
+    <h2>Chi tiết Import #@Model.StockInId</h2>
+</div>
+<div class="d-flex gap-2">
+    <a class="btn-gradient" asp-action="DownloadPdf" asp-route-id="@Model.StockInId">
+        <i class="bi bi-download"></i> Tải PDF
+    </a>
+    <button type="button" class="btn-warning-gradient" onclick="verifyImport(@Model.StockInId)">
+        <i class="bi bi-shield-check"></i> Xác thực chữ ký
+    </button>
+    <a class="btn-back" asp-action="Index">
+        <i class="bi bi-arrow-left"></i> Quay lại
+    </a>
+</div>
+<div class="detail-card">
+    <div class="detail-card-body">
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Employee Name:</div>
+                <div class="info-value">@Model.EmpUsername</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">In Date:</div>
+                <div class="info-value">@Model.OutDate</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Note:</div>
+                <div class="info-value">@Model.Note</div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<h3>Items</h3>
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Part Name</th>
-            <th>Manufacturer</th>
-            <th>Serial</th>
-            <th>Price</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model.Items)
-        {
+<div class="detail-header">
+    <h2>Items</h2>
+</div>
+
+<div class="table-container">
+    <table class="detail-table">
+        <thead>
             <tr>
-                <td>@item.PartName</td>
-                <td>@item.Manufacturer</td>
-                <td>@item.Serial</td>
-                <td>@item.Price</td>
+                <th>Part Name</th>
+                <th>Manufacturer</th>
+                <th>Serial</th>
+                <th>Price</th>
             </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td data-label="Part Name">@item.PartName</td>
+                    <td data-label="Manufacturer">@item.Manufacturer</td>
+                    <td data-label="Serial">@item.Serial</td>
+                    <td data-label="Price">@item.Price</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Verify Modal -->
+<div class="modal fade" id="verifyModal" tabindex="-1" aria-labelledby="verifyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="verifyModalHeader">
+                <h5 class="modal-title" id="verifyModalLabel">
+                    <i class="bi bi-shield-check"></i> Kết quả xác thực
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="verifyModalBody">
+                <p id="verifyMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function verifyImport(id) {
+        const modal = new bootstrap.Modal(document.getElementById('verifyModal'));
+        const modalBody = document.getElementById('verifyModalBody');
+        const modalHeader = document.getElementById('verifyModalHeader');
+        const message = document.getElementById('verifyMessage');
+        
+        // Hiển thị modal với loading
+        modalHeader.className = 'modal-header bg-info text-white';
+        message.innerHTML = '<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Đang xác thực...</p></div>';
+        modal.show();
+        
+        try {
+            const response = await fetch(`@Url.Action("Verify", "Import", new { area = "Admin" })?id=${id}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                if (data.isValid) {
+                    modalHeader.className = 'modal-header bg-success text-white';
+                    message.innerHTML = `<div class="text-center"><i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i><p class="mt-3 fs-5">${data.message}</p></div>`;
+                } else {
+                    modalHeader.className = 'modal-header bg-danger text-white';
+                    message.innerHTML = `<div class="text-center"><i class="bi bi-x-circle-fill text-danger" style="font-size: 3rem;"></i><p class="mt-3 fs-5">${data.message}</p></div>`;
+                }
+            } else {
+                modalHeader.className = 'modal-header bg-danger text-white';
+                message.innerHTML = `<div class="text-center"><i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i><p class="mt-3">${data.message}</p></div>`;
+            }
+        } catch (error) {
+            modalHeader.className = 'modal-header bg-danger text-white';
+            message.innerHTML = `<div class="text-center"><i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i><p class="mt-3">Lỗi: ${error.message}</p></div>`;
         }
-    </tbody>
-</table>
+    }
+</script>
+}

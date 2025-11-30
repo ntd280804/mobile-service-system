@@ -26,59 +26,667 @@
     <title>@title - Admin</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body, html { height: 100%; margin: 0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
-        .d-flex-full { display: flex; min-height: 100vh; flex-direction: row; }
-        .sidebar { width: 220px; background-color: #343a40; color: #fff; display: flex; flex-direction: column; padding-top: 1rem; }
-        .sidebar a { color: #fff; text-decoration: none; padding: 0.6rem 1rem; display: flex; align-items: center; transition: background 0.2s; }
-        .sidebar a:hover { background-color: #495057; }
-        .sidebar .nav-link.active { background-color: #0d6efd; }
-        .sidebar .collapse .nav-link { font-size: 0.95rem; padding-left: 1.5rem; }
-        .sidebar .nav-link span { margin-left: auto; transition: transform 0.2s; }
-        .sidebar .nav-link[aria-expanded="true"] span { transform: rotate(180deg); }
-        .content { flex: 1; padding: 20px; background-color: #f8f9fa; }
-        footer { border-top: 1px solid #dee2e6; text-align: center; padding: 0.5rem 0; background-color: #fff; flex-shrink: 0; }
+        :root {
+            --sidebar-width: 320px;
+            --primary-color: #4f46e5;
+            --primary-dark: #4338ca;
+            --primary-light: #6366f1;
+            --sidebar-bg: #1e293b;
+            --sidebar-hover: #334155;
+            --text-gray: #94a3b8;
+            --text-white: #f1f5f9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        
+        body.admin-layout {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .admin-shell {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        /* ===== SIDEBAR STYLES ===== */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: var(--text-white);
+            flex-shrink: 0;
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.15);
+            transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Brand Header */
+        .sidebar .brand {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            padding: 1.75rem 1.5rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+        
+        .sidebar .brand i {
+            font-size: 1.5rem;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        .sidebar .brand #sidebarClose {
+            border: none !important;
+            background: none !important;
+        }
+        
+        .sidebar .brand #sidebarClose:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-radius: 6px;
+        }
+        
+        /* Navigation Container */
+        .sidebar ul {
+            padding: 1rem 0.75rem;
+            flex: 1;
+        }
+        
+        /* Navigation Links */
+        .sidebar .nav-link {
+            color: var(--text-gray);
+            padding: 0.875rem 1rem;
+            margin-bottom: 0.25rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            font-weight: 500;
+            font-size: 0.9375rem;
+            position: relative;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
+        .sidebar .nav-link .icon {
+            width: 1.75rem;
+            min-width: 1.75rem;
+            height: 1.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+            transition: none;
+            text-align: center;
+            margin-right: 0.5rem;
+        }
+        
+        .sidebar .nav-link .nav-label {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: var(--text-white);
+            text-decoration: none;
+            background-color: var(--sidebar-hover);
+            transform: translateX(2px);
+        }
+        
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, 
+                rgba(96, 165, 250, 0.6) 0%,
+                rgba(59, 130, 246, 0.65) 25%,
+                rgba(147, 51, 234, 0.7) 50%,
+                rgba(168, 85, 247, 0.65) 75%,
+                rgba(192, 132, 252, 0.6) 100%);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .sidebar .nav-link.active .icon {
+            color: #fff;
+        }
+        
+        /* Collapse Toggle */
+        .sidebar .collapse-toggle {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            justify-content: space-between;
+        }
+        
+        .sidebar .collapse-toggle:hover {
+            background-color: var(--sidebar-hover);
+        }
+        
+        .sidebar .collapse-toggle .caret {
+            transition: transform 0.2s ease;
+            font-size: 0.875rem;
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+        
+        .sidebar .collapse-toggle[aria-expanded="true"] {
+            color: var(--text-white);
+            background: rgba(100, 116, 139, 0.1);
+        }
+        
+        .sidebar .collapse-toggle[aria-expanded="true"] .caret {
+            transform: rotate(180deg);
+            opacity: 1;
+        }
+        
+        /* Đảm bảo dropdown items có cùng layout với menu thường */
+        .sidebar .collapse-toggle .d-flex {
+            gap: 0;
+            align-items: center;
+        }
+        
+        .sidebar .collapse-toggle .d-flex .icon {
+            width: 1.75rem;
+            min-width: 1.75rem;
+            height: 1.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+            margin-right: 0.5rem;
+        }
+        
+        /* Submenu Items */
+        .sidebar .collapse {
+            margin-top: 0.25rem;
+        }
+        
+        /* Disable Bootstrap default collapse behavior */
+        .sidebar .collapsing {
+            transition: none !important;
+            height: auto !important;
+            display: none !important;
+        }
+        
+        /* Submenu animation */
+        .sidebar .collapse {
+            display: none;
+            height: auto !important;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.25s ease,
+                        transform 0.25s ease;
+        }
+        
+        .sidebar .collapse.show {
+            display: block;
+            max-height: 500px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Smooth submenu item appearance */
+        .sidebar .collapse.show .nav-link {
+            animation: slideIn 0.3s ease forwards;
+            opacity: 0;
+        }
+        
+        .sidebar .collapse.show .nav-link:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+        
+        .sidebar .collapse.show .nav-link:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+        
+        .sidebar .collapse.show .nav-link:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+        
+        .sidebar .collapse.show .nav-link:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+        
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Menu structure */
+        .sidebar .collapse ul,
+        .sidebar .collapse .nav {
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100%;
+            list-style: none;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        .sidebar .collapse li {
+            width: 100%;
+            display: block !important;
+        }
+        
+        /* Submenu links */
+        .sidebar .collapse .nav-link {
+            font-size: 0.875rem;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            margin-bottom: 0.15rem;
+            position: relative;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            width: 100%;
+        }
+        
+        /* Submenu bullet point */
+        .sidebar .collapse .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 1.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 5px;
+            height: 5px;
+            background: var(--text-gray);
+            border-radius: 50%;
+        }
+        
+        .sidebar .collapse .nav-link:hover::before,
+        .sidebar .collapse .nav-link.active::before {
+            background: #fff;
+        }
+        
+        .sidebar .collapse .nav-link .icon {
+            display: none;
+        }
+
+        /* Logout Button Special Styling */
+        .sidebar .nav-link.btn {
+            background: transparent;
+            border: none;
+            text-decoration: none;
+            padding: 0.875rem 1rem;
+        }
+        
+        .sidebar .nav-link.btn:focus {
+            outline: none;
+            box-shadow: none;
+        }
+        
+        .sidebar .nav-item.mt-3 {
+            margin-top: 1.5rem !important;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar .nav-item.mt-3 .nav-link {
+            background: rgba(239, 68, 68, 0.1);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+        
+        .sidebar .nav-item.mt-3 .nav-link:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fff;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            flex: 1;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+        
+        /* Navbar */
+        .content-area .navbar {
+            background: #fff !important;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+        
+        .content-area .navbar .fw-semibold {
+            color: #1e293b;
+            font-size: 1rem;
+        }
+        
+        .content-area .navbar .text-muted {
+            color: #64748b !important;
+            font-size: 0.8125rem;
+        }
+        
+        /* Sidebar Toggle Button */
+        #sidebarToggle {
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #475569;
+            transition: all 0.2s ease;
+        }
+        
+        #sidebarToggle:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+        
+        #sidebarToggle i {
+            font-size: 1.25rem;
+        }
+        
+        /* Page Wrapper */
+        .page-wrapper {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+        
+        /* Footer */
+        footer {
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            padding: 1rem;
+            background-color: #fff;
+            color: #64748b;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+        
+        /* Backdrop */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1035;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(2px);
+            display: none;
+        }
+        
+        @@media (min-width: 992px) {
+            body.sidebar-open .sidebar-backdrop {
+                opacity: 1;
+                visibility: visible;
+                display: block;
+            }
+        }
+        
+        /* ===== USER PROFILE AVATAR ===== */
+        .user-profile {
+            margin-left: auto;
+        }
+        
+        .user-avatar-link {
+            text-decoration: none;
+            display: block;
+        }
+        
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+        
+        .user-avatar:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+        }
+
+
+
+        /* ===== RESPONSIVE STYLES ===== */
+        @@media (max-width: 991.98px) {
+            .admin-shell {
+                position: relative;
+            }
+            
+            .sidebar {
+                position: fixed;
+                z-index: 1050;
+                height: 100vh;
+                top: 0;
+                left: 0;
+                right: 0;
+                transform: translateX(-100%);
+                width: 100vw !important;
+                max-width: none !important;
+                transition: transform 0.3s ease;
+            }
+            
+            body.sidebar-open .sidebar {
+                transform: translateX(0);
+                box-shadow: none;
+            }
+            
+            .content-area {
+                width: 100%;
+            }
+            
+            .user-profile {
+                margin-left: 0.5rem;
+            }
+            
+            .user-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            /* Đảm bảo touch events hoạt động trên mobile */
+            .sidebar .nav-link {
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+            
+            .page-wrapper {
+                padding: 1rem;
+            }
+        }
+        
+        @@media (max-width: 575.98px) {
+            .sidebar {
+                width: 90vw;
+                max-width: 280px;
+            }
+            
+            .sidebar .brand {
+                padding: 1.25rem 1rem;
+                font-size: 1.1rem;
+            }
+            
+            .sidebar .nav-link {
+                padding: 0.75rem 0.875rem;
+                font-size: 0.875rem;
+            }
+            
+            .sidebar .collapse .nav-link {
+                padding: 0.65rem 0.875rem 0.65rem 2.5rem;
+            }
+            
+            .page-wrapper {
+                padding: 0.875rem;
+            }
+            
+            .content-area .navbar {
+                padding: 0.875rem 1rem;
+            }
+            
+            footer {
+                padding: 0.75rem;
+                font-size: 0.8125rem;
+            }
+        }
+        
+        @@media (min-width: 992px) {
+            .sidebar-backdrop {
+                display: none;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="d-flex">
+<body class="admin-layout">
+    <div class="admin-shell">
         <!-- Sidebar -->
-        <ul class="nav nav-pills flex-column mb-auto sidebar">
+        <aside class="sidebar" id="adminSidebar">
+            <div class="brand">
+                <button class="btn btn-link text-white p-0 d-lg-none" id="sidebarClose" type="button">
+                    <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+                </button>
+                <span class="d-none d-lg-inline-flex align-items-center gap-2">
+                    <i class="bi bi-tools"></i>
+                    Admin Portal
+                </span>
+            </div>
+            <ul class="nav nav-pills flex-column mb-auto">
             @if (string.IsNullOrEmpty(username))
             {
                 <li class="nav-item">
-                    <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="Login">Login</a>
+                    <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Employee" asp-action="Login">
+                        <span class="icon bi bi-box-arrow-in-right"></span>
+                        <span class="nav-label">Login</span>
+                    </a>
                 </li>
             }
             else
             {
-                <li><a class="nav-link" asp-area="Admin" asp-controller="Home" asp-action="Index">Dashboard</a></li>
-                <li class="nav-item">
-                    <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="ChangePassword">Đổi mật khẩu</a>
+                <li>
+                    <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Home" asp-action="Index">
+                        <span class="icon bi bi-speedometer2"></span>
+                        <span class="nav-label">Dashboard</span>
+                    </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="MobileQrLogin">Tạo mã đăng nhập Mobile</a>
+                    <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Employee" asp-action="ChangePassword">
+                        <span class="icon bi bi-shield-lock"></span>
+                        <span class="nav-label">Đổi mật khẩu</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Employee" asp-action="MobileQrLogin">
+                        <span class="icon bi bi-qr-code"></span>
+                        <span class="nav-label">Tạo mã đăng nhập Mobile</span>
+                    </a>
                 </li>
                 @* Quản lý nhân viên *@
                 @if (HasRole("ROLE_ADMIN"))
                 {
 
                     <li>
-                        <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseEmployee" role="button" aria-expanded="false" aria-controls="collapseEmployee">
-                            Quản lý nhân viên <span>▾</span>
+                        <a class="nav-link collapse-toggle" href="#collapseEmployee" role="button" aria-expanded="false" aria-controls="collapseEmployee">
+                            <span class="d-flex align-items-center">
+                                <span class="icon bi bi-people"></span>
+                                <span class="nav-label">Quản lý nhân viên</span>
+                            </span>
+                            <span class="caret bi bi-chevron-down"></span>
                         </a>
                         <ul class="collapse nav flex-column ms-3" id="collapseEmployee">
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Employee" asp-action="Index">Danh sách nhân viên</a></li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Employee" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Danh sách nhân viên</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
 
                     <li>
-                        <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseRoleProfile" role="button" aria-expanded="false" aria-controls="collapseRoleProfile">
-                            Quản lý phân quyền & Profile <span>▾</span>
+                        <a class="nav-link collapse-toggle" href="#collapseRoleProfile" role="button" aria-expanded="false" aria-controls="collapseRoleProfile">
+                            <span class="d-flex align-items-center">
+                                <span class="icon bi bi-person-badge"></span>
+                                <span class="nav-label">Quản lý phân quyền & Profile</span>
+                            </span>
+                            <span class="caret bi bi-chevron-down"></span>
                         </a>
                         <ul class="collapse nav flex-column ms-3" id="collapseRoleProfile">
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Role" asp-action="Index">Phân quyền</a></li>
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Profile" asp-action="Index">Profile</a></li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Role" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Phân quyền</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Profile" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Profile</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 }
@@ -87,12 +695,26 @@
                 @if (HasRole("ROLE_ADMIN", "ROLE_TIEPTAN"))
                 {
                     <li>
-                        <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseCustomer" role="button" aria-expanded="false" aria-controls="collapseCustomer">
-                            Quản lý khách hàng <span>▾</span>
+                        <a class="nav-link collapse-toggle" href="#collapseCustomer" role="button" aria-expanded="false" aria-controls="collapseCustomer">
+                            <span class="d-flex align-items-center">
+                                <span class="icon bi bi-person-lines-fill"></span>
+                                <span class="nav-label">Quản lý khách hàng</span>
+                            </span>
+                            <span class="caret bi bi-chevron-down"></span>
                         </a>
                         <ul class="collapse nav flex-column ms-3" id="collapseCustomer">
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Customer" asp-action="Index">Danh sách khách hàng</a></li>
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Appointment" asp-action="Index">Danh sách đặt lịch</a></li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Customer" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Danh sách khách hàng</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Appointment" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Danh sách đặt lịch</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 }
@@ -101,12 +723,26 @@
                 @if (HasRole("ROLE_ADMIN", "ROLE_THUKHO"))
                 {
                     <li>
-                        <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseStock" role="button" aria-expanded="false" aria-controls="collapseStock">
-                            Quản lý nhập xuất kho <span>▾</span>
+                        <a class="nav-link collapse-toggle" href="#collapseStock" role="button" aria-expanded="false" aria-controls="collapseStock">
+                            <span class="d-flex align-items-center">
+                                <span class="icon bi bi-box-seam"></span>
+                                <span class="nav-label">Quản lý nhập xuất kho</span>
+                            </span>
+                            <span class="caret bi bi-chevron-down"></span>
                         </a>
                         <ul class="collapse nav flex-column ms-3" id="collapseStock">
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Import" asp-action="Index">Nhập kho</a></li>
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Export" asp-action="Index">Xuất kho</a></li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Import" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Nhập kho</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Export" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Xuất kho</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 }
@@ -115,7 +751,10 @@
                 @if (HasRole("ROLE_ADMIN", "ROLE_TIEPTAN"))
                 {
                     <li>
-                        <a class="nav-link" asp-area="Admin" asp-controller="Invoice" asp-action="Index">Quản lý hóa đơn</a>
+                        <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Invoice" asp-action="Index">
+                            <span class="icon bi bi-receipt-cutoff"></span>
+                            <span class="nav-label">Quản lý hóa đơn</span>
+                        </a>
                     </li>
                 }
 
@@ -123,12 +762,26 @@
                 @if (HasRole("ROLE_ADMIN", "ROLE_THUKHO", "ROLE_KITHUATVIEN"))
                 {
                     <li>
-                        <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseParts" role="button" aria-expanded="false" aria-controls="collapseParts">
-                            Quản lý linh kiện <span>▾</span>
+                        <a class="nav-link collapse-toggle" href="#collapseParts" role="button" aria-expanded="false" aria-controls="collapseParts">
+                            <span class="d-flex align-items-center">
+                                <span class="icon bi bi-cpu"></span>
+                                <span class="nav-label">Quản lý linh kiện</span>
+                            </span>
+                            <span class="caret bi bi-chevron-down"></span>
                         </a>
                         <ul class="collapse nav flex-column ms-3" id="collapseParts">
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Part" asp-action="Index">Danh sách linh kiện</a></li>
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="PartRequest" asp-action="Index">Danh sách yêu cầu</a></li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Part" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Danh sách linh kiện</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="PartRequest" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Danh sách yêu cầu</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 }
@@ -137,74 +790,131 @@
                 @if (HasRole("ROLE_ADMIN", "ROLE_TIEPTAN", "ROLE_KITHUATVIEN"))
                 {
                     <li>
-                        <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseOrder" role="button" aria-expanded="false" aria-controls="collapseOrder">
-                            Quản lý Order <span>▾</span>
+                        <a class="nav-link collapse-toggle" href="#collapseOrder" role="button" aria-expanded="false" aria-controls="collapseOrder">
+                            <span class="d-flex align-items-center">
+                                <span class="icon bi bi-card-checklist"></span>
+                                <span class="nav-label">Quản lý Order</span>
+                            </span>
+                            <span class="caret bi bi-chevron-down"></span>
                         </a>
                         <ul class="collapse nav flex-column ms-3" id="collapseOrder">
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="Index">Danh sách đơn hàng</a></li>
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="WarrantyIndex">Danh sách đơn bảo hành</a></li>
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Order" asp-action="RepairIndex">Danh sách đơn sửa chữa</a></li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Order" asp-action="Index">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Danh sách đơn hàng</span>
+                                </a>
+                            </li>
+                            @* <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Order" asp-action="WarrantyIndex">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Danh sách đơn bảo hành</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Order" asp-action="RepairIndex">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">Danh sách đơn sửa chữa</span>
+                                </a>
+                            </li> *@
                         </ul>
                     </li>
                 }
                 @if (HasRole("ROLE_ADMIN"))
                 {
                     <li>
-                        <a class="nav-link d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#collapseAudit" role="button" aria-expanded="false" aria-controls="collapseAudit">
-                            Audit <span>▾</span>
+                        <a class="nav-link collapse-toggle" href="#collapseAudit" role="button" aria-expanded="false" aria-controls="collapseAudit">
+                            <span class="d-flex align-items-center">
+                                <span class="icon bi bi-clipboard-data"></span>
+                                <span class="nav-label">Audit</span>
+                            </span>
+                            <span class="caret bi bi-chevron-down"></span>
                         </a>
                         <ul class="collapse nav flex-column ms-3" id="collapseAudit">
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="TriggerAudit">TriggerAudit</a></li>
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="FGAAudit">FGAAudit</a></li>
-                            <li><a class="nav-link" asp-area="Admin" asp-controller="Audit" asp-action="StandardAudit">StandardAudit</a></li>
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Audit" asp-action="TriggerAudit">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">TriggerAudit</span>
+                                </a>
+                            </li>
+                            @* <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Audit" asp-action="FGAAudit">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">FGAAudit</span>
+                                </a>
+                            </li> *@
+                            <li>
+                                <a class="nav-link d-flex align-items-center" asp-area="Admin" asp-controller="Audit" asp-action="StandardAudit">
+                                    <span class="icon bi bi-dot"></span>
+                                    <span class="nav-label">StandardAudit</span>
+                                </a>
+                            </li>
                         </ul>
                     </li>
                 }
                 <li class="nav-item mt-3">
                     <form method="post" asp-area="Admin" asp-controller="Employee" asp-action="Logout">
-                        <button type="submit" class="nav-link btn btn-link text-start">Logout (@username)</button>
+                        <button type="submit" class="nav-link btn btn-link text-start d-flex align-items-center gap-2 w-100">
+                            <span class="icon bi bi-box-arrow-right"></span>
+                            <span class="nav-label">Logout (@username)</span>
+                        </button>
                     </form>
                 </li>
             }
-        </ul>
+            </ul>
+        </aside>
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-        <div class="content w-100">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
-                <div class="container-fluid">
+        <div class="content-area">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm px-3">
+                <div class="container-fluid gap-2">
+                    <button class="btn btn-outline-secondary d-lg-none" id="sidebarToggle" type="button">
+                        <i class="bi bi-list"></i>
+                    </button>
                     @if (!string.IsNullOrEmpty(username))
                     {
-                        <span class="navbar-text">
-                            Welcome, @username (@string.Join(", ", roles)) ,@sessionId
-                        </span>
+                        <div class="d-flex flex-column d-none d-lg-flex">
+                            <span class="fw-semibold">Welcome, @username</span>
+                            <small class="text-muted">@string.Join(", ", roles)</small>
+                        </div>
+                        
+                        <div class="user-profile">
+                            <a href="@Url.Action("MyProfile", "Profile", new { area = "Admin" })" class="user-avatar-link">
+                                <div class="user-avatar">
+                                    @username.Substring(0, Math.Min(2, username.Length))
+                                </div>
+                            </a>
+                        </div>
                     }
                     else
                     {
-                        <span class="navbar-text">Welcome, Guest!</span>
+                        <span class="navbar-text d-none d-lg-inline">Welcome, Guest!</span>
                     }
                 </div>
             </nav>
 
-            @RenderBody()
+            <div class="page-wrapper">
+                @RenderBody()
+            </div>
+            
+            <footer class="border-top text-muted py-2 mt-auto">
+                <div class="container text-center">Admin Dashboard</div>
+            </footer>
         </div>
     </div>
-
-    <footer class="border-top text-muted py-2 mt-auto">
-        <div class="container text-center">&copy; 2025 - Admin Dashboard</div>
-    </footer>
     <!-- Modal Bắt Buộc Upload Private Key (Sau Login) -->
     <div class="modal fade" id="requiredUploadPrivateKeyModal" tabindex="-1" aria-labelledby="requiredUploadPrivateKeyModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-danger text-white">
+                <div class="modal-header text-white" style="background: linear-gradient(135deg, rgba(59,130,246,1) 0%, rgba(139,92,246,1) 100%);">
                     <h5 class="modal-title" id="requiredUploadPrivateKeyModalLabel">
-                        <strong>⚠️ BẮT BUỘC UPLOAD PRIVATE KEY</strong>
+                        <strong>BẮT BUỘC UPLOAD PRIVATE KEY</strong>
                     </h5>
                     <!-- Không có nút đóng - modal bắt buộc -->
                 </div>
                 <form id="requiredUploadPrivateKeyForm" method="post" asp-area="Admin" asp-controller="Employee" asp-action="UploadPrivateKey" enctype="multipart/form-data">
                     <div class="modal-body">
                         <div class="alert alert-danger">
-                            <h6><strong>⚠️ Yêu cầu bắt buộc:</strong></h6>
+                            <h6><strong>Yêu cầu bắt buộc:</strong></h6>
                             <p class="mb-0">Bạn <strong>PHẢI</strong> upload private key để có thể sử dụng các chức năng API secure trong hệ thống:</p>
                             <ul class="mb-0 mt-2">
                                 <li>Nhập kho (Import Stock)</li>
@@ -227,8 +937,8 @@
                         <div id="requiredUploadStatus" class="alert" style="display: none;"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                            <strong>📤 Upload Private Key & Tiếp Tục</strong>
+                        <button type="submit" class="btn btn-lg w-100" style="background: linear-gradient(135deg, rgba(59,130,246,1) 0%, rgba(139,92,246,1) 100%); border: none; color: white;">
+                            <strong>Upload Private Key & Tiếp Tục</strong>
                         </button>
                     </div>
                 </form>
@@ -239,21 +949,160 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
     <script>
+        // Sidebar toggle for responsive layout
+        (function () {
+            const body = document.body;
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            const navLinks = document.querySelectorAll('#adminSidebar .nav-link');
+
+            const closeSidebar = () => body.classList.remove('sidebar-open');
+            const openSidebar = () => body.classList.add('sidebar-open');
+            const toggleSidebar = () => body.classList.toggle('sidebar-open');
+
+            toggleBtn?.addEventListener('click', toggleSidebar);
+            backdrop?.addEventListener('click', closeSidebar);
+            
+            // Thêm xử lý cho nút đóng menu trong sidebar
+            const closeBtn = document.getElementById('sidebarClose');
+            closeBtn?.addEventListener('click', closeSidebar);
+            
+            // Chỉ đóng sidebar khi click vào link thực sự (không phải collapse toggle)
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    // Nếu đây là collapse toggle thì không đóng sidebar
+                    if (link.classList.contains('collapse-toggle')) {
+                        return;
+                    }
+                    
+                    // Nếu đây là link có href thực sự thì đóng sidebar trên mobile
+                    const href = link.getAttribute('href');
+                    if (window.innerWidth < 992 && href && href !== '#' && !href.startsWith('#')) {
+                        setTimeout(() => closeSidebar(), 100);
+                    }
+                });
+            });
+
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 992) {
+                    closeSidebar();
+                }
+            });
+            
+            // Disable Bootstrap collapse animations completely
+            const style = document.createElement('style');
+            style.textContent = `
+                .sidebar .collapse.collapsing {
+                    transition: none !important;
+                    height: auto !important;
+                    display: none !important;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Handle collapse toggle with smooth animation
+            const collapseToggles = document.querySelectorAll('.sidebar .collapse-toggle');
+            
+            collapseToggles.forEach(toggle => {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetCollapse = document.getElementById(targetId);
+                    
+                    if (!targetCollapse) return;
+                    
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    
+                    // Close all other collapses smoothly
+                    const allCollapses = document.querySelectorAll('.sidebar .collapse');
+                    const allToggles = document.querySelectorAll('.sidebar .collapse-toggle');
+                    
+                    allCollapses.forEach(collapse => {
+                        if (collapse.id !== targetId && collapse.classList.contains('show')) {
+                            collapse.classList.remove('show');
+                        }
+                    });
+                    
+                    allToggles.forEach(t => {
+                        if (t !== toggle) {
+                            t.setAttribute('aria-expanded', 'false');
+                        }
+                    });
+                    
+                    // Toggle target collapse with animation
+                    if (isExpanded) {
+                        targetCollapse.classList.remove('show');
+                        toggle.setAttribute('aria-expanded', 'false');
+                    } else {
+                        // Small delay to ensure display is set before animation
+                        setTimeout(() => {
+                            targetCollapse.classList.add('show');
+                            toggle.setAttribute('aria-expanded', 'true');
+                        }, 10);
+                    }
+                });
+            });
+        })();
+    </script>
+    <script>
         // SignalR connection cho Admin
         @inject IConfiguration Configuration
         const adminSessionId = '@(sessionId ?? "")';
-        console.log('👤 Admin sessionId:', adminSessionId);
+        console.log('Admin sessionId:', adminSessionId);
+        
+        // Định nghĩa URLs để dùng cho BroadcastChannel (cần ở ngoài để luôn có)
+        const dashboardUrl = '@Url.Action("Index", "Home", new { area = "Admin" })';
+        const logoutUrl = '@Url.Action("Logout", "Employee", new { area = "Admin" })';
+        const loginUrl = '@Url.Action("Login", "Employee", new { area = "Admin" })';
+
+        // Đồng bộ login/logout đa tab - LUÔN khởi tạo để hoạt động cả khi chưa đăng nhập
+        const channel = new BroadcastChannel('Admin_auth_channel');
+
+        channel.onmessage = (event) => {
+            console.log('📢 Nhận auth event từ tab khác:', event.data);
+            if (event.data === 'logout') {
+                setTimeout(() => {
+                    window.location.href = loginUrl;
+                }, 1000);
+            } else if (event.data === 'login') {
+                // Nếu đang ở trang login, redirect đến dashboard
+                // Nếu đang ở trang khác, reload để cập nhật trạng thái
+                setTimeout(() => {
+                    const currentPath = window.location.pathname.toLowerCase();
+                    if (currentPath.includes('/admin/employee/login') || currentPath === '/admin/employee/login') {
+                        window.location.href = dashboardUrl;
+                    } else {
+                        window.location.reload();
+                    }
+                }, 1500);
+            }
+        };
+
+        // Gửi sự kiện logout từ form
+        const logoutForm = document.querySelector('form[action$="Logout"]');
+        if (logoutForm) {
+            logoutForm.addEventListener('submit', () => {
+                channel.postMessage('logout');
+                console.log('📡 Gửi logout event sang các tab khác');
+            });
+        }
+
+        const loginForm = document.querySelector('form[action$="Login"]');
+        if (loginForm) {
+            loginForm.addEventListener('submit', () => {
+                channel.postMessage('login');
+                console.log('📡 Gửi login event sang các tab khác');
+            });
+        }
         
         if (adminSessionId) {
-            // Tạo SignalR connection
+            // Tạo SignalR connection (chỉ khi đã đăng nhập)
             const connection = new signalR.HubConnectionBuilder()
                 .withUrl('@Configuration["SignalR:NotificationHubUrl"]?sessionId=' + encodeURIComponent(adminSessionId))
                 .withAutomaticReconnect()
                 .build();
-            
-            const dashboardUrl = '@Url.Action("Index", "Home", new { area = "Admin" })';
-            const logoutUrl = '@Url.Action("Logout", "Employee", new { area = "Admin" })';
-            const loginUrl = '@Url.Action("Login", "Employee", new { area = "Admin" })';
 
             // Lắng nghe ForceLogout từ server
             connection.on('ForceLogout', async function(message) {
@@ -277,47 +1126,14 @@
             async function startConnection() {
                 try {
                     await connection.start();
-                    console.log('✅ SignalR connected (Admin)');
+                    console.log('SignalR connected (Admin)');
                 } catch (err) {
-                    console.error('⚠️ SignalR start error:', err);
+                    console.error('SignalR start error:', err);
                     setTimeout(startConnection, 5000); // thử lại sau 5s
                 }
             }
 
             startConnection();
-
-            // 🔐 Đồng bộ login/logout đa tab
-            const channel = new BroadcastChannel('Admin_auth_channel');
-
-            channel.onmessage = (event) => {
-                console.log('📢 Nhận auth event từ tab khác:', event.data);
-                if (event.data === 'logout') {
-                    setTimeout(() => {
-                        window.location.href = loginUrl;
-                    }, 1000);
-                } else if (event.data === 'login') {
-                    setTimeout(() => {
-                        window.location.href = dashboardUrl;
-                    }, 1000);
-                }
-            };
-
-            // Gửi sự kiện logout từ form
-            const logoutForm = document.querySelector('form[action$="Logout"]');
-            if (logoutForm) {
-                logoutForm.addEventListener('submit', () => {
-                    channel.postMessage('logout');
-                    console.log('📡 Gửi logout event sang các tab khác');
-                });
-            }
-
-            const loginLink = document.querySelector('a[href*="Login"]');
-            if (loginLink) {
-                loginLink.addEventListener('click', () => {
-                    channel.postMessage('login');
-                    console.log('📡 Gửi login event sang các tab khác');
-                });
-            }
         }
     </script>
     <script>

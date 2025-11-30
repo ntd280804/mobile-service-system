@@ -19,9 +19,9 @@ namespace WebAPI.Areas.Common.Controllers
         }
         [HttpGet]
         [Authorize]
-        public IActionResult Getall()
+        public async Task<IActionResult> Getall()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(
                     conn,
@@ -41,6 +41,33 @@ namespace WebAPI.Areas.Common.Controllers
 
                 return Ok(list);
             }, "Lỗi khi lấy danh sách đơn hàng");
+        }
+
+        [HttpGet("{orderId}/details")]
+        [Authorize]
+        public async Task<IActionResult> GetOrderDetails(int orderId)
+        {
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
+            {
+                var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ORDER_BY_ID", "cur_out",
+                    reader => new OrderDto
+                    {
+                        OrderId = reader.GetDecimal(0),
+                        CustomerPhone = reader.GetString(1),
+                        ReceiverEmpName = reader.GetString(2),
+                        HandlerEmpName = reader.GetString(3),
+                        OrderType = reader.GetString(4),
+                        ReceivedDate = reader.GetDateTime(5),
+                        Status = reader.GetString(6),
+                        Description = reader.GetStringSafe(7)
+                    },
+                    ("p_order_id", OracleDbType.Int32, orderId));
+
+                if (list.Count == 0)
+                    return NotFound(new { message = $"Order ID {orderId} not found" });
+
+                return Ok(list[0]);
+            }, "Lỗi khi lấy chi tiết đơn hàng");
         }
     }
 }

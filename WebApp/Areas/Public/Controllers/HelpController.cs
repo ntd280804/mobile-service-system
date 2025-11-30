@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WebApp.Models;
-using WebApp.Models.Public;
 
 namespace WebApp.Areas.Public.Controllers
 {
@@ -94,6 +93,21 @@ namespace WebApp.Areas.Public.Controllers
                 _logger.LogError(ex, "Lỗi khi đọc FAQ: {Error}", ex.Message);
                 return Json(new FaqData { Faqs = new List<FaqItem>() });
             }
+        }
+
+        public class FaqData
+        {
+            [JsonPropertyName("faqs")]
+            public List<FaqItem> Faqs { get; set; } = new();
+        }
+
+        public class FaqItem
+        {
+            [JsonPropertyName("question")]
+            public string Question { get; set; } = string.Empty;
+            
+            [JsonPropertyName("answer")]
+            public string Answer { get; set; } = string.Empty;
         }
     }
 }

@@ -1,31 +1,283 @@
 @{
     Layout = "~/Areas/Public/Views/Shared/_Layout.cshtml";
-    ViewData["Title"] = "Trợ giúp";
+    ViewData["Title"] = "Liên hệ";
 }
 
-<div class="py-4">
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">Gửi yêu cầu trợ giúp</h3>
-                </div>
-                <div class="card-body">
-                    @if (TempData["Message"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            @TempData["Message"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
-                    @if (TempData["Error"] != null)
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            @TempData["Error"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
+<style>
+    .help-page {
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);
+        min-height: 100vh;
+    }
 
+    .equal-height-row {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .equal-height-col {
+        display: flex;
+        width: 100%;
+    }
+
+    .help-card {
+        background: linear-gradient(135deg, 
+            rgba(255,255,255,0.95) 0%, 
+            rgba(249,250,251,0.95) 50%, 
+            rgba(255,255,255,0.95) 100%);
+        border: 1px solid rgba(59,130,246,0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08);
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .help-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.8) 0%, rgba(139,92,246,0.8) 100%) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1.5rem;
+    }
+
+    .help-header h3 {
+        color: white !important;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .help-body {
+        padding: 2rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid rgba(59,130,246,0.3);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        outline: none;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+        color: white;
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(22,163,74,0.1) 100%);
+        color: #059669;
+        border-left: 4px solid #10b981;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(220,38,38,0.1) 100%);
+        color: #dc2626;
+        border-left: 4px solid #ef4444;
+    }
+
+    /* Map card styling */
+    .map-card {
+        background: linear-gradient(135deg, 
+            rgba(255,255,255,0.95) 0%, 
+            rgba(249,250,251,0.95) 50%, 
+            rgba(255,255,255,0.95) 100%);
+        border: 1px solid rgba(59,130,246,0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08);
+        height: 100%;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .map-header {
+        background: linear-gradient(135deg, rgba(34,197,94,0.8) 0%, rgba(22,163,74,0.8) 100%) !important;
+        border-radius: 12px 12px 0 0 !important;
+        padding: 1.5rem;
+    }
+
+    .map-header h3 {
+        color: white !important;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .map-body {
+        padding: 2rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .map-container {
+        position: relative;
+        width: 100%;
+        flex: 1;
+        min-height: 300px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .store-info {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(22,163,74,0.1) 100%);
+        border-radius: 8px;
+        border-left: 4px solid #10b981;
+    }
+
+    .store-info h5 {
+        color: #059669;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .store-info p {
+        margin: 0.25rem 0;
+        color: #4b5563;
+    }
+
+    .store-info i {
+        color: #10b981;
+        width: 20px;
+    }
+
+    @@media (max-width: 768px) {
+        .help-page {
+            padding: 1rem;
+            min-height: calc(100vh - 80px);
+        }
+        
+        .equal-height-row {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .equal-height-col {
+            width: 100% !important;
+        }
+        
+        .help-body, .map-body {
+            padding: 1.5rem;
+        }
+        
+        .help-header, .map-header {
+            padding: 1rem;
+        }
+        
+        .btn-gradient {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .map-container {
+            min-height: 300px;
+        }
+        
+        .store-info {
+            padding: 1rem;
+        }
+        
+        .form-control {
+            font-size: 16px; /* Prevents zoom on iOS */
+            padding: 0.75rem;
+        }
+        
+        .form-label {
+            font-size: 1rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .help-page {
+            padding: 0.5rem;
+            min-height: calc(100vh - 60px);
+        }
+        
+        .equal-height-row {
+            gap: 0.75rem;
+        }
+        
+        .help-body, .map-body {
+            padding: 1rem;
+        }
+        
+        .help-header, .map-header {
+            padding: 0.75rem;
+        }
+        
+        .help-header h3, .map-header h3 {
+            font-size: 1.1rem;
+        }
+        
+        .map-container {
+            min-height: 250px;
+        }
+        
+        .store-info {
+            padding: 0.75rem;
+        }
+        
+        .store-info h5 {
+            font-size: 1rem;
+        }
+        
+        .btn-gradient {
+            padding: 0.75rem;
+            font-size: 1rem;
+        }
+        
+        .form-control {
+            padding: 0.75rem;
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+        }
+    }
+</style>
+
+<div class="help-page">
+    <div class="row equal-height-row">
+        <!-- Gửi yêu cầu trợ giúp -->
+        <div class="col-md-6 equal-height-col">
+            <div class="help-card">
+                <div class="help-header">
+                    <h3><i class="bi bi-envelope"></i> Liên hệ với chúng tôi</h3>
+                </div>
+                <div class="help-body">
                     <form asp-area="Public" asp-controller="Help" asp-action="SendEmail" method="post">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
@@ -38,10 +290,52 @@
                             <textarea class="form-control" id="content" name="content" rows="8" required 
                                       placeholder="Mô tả chi tiết vấn đề bạn gặp phải..."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-gradient">
                             <i class="bi bi-send"></i> Gửi yêu cầu
                         </button>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bản đồ hướng dẫn -->
+        <div class="col-md-6 equal-height-col">
+            <div class="map-card">
+                <div class="map-header">
+                    <h3><i class="bi bi-geo-alt"></i> Thông tin liên hệ</h3>
+                </div>
+                <div class="map-body">
+                    <div class="store-info">
+                        <h5><i class="bi bi-shop"></i> HealthCare Center</h5>
+                        <p><i class="bi bi-geo-alt-fill"></i> 140 Lê Trọng Tấn, Tân Phú, TP.HCM</p>
+                        <p><i class="bi bi-telephone-fill"></i> 0909 123 456</p>
+                        <p><i class="bi bi-clock-fill"></i> 08:00 - 21:00 (Thứ 2 - Chủ Nhật)</p>
+                    </div>
+                    
+                    <div class="map-container">
+                        <iframe 
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.3167358054484!2d106.62534567584955!3d10.784682889376207!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752ec3c161a3fb%3A0xef77cd47a1cc691e!2zMTQwIEzDqiBUcuG7jW5nIFThuqVuLCBUw6J5IFRoYW5oLCBUw6JuIFBow7osIFRQLiBI4buTIENow60gTWluaCwgVmlldG5hbQ!5e0!3m2!1sen!2s!4v1732762800000!5m2!1sen!2s"
+                            width="100%" 
+                            height="100%" 
+                            style="border:0;" 
+                            allowfullscreen="" 
+                            loading="lazy" 
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                    
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <a href="https://maps.google.com/?q=140+Lê+Trọng+Tấn,+Tân+Phú,+TP.HCM" 
+                           target="_blank" 
+                           class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-map"></i> Mở Google Maps
+                        </a>
+                        <a href="https://www.google.com/maps/dir//140+Lê+Trọng+Tấn,+Tân+Phú,+TP.HCM" 
+                           target="_blank" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-navigation"></i> Chỉ đường
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

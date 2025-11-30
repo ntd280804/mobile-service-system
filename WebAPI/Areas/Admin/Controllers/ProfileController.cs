@@ -22,9 +22,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("users")]
         [Authorize]
-        public IActionResult GetAllUsersWithProfile()
+        public async Task<IActionResult> GetAllUsersWithProfile()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_USERS_WITH_PROFILE", "cur_out",
                     reader => new
@@ -38,9 +38,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet]
         [Authorize]
-        public IActionResult GetAllProfiles()
+        public async Task<IActionResult> GetAllProfiles()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var tempList = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_PROFILES_WITH_LIMITS", "cur_out",
                     reader => new
@@ -68,9 +68,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{profileName}")]
         [Authorize]
-        public IActionResult GetProfileByName(string profileName)
+        public async Task<IActionResult> GetProfileByName(string profileName)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var dict = new Dictionary<string, string>();
 
@@ -106,11 +106,11 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost]
         [Authorize]
-        public IActionResult CreateProfile([FromBody] CreateProfileRequest request)
+        public async Task<IActionResult> CreateProfile([FromBody] CreateProfileRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.ProfileName)) return BadRequest(new { message = "ProfileName is required" });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 try
                 {
@@ -133,11 +133,11 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpDelete("{profileName}")]
         [Authorize]
-        public IActionResult DeleteProfile(string profileName)
+        public async Task<IActionResult> DeleteProfile(string profileName)
         {
             if (string.IsNullOrWhiteSpace(profileName)) return BadRequest(new { message = "Profile name is required" });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
             try
             {
@@ -156,12 +156,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("assign")]
         [Authorize]
-        public IActionResult AssignProfileToUser([FromBody] AssignProfileRequest request)
+        public async Task<IActionResult> AssignProfileToUser([FromBody] AssignProfileRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.ProfileName))
                 return BadRequest(new { message = "Username and ProfileName are required" });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 try
                 {
@@ -185,12 +185,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPut("{profileName}")]
         [Authorize]
-        public IActionResult UpdateProfile(string profileName, [FromBody] UpdateProfileRequest request)
+        public async Task<IActionResult> UpdateProfile(string profileName, [FromBody] UpdateProfileRequest request)
         {
             if (string.IsNullOrWhiteSpace(profileName)) return BadRequest(new { message = "Profile name is required" });
             if (request == null) return BadRequest(new { message = "Request body is required" });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
             try
             {

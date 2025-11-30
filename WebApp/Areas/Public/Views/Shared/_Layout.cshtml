@@ -13,12 +13,151 @@
     <title>@ViewData["Title"] - KLTN</title>
     <!-- Bootstrap CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        /* Main content optimization */
+        main.container {
+            min-height: calc(100vh - 80px); /* Full viewport minus header */
+            padding-bottom: 2rem;
+        }
+        
+        /* Content wrapper for better spacing */
+        .content-wrapper {
+            min-height: calc(100vh - 140px); /* Ensure content takes full height */
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Push footer down */
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        footer {
+            margin-top: auto;
+        }
+        
+        /* Footer hover effects */
+        .hover-link:hover {
+            color: #007bff !important;
+            transform: translateX(3px);
+        }
+        
+        footer .hover-link {
+            transition: all 0.3s ease;
+        }
+        
+        /* Compact footer */
+        footer .col-lg-3,
+        footer .col-lg-2,
+        footer .col-lg-4 {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Responsive layout */
+            @@media (max-width: 768px) {
+            /* Mobile layout adjustments - hide footer */
+            footer {
+                display: none !important;
+            }
+            
+            main.container {
+                min-height: 100vh;
+                padding: 1rem;
+            }
+            
+            .content-wrapper {
+                min-height: calc(100vh - 80px);
+                padding: 1rem 0;
+            }
+            
+            /* Responsive navigation */
+            .navbar-nav {
+                text-align: left;
+                width: 100%;
+            }
+            
+            .navbar-nav .nav-link {
+                padding: 0.75rem 1rem;
+                border-bottom: 1px solid rgba(255,255,255,0.1);
+                display: block;
+                width: 100%;
+                text-align: left;
+            }
+            
+            .navbar-nav .nav-link:last-child {
+                border-bottom: none;
+            }
+            
+            /* Ensure logout aligns with other menu items */
+            .navbar-nav .nav-item {
+                width: 100%;
+            }
+        }        @@media (max-width: 576px) {
+            /* Extra small devices - hide footer */
+            footer {
+                display: none !important;
+            }
+            
+            main.container {
+                min-height: 100vh;
+                padding: 0.5rem;
+            }
+            
+            .content-wrapper {
+                min-height: calc(100vh - 60px);
+                padding: 0.5rem 0;
+            }
+            
+            /* Mobile-first responsive adjustments */
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .btn:last-child {
+                margin-bottom: 0;
+            }
+            
+            /* Cards and forms responsive */
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            .form-control {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+        
+        @@media (min-width: 992px) {
+            /* Desktop optimizations */
+            main.container {
+                min-height: calc(100vh - 100px);
+                padding-bottom: 3rem;
+            }
+            
+            .content-wrapper {
+                min-height: calc(100vh - 160px);
+                padding: 3rem 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">KLTN</a>
+        <nav class="navbar navbar-expand-sm navbar-dark border-bottom mb-3" style="background: linear-gradient(135deg, rgba(59,130,246,1) 0%, rgba(139,92,246,1) 100%);">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/logoMB.jpg" alt="Mobile Service" height="50" class="d-inline-block align-text-top">
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
                         aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -28,22 +167,22 @@
                     <!-- Menu trái -->
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Public" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link fw-semibold fs-6 text-white" asp-area="Public" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         @if (!string.IsNullOrEmpty(username))
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="Public" asp-controller="Appointment" asp-action="Booking">Đặt lịch</a>
+                                <a class="nav-link fw-semibold fs-6 text-white" asp-area="Public" asp-controller="Appointment" asp-action="Booking">Đặt lịch</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="Public" asp-controller="Appointment" asp-action="Index">Xem lịch đặt</a>
+                                <a class="nav-link fw-semibold fs-6 text-white" asp-area="Public" asp-controller="Appointment" asp-action="Index">Xem lịch đặt</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="Public" asp-controller="Order" asp-action="Index">Xem đơn hàng</a>
+                                <a class="nav-link fw-semibold fs-6 text-white" asp-area="Public" asp-controller="Order" asp-action="Index">Xem đơn hàng</a>
                             </li>
                         }
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Public" asp-controller="Help" asp-action="Index">Trợ giúp</a>
+                            <a class="nav-link fw-semibold fs-6 text-white" asp-area="Public" asp-controller="Help" asp-action="Index">Trợ giúp</a>
                         
                         </li>
                     </ul>
@@ -53,20 +192,20 @@
                         @if (string.IsNullOrEmpty(username))
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="Public" asp-controller="Customer" asp-action="Login">Login</a>
+                                <a class="nav-link fw-semibold fs-6 text-white" asp-area="Public" asp-controller="Customer" asp-action="Login">Login</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="Public" asp-controller="Customer" asp-action="Register">Register</a>
+                                <a class="nav-link fw-semibold fs-6 text-white" asp-area="Public" asp-controller="Customer" asp-action="Register">Register</a>
                             </li>
                         }
                         else
                         {
                             <li class="nav-item">
-                                <a class="nav-link" asp-area="Public" asp-controller="Customer" asp-action="ChangePassword">Đổi mật khẩu</a>
+                                <a class="nav-link fw-semibold fs-6 text-white" asp-area="Public" asp-controller="Customer" asp-action="ChangePassword">Đổi mật khẩu</a>
                             </li>
                             <li class="nav-item">
                                 <form method="post" asp-area="Public" asp-controller="Customer" asp-action="Logout">
-                                    <button type="submit" class="nav-link btn btn-link text-start">Logout (@username)</button>
+                                    <button type="submit" class="nav-link btn btn-link text-start fw-semibold fs-6 text-white">Logout (@username)</button>
                                 </form>
                             </li>
 
@@ -78,56 +217,137 @@
         </nav>
     </header>
 
-    <main class="container pb-3">
-        @RenderBody()
+    <main class="container pb-3 flex-grow-1">
+        <div class="content-wrapper">
+            @RenderBody()
+        </div>
     </main>
 
     <!-- Floating FAQ Chatbot Button -->
-    @{
-        var isHelpPage = ViewContext.RouteData.Values["controller"]?.ToString() == "Help";
-    }
-    @if (!isHelpPage)
-    {
-        <button id="faqToggleBtn" class="btn btn-info btn-lg rounded-circle shadow-lg position-fixed" 
-                style="bottom: 20px; right: 20px; width: 60px; height: 60px; z-index: 1050;"
-                onclick="toggleFaqModal()">
-            💡
-        </button>
 
-        <!-- FAQ Modal -->
-        <div id="faqModal" class="position-fixed shadow-lg" style="display: none; bottom: 90px; right: 20px; width: 380px; max-width: 90vw; z-index: 1050; background: white; border-radius: 10px; overflow: hidden;">
-            <div class="card border-0 h-100 d-flex flex-column" style="max-height: 600px;">
-                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">💡 Trợ giúp nhanh</h5>
-                    <div>
-                        <button class="btn btn-sm btn-light" onclick="closeFaqModal()" title="Đóng">
-                            ×
-                        </button>
-                    </div>
-                </div>
-                <div id="faqModalBody" class="card-body flex-grow-1 d-flex flex-column" style="overflow: hidden;">
+
+    <footer class="mt-auto py-3" style="background: #f8f9fa; color: #212529; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; border-top: 1px solid #dee2e6;">
+        <div class="container">
+            <div class="row g-3">
+                <!-- Thông tin doanh nghiệp -->
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="fw-bold mb-3" style="color: #007bff;">HEALTHCARE CENTER</h6>
                     <div class="mb-3">
-                        <input type="text" class="form-control form-control-sm" id="faqSearch" 
-                               placeholder="Tìm câu hỏi...">
-                    </div>
-                    <div id="faqList" class="flex-grow-1" style="overflow-y: auto; max-height: 400px;">
-                        <div class="text-center text-muted">
-                            <small>Đang tải...</small>
+                        <div class="d-flex align-items-start mb-2">
+                            <i class="bi bi-geo-alt-fill me-2 text-primary" style="margin-top: 2px;"></i>
+                            <span class="small">140 Lê Trọng Tấn, TP.HCM</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-telephone-fill me-2 text-primary"></i>
+                            <a href="tel:0909123456" class="text-dark text-decoration-none small">0909 123 456</a>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-envelope-fill me-2 text-primary"></i>
+                            <a href="mailto:support@healthcare.vn" class="text-dark text-decoration-none small">support@healthcare.vn</a>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-clock-fill me-2 text-primary"></i>
+                            <span class="small">08:00–21:00 (T2–CN)</span>
                         </div>
                     </div>
-                    <hr class="my-2">
-                    <a href="@Url.Action("Index", "Help", new { area = "Public" })" 
-                       class="btn btn-sm btn-outline-primary w-100">
-                        📧 Gửi yêu cầu trợ giúp
-                    </a>
+                </div>
+
+                <!-- Liên kết nhanh -->
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="fw-bold mb-3" style="color: #007bff;">LIÊN KẾT NHANH</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link" style="transition: color 0.3s;">
+                                Trang chủ
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Sửa chữa
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Bảo hành
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Tra cứu đơn hàng
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Tra cứu hóa đơn
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Liên hệ
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Chính sách -->
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="fw-bold mb-3" style="color: #007bff;">CHÍNH SÁCH</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Chính sách bảo hành
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Chính sách bảo mật
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Điều khoản sử dụng
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Chính sách kiểm tra & giao nhận
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Hỗ trợ khách hàng -->
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="fw-bold mb-3" style="color: #007bff;">HỖ TRỢ KHÁCH HÀNG</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Câu hỏi thường gặp (FAQ)
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Hướng dẫn gửi máy sửa
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Hướng dẫn tra cứu tình trạng sửa chữa
+                            </a>
+                        </li>
+                        <li class="mb-2">
+                            <a href="#" class="text-dark text-decoration-none small hover-link">
+                                Báo giá tham khảo
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
-        </div>
-    }
-
-    <footer class="border-top text-muted py-3">
-        <div class="container">
-            &copy; 2025 - KLTN - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            
+            <hr class="my-2" style="border-color: #dee2e6;">
+            <div class="text-center">
+                <small class="text-muted">&copy; 2025 HealthCare Center. All rights reserved.</small>
+            </div>
         </div>
     </footer>
 
@@ -139,7 +359,7 @@
             // Lấy username từ Razor, đảm bảo không null
             const username = '@(username ?? "")';
             const sessionId = '@(HttpContextAccessor.HttpContext.Session.GetString("CSessionId") ?? "")';
-            console.log('👤 sessionId:', sessionId);
+            console.log('sessionId:', sessionId);
             // Tạo SignalR connection
             @inject IConfiguration Configuration
             const connection = new signalR.HubConnectionBuilder()
@@ -174,31 +394,37 @@
             async function startConnection() {
                 try {
                     await connection.start();
-                    console.log('✅ SignalR connected');
+                    console.log('SignalR connected');
                 } catch (err) {
-                    console.error('⚠️ SignalR start error:', err);
+                    console.error('SignalR start error:', err);
                     setTimeout(startConnection, 5000); // thử lại sau 5s
                 }
             }
 
             startConnection();
 
-            // 🔐 Đồng bộ login/logout đa tab
+            // Đồng bộ login/logout đa tab
             const channel = new BroadcastChannel('Cauth_channel');
 
-                    channel.onmessage = (event) => {
-            console.log('📢 Nhận auth event từ tab khác:', event.data);
-            if (event.data === 'logout') {
-                setTimeout(() => {
-                    window.location.href = loginUrl;
-                }, 1000); // 1000 ms = 1 giây
-            } else if (event.data === 'login') {
-                setTimeout(() => {
-                    window.location.href = dashboardUrl;
-                }, 1000);
-                
-            }
-        };
+            channel.onmessage = (event) => {
+                console.log('📢 Nhận auth event từ tab khác:', event.data);
+                if (event.data === 'logout') {
+                    setTimeout(() => {
+                        window.location.href = loginUrl;
+                    }, 1000);
+                } else if (event.data === 'login') {
+                    // Nếu đang ở trang login, redirect đến dashboard
+                    // Nếu đang ở trang khác, reload để cập nhật trạng thái
+                    setTimeout(() => {
+                        const currentPath = window.location.pathname.toLowerCase();
+                        if (currentPath.includes('/public/customer/login') || currentPath === '/public/customer/login') {
+                            window.location.href = dashboardUrl;
+                        } else {
+                            window.location.reload();
+                        }
+                    }, 1500);
+                }
+            };
 
 
             // Gửi sự kiện logout từ form
@@ -210,157 +436,192 @@
                 });
             }
 
-                    const loginLink = document.querySelector('form[action$="Login"]');
-        if (loginLink) {
-            loginLink.addEventListener('click', () => {
-                channel.postMessage('login');
-                console.log('📡 Gửi login event sang các tab khác');
-            });
-        }
-
-        // FAQ Floating Modal Helper
-        let faqModalMinimized = false;
-        let faqModalVisible = false;
-
-        function toggleFaqModal() {
-            const modal = document.getElementById('faqModal');
-            if (!modal) return;
-            
-            if (faqModalVisible) {
-                closeFaqModal();
-            } else {
-                openFaqModal();
-            }
-        }
-
-        function openFaqModal() {
-            const modal = document.getElementById('faqModal');
-            const modalBody = document.getElementById('faqModalBody');
-            if (!modal || !modalBody) return;
-            
-            modal.style.display = 'block';
-            modalBody.style.display = 'flex';
-            faqModalMinimized = false;
-            faqModalVisible = true;
-            document.getElementById('minimizeIcon').textContent = '−';
-            
-            // Load FAQs if not already loaded
-            const faqList = document.getElementById('faqList');
-            if (faqList && (!window.faqLoaded || faqList.innerHTML.includes('Đang tải'))) {
-                window.loadFaqsIfNeeded();
-            }
-        }
-
-        function minimizeFaqModal() {
-            const modal = document.getElementById('faqModal');
-            const modalBody = document.getElementById('faqModalBody');
-            if (!modal || !modalBody) return;
-            
-            if (faqModalMinimized) {
-                // Maximize
-                modalBody.style.display = 'flex';
-                faqModalMinimized = false;
-                document.getElementById('minimizeIcon').textContent = '−';
-            } else {
-                // Minimize
-                modalBody.style.display = 'none';
-                faqModalMinimized = true;
-                document.getElementById('minimizeIcon').textContent = '+';
-            }
-        }
-
-        function closeFaqModal() {
-            const modal = document.getElementById('faqModal');
-            if (!modal) return;
-            
-            modal.style.display = 'none';
-            faqModalVisible = false;
-            faqModalMinimized = false;
-        }
-
-        // FAQ Auto Helper
-        (async function() {
-            const faqList = document.getElementById('faqList');
-            const faqSearch = document.getElementById('faqSearch');
-            let allFaqs = [];
-            window.faqLoaded = false;
-
-            async function loadFaqs() {
-                try {
-                    const response = await fetch('@Url.Action("GetFaqs", "Help", new { area = "Public" })');
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    const data = await response.json();
-                    console.log('FAQ Data received:', data); // Debug log
-                    // Try both lowercase and uppercase property names
-                    allFaqs = data.faqs || data.Faqs || [];
-                    console.log('FAQ items loaded:', allFaqs.length); // Debug log
-                    renderFaqs(allFaqs);
-                    window.faqLoaded = true;
-                } catch (error) {
-                    console.error('Lỗi tải FAQ:', error);
-                    if (faqList) {
-                        faqList.innerHTML = '<div class="text-danger small">Không thể tải câu hỏi thường gặp: ' + error.message + '</div>';
-                    }
-                }
-            }
-
-            function renderFaqs(faqs) {
-                if (!faqList) return;
-                
-                if (faqs.length === 0) {
-                    faqList.innerHTML = '<div class="text-muted small">Không có câu hỏi nào.</div>';
-                    return;
-                }
-
-                // Generate unique IDs based on timestamp to avoid conflicts
-                const timestamp = Date.now();
-                faqList.innerHTML = faqs.map((faq, index) => {
-                    const faqId = `faq_${timestamp}_${index}`;
-                    return `
-                        <div class="mb-3">
-                            <button class="btn btn-link text-start p-0 w-100 text-decoration-none" 
-                                    type="button" data-bs-toggle="collapse" 
-                                    data-bs-target="#${faqId}" aria-expanded="false">
-                                <strong class="text-primary">❓ ${faq.question}</strong>
-                            </button>
-                            <div class="collapse" id="${faqId}">
-                                <div class="card card-body border-0 bg-light small mt-2">
-                                    ${faq.answer}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-
-            if (faqSearch) {
-                faqSearch.addEventListener('input', (e) => {
-                    const searchTerm = e.target.value.toLowerCase().trim();
-                    if (searchTerm === '') {
-                        renderFaqs(allFaqs);
-                    } else {
-                        const filtered = allFaqs.filter(faq => 
-                            faq.question.toLowerCase().includes(searchTerm) ||
-                            faq.answer.toLowerCase().includes(searchTerm)
-                        );
-                        renderFaqs(filtered);
-                    }
+            const loginForm = document.querySelector('form[action$="Login"]');
+            if (loginForm) {
+                loginForm.addEventListener('submit', () => {
+                    channel.postMessage('login');
+                    console.log('📡 Gửi login event sang các tab khác');
                 });
             }
 
-            // Make loadFaqs available globally
-            window.loadFaqsIfNeeded = async function() {
-                if (!window.faqLoaded) {
-                    await loadFaqs();
-                }
-            };
-            
-            // Auto load on page load
-            await loadFaqs();
-        })();
+
     </script>
+
+    <!-- Floating Help Button -->
+    <div class="help-widget">
+        <button type="button" class="btn help-button" data-bs-toggle="modal" data-bs-target="#helpModal">
+            <i class="bi bi-question-lg"></i>
+        </button>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen-md-down modal-lg">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-info-circle me-2"></i>Trợ Giúp & FAQ
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="fw-bold mb-3">Câu hỏi thường gặp</h6>
+                            
+                            <div class="accordion" id="helpAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help1">
+                                            Làm thế nào để đặt lịch bảo hành?
+                                        </button>
+                                    </h2>
+                                    <div id="help1" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                        <div class="accordion-body">
+                                            Bạn có thể đặt lịch bảo hành bằng cách đăng nhập vào tài khoản và chọn "Đặt lịch" trong menu. Chọn ngày và mô tả vấn đề cần sửa chữa.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help2">
+                                            Tôi có thể theo dõi tiến độ sửa chữa như thế nào?
+                                        </button>
+                                    </h2>
+                                    <div id="help2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                        <div class="accordion-body">
+                                            Sau khi đặt lịch, bạn sẽ nhận được thông báo qua app mobile hoặc có thể kiểm tra trạng thái trong mục "Đơn hàng" của tài khoản.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#help3">
+                                            Làm sao để xác thực hóa đơn điện tử?
+                                        </button>
+                                    </h2>
+                                    <div id="help3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                        <div class="accordion-body">
+                                            Sử dụng tính năng "Xác thực PDF hóa đơn đã ký" trên trang chủ. Tải lên file PDF để kiểm tra chữ ký số và tính toàn vẹn.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="text-center">
+                                <h6 class="fw-bold mb-3">Cần hỗ trợ thêm?</h6>
+                                <a href="/Public/Help" class="btn btn-primary me-2">
+                                    <i class="bi bi-envelope me-1"></i>Liên hệ
+                                </a>
+                                <a href="tel:0909123456" class="btn btn-outline-primary">
+                                    <i class="bi bi-telephone me-1"></i>Hotline
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .help-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050;
+            display: block !important;
+        }
+
+        .help-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border: none;
+            color: white !important;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            color: white !important;
+        }
+
+        .help-button:active {
+            transform: translateY(0);
+        }
+
+        .help-button:focus {
+            color: white !important;
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+
+        /* Desktop and all screen sizes */
+        @@media (min-width: 769px) {
+            .help-widget {
+                bottom: 25px;
+                right: 25px;
+            }
+            
+            .help-button {
+                width: 65px;
+                height: 65px;
+                font-size: 26px;
+            }
+        }
+
+        /* Mobile and tablet full screen modal */
+        @@media (max-width: 768px) {
+            .modal-fullscreen-md-down {
+                width: 100vw;
+                height: 100vh;
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .modal-fullscreen-md-down .modal-content {
+                height: 100vh;
+                border-radius: 0;
+                border: 0;
+            }
+            
+            .help-widget {
+                bottom: 20px;
+                right: 20px;
+            }
+            
+            .help-button {
+                width: 55px;
+                height: 55px;
+                font-size: 22px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .help-widget {
+                bottom: 15px;
+                right: 15px;
+            }
+            
+            .help-button {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+    </style>
 
 </body>
 </html>

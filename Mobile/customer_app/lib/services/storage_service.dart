@@ -5,6 +5,7 @@ class StorageKeys {
   static const sessionId = 'session_id';
   static const username = 'username';
   static const userRole = 'user_role';
+  static const userType = 'user_type'; // 'customer' or 'employee'
 }
 
 class StorageService {
@@ -46,10 +47,27 @@ class StorageService {
     return _storage.read(key: StorageKeys.userRole);
   }
 
+  Future<void> deleteUsername() async {
+    await _storage.delete(key: StorageKeys.username);
+  }
+
+  Future<void> saveUserType(String type) async {
+    await _storage.write(key: StorageKeys.userType, value: type);
+  }
+
+  Future<String?> getUserType() async {
+    return _storage.read(key: StorageKeys.userType);
+  }
+
+  Future<void> deleteUserType() async {
+    await _storage.delete(key: StorageKeys.userType);
+  }
+
   Future<void> clearAll() async {
     await _storage.delete(key: StorageKeys.token);
     await _storage.delete(key: StorageKeys.sessionId);
     await _storage.delete(key: StorageKeys.username);
     await _storage.delete(key: StorageKeys.userRole);
+    await _storage.delete(key: StorageKeys.userType);
   }
 }

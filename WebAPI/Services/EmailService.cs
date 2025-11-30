@@ -36,7 +36,7 @@ namespace WebAPI.Services
 
                     var mailMessage = new MailMessage
                     {
-                        From = new MailAddress(senderEmail, "Mobile Service System"),
+                        From = new MailAddress(senderEmail, "HealthCare"),
                         Subject = "Mã OTP đặt lại mật khẩu",
                         IsBodyHtml = true
                     };
@@ -107,7 +107,7 @@ namespace WebAPI.Services
 
                 var mailMessage = new MailMessage
                 {
-                    From = new MailAddress(senderEmail, "Mobile Service System"),
+                    From = new MailAddress(senderEmail, "HealthCare"),
                     Subject = $"Yêu cầu trợ giúp từ: {requesterEmail}",
                     Body = $"Email người gửi: {requesterEmail}\n\nNội dung:\n{content}",
                     IsBodyHtml = false

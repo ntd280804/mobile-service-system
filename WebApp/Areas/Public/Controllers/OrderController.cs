@@ -64,7 +64,7 @@ namespace WebApp.Areas.Public.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/Public/Order/details/{id}");
+                var response = await _httpClient.GetAsync($"api/Public/Order/{id}/details");
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)

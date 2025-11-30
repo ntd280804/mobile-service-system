@@ -5,53 +5,152 @@
     ViewData["Title"] = "Register Customer";
 }
 
-<h2>@ViewData["Title"]</h2>
+<style>
+    .gradient-card {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
 
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
+    .gradient-header {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 1) 0%, rgba(139, 92, 246, 1) 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 1.5rem;
+        margin: -1px -1px 0 -1px;
+    }
 
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger">
-        @Html.ValidationSummary(true)
+    .gradient-form-control {
+        border: 2px solid rgba(59, 130, 246, 0.2);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+
+    .gradient-form-control:focus {
+        border-color: rgba(59, 130, 246, 0.5);
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        background-color: white;
+    }
+
+    .gradient-btn {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 1) 0%, rgba(139, 92, 246, 1) 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .gradient-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px -1px rgba(0, 0, 0, 0.15);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 1) 0%, rgba(124, 58, 237, 1) 100%);
+    }
+
+    .gradient-alert-danger {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 127, 0.1) 100%);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 8px;
+        color: #dc2626;
+    }
+
+    .gradient-alert-danger i {
+        color: #dc2626;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="gradient-card p-0">
+                <div class="gradient-header">
+                    <h2 class="mb-0">
+                        <i class="bi bi-person-plus me-2"></i>
+                        @ViewData["Title"]
+                    </h2>
+                </div>
+                
+                <div class="p-4">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert gradient-alert-danger d-flex align-items-center mb-4">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            @TempData["Error"]
+                        </div>
+                    }
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert gradient-alert-danger d-flex align-items-center mb-4">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>
+                                @Html.ValidationSummary(true)
+                            </div>
+                        </div>
+                    }
+
+                    <form asp-action="Register" method="post">
+                        <div class="mb-4">
+                            <label asp-for="FullName" class="form-label fw-semibold">
+                                <i class="bi bi-person me-1"></i>
+                                Full Name
+                            </label>
+                            <input asp-for="FullName" class="form-control gradient-form-control" placeholder="Enter your full name" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Password" class="form-label fw-semibold">
+                                <i class="bi bi-lock me-1"></i>
+                                Password
+                            </label>
+                            <input asp-for="Password" type="password" class="form-control gradient-form-control" placeholder="Create a secure password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Email" class="form-label fw-semibold">
+                                <i class="bi bi-envelope me-1"></i>
+                                Email
+                            </label>
+                            <input asp-for="Email" type="email" class="form-control gradient-form-control" placeholder="Enter your email address" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Phone" class="form-label fw-semibold">
+                                <i class="bi bi-telephone me-1"></i>
+                                Phone
+                            </label>
+                            <input asp-for="Phone" type="text" class="form-control gradient-form-control" placeholder="Enter your phone number" />
+                            <span asp-validation-for="Phone" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Address" class="form-label fw-semibold">
+                                <i class="bi bi-geo-alt me-1"></i>
+                                Address
+                            </label>
+                            <input asp-for="Address" type="text" class="form-control gradient-form-control" placeholder="Enter your address" />
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary gradient-btn">
+                                <i class="bi bi-check-circle me-2"></i>
+                                Register
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-}
+</div>
 
-<form asp-action="Register" method="post">
-    <div class="mb-3">
-        <label asp-for="FullName" class="form-label"></label>
-        <input asp-for="FullName" class="form-control" />
-        <span asp-validation-for="FullName" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" type="password" class="form-control" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" type="email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Phone" class="form-label"></label>
-        <input asp-for="Phone" type="text" class="form-control" />
-        <span asp-validation-for="Phone" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Address" class="form-label"></label>
-        <input asp-for="Address" type="text" class="form-control" />
-        <span asp-validation-for="Address" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Register</button>
-</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

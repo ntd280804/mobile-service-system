@@ -19,12 +19,12 @@ namespace WebAPI.Areas.Public.Controllers
         }
         [HttpPost]
         [Authorize]
-        public IActionResult Create([FromBody] CreateAppointmentDto dto)
+        public async Task<IActionResult> Create([FromBody] CreateAppointmentDto dto)
         {
             if (dto == null || string.IsNullOrEmpty(dto.CustomerPhone) || dto.AppointmentDate == default)
                 return BadRequest(new { message = "Dữ liệu không hợp lệ." });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var outputs = OracleHelper.ExecuteNonQueryWithOutputs(
                     conn,

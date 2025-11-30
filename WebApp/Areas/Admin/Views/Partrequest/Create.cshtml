@@ -21,8 +21,178 @@
     }
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">📦 Tạo yêu cầu linh kiện</h2>
+<style>
+    .detail-page {
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);
+        min-height: 100vh;
+    }
+
+    .detail-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .detail-header h2 {
+        color: #1e40af;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.75rem;
+    }
+
+    .detail-card {
+        background: linear-gradient(135deg, 
+            rgba(255,255,255,0.95) 0%, 
+            rgba(249,250,251,0.95) 50%, 
+            rgba(255,255,255,0.95) 100%);
+        border: 1px solid rgba(59,130,246,0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-card-header {
+        background: linear-gradient(135deg, 
+            rgba(59,130,246,0.8) 0%, 
+            rgba(37,99,235,0.85) 25%,
+            rgba(59,130,246,0.8) 50%,
+            rgba(139,92,246,0.85) 75%,
+            rgba(192,132,252,0.8) 100%);
+        background-size: 200% 100%;
+        padding: 1rem 1.5rem;
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border-bottom: 2px solid rgba(59,130,246,0.3);
+    }
+
+    .detail-card-body {
+        padding: 1.5rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .info-item {
+        padding: 0.75rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.03) 0%, rgba(139,92,246,0.03) 100%);
+        border-radius: 8px;
+        border: 1px solid rgba(59,130,246,0.1);
+    }
+
+    .info-item label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #4b5563;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .info-item .form-control {
+        background: white;
+        border: 1px solid rgba(59,130,246,0.2);
+        font-weight: 500;
+        color: #1f2937;
+    }
+
+    .item-row {
+        background: linear-gradient(135deg, rgba(59,130,246,0.02) 0%, rgba(139,92,246,0.02) 100%);
+        border: 1px solid rgba(59,130,246,0.15);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .item-row .card-body {
+        padding: 1rem;
+    }
+
+    .btn-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+    }
+
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59,130,246,0.4);
+        color: white;
+    }
+
+    .btn-add {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-add:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(16,185,129,0.4);
+        color: white;
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-back:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(107,114,128,0.4);
+        color: white;
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    @@media (max-width: 768px) {
+        .detail-page {
+            padding: 1rem;
+        }
+
+        .detail-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-gradient, .btn-back {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+    }
+</style>
+
+<div class="detail-page">
+    <div class="detail-header">
+        <h2>Tạo yêu cầu linh kiện</h2>
+    </div>
 
     @if (TempData["Error"] != null)
     {
@@ -38,47 +208,45 @@
         <input type="hidden" asp-for="Status" />
         <input type="hidden" asp-for="RequestDate" />
 
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <strong>📝 Thông tin yêu cầu</strong>
+        <div class="detail-card">
+            <div class="detail-card-header">
+                Thông tin yêu cầu
+            </div>
+            <div class="detail-card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Order ID</label>
+                        <input type="text" value="@Model.OrderId" class="form-control" readonly />
+                        <input type="hidden" asp-for="OrderId" />
                     </div>
-                    <div class="card-body">
-                        <div class="form-group mb-3">
-                            <label>Order ID</label>
-                            <input type="text" value="@Model.OrderId" class="form-control" readonly />
-                            <input type="hidden" asp-for="OrderId" />
-                        </div>
-                        <div class="form-group mb-3">
-                            <label>Nhân viên</label>
-                            <input type="text" value="@Model.EmpUsername" class="form-control" readonly />
-                        </div>
-                        <div class="form-group mb-3">
-                            <label>Ngày yêu cầu</label>
-                            <input type="text" value="@Model.RequestDate.ToString("yyyy-MM-dd HH:mm")" class="form-control" readonly />
-                        </div>
-                        <div class="form-group mb-3">
-                            <label>Trạng thái</label>
-                            <input type="text" value="@Model.Status" class="form-control" readonly />
-                        </div>
+                    <div class="info-item">
+                        <label>Nhân viên</label>
+                        <input type="text" value="@Model.EmpUsername" class="form-control" readonly />
+                    </div>
+                    <div class="info-item">
+                        <label>Ngày yêu cầu</label>
+                        <input type="text" value="@Model.RequestDate.ToString("yyyy-MM-dd HH:mm")" class="form-control" readonly />
+                    </div>
+                    <div class="info-item">
+                        <label>Trạng thái</label>
+                        <input type="text" value="@Model.Status" class="form-control" readonly />
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow mb-4">
-            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                <strong>📋 Danh sách linh kiện</strong>
-                <button type="button" id="add-item" class="btn btn-sm btn-light">
+        <div class="detail-card">
+            <div class="detail-card-header d-flex justify-content-between align-items-center">
+                <span>Danh sách linh kiện</span>
+                <button type="button" id="add-item" class="btn btn-add btn-sm">
                     <i class="bi bi-plus-circle"></i> Thêm linh kiện
                 </button>
             </div>
-            <div class="card-body">
+            <div class="detail-card-body">
                 <div id="items-container">
                     @for (int i = 0; i < Model.Items.Count; i++)
                     {
-                        <div class="item-row card mb-3">
+                        <div class="item-row card">
                             <div class="card-body">
                                 <div class="row g-2">
                                     <div class="col-md-10">
@@ -104,11 +272,11 @@
             </div>
         </div>
 
-        <div class="text-end mb-4">
-            <button type="submit" class="btn btn-primary btn-lg">
+        <div class="text-end">
+            <button type="submit" class="btn btn-gradient btn-lg">
                 <i class="bi bi-check-circle"></i> Tạo yêu cầu
             </button>
-            <a asp-action="Index" class="btn btn-secondary btn-lg ms-2">Quay lại</a>
+            <a asp-action="Index" class="btn btn-back btn-lg ms-2">Quay lại</a>
         </div>
     </form>
 </div>

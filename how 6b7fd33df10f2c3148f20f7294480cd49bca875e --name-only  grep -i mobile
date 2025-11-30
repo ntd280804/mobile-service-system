@@ -1,0 +1,87 @@
+[33mcommit 6b7fd33df10f2c3148f20f7294480cd49bca875e[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Nguyễn Trần Dinh <vinhdtq123123123@gmail.com>
+Date:   Sat Nov 29 01:16:18 2025 +0700
+
+    update
+
+ .../mobile-service-system-main.metadata.v9.bin     | Bin [31m2369[m -> [32m2377[m bytes
+ .../mobile-service-system-main.projects.v9.bin     | Bin [31m891497[m -> [32m973002[m bytes
+ .../mobile-service-system-main.strings.v9.bin      | Bin [31m195021[m -> [32m195411[m bytes
+ .../CopilotIndices/17.14.734.62261/CodeChunks.db   | Bin [31m2310144[m -> [32m2310144[m bytes
+ .../17.14.734.62261/SemanticSymbols.db             | Bin [31m774144[m -> [32m794624[m bytes
+ .../DesignTimeBuild/.dtbcache.v2                   | Bin [31m285500[m -> [32m285500[m bytes
+ .vs/mobile-service-system-main/v17/.futdcache.v2   | Bin [31m474[m -> [32m474[m bytes
+ .vs/mobile-service-system-main/v17/.suo            | Bin [31m193024[m -> [32m199168[m bytes
+ .../v17/DocumentLayout.backup.json                 |  79 [32m+++[m[31m--[m
+ .../v17/DocumentLayout.json                        | 114 [32m+++[m[31m----[m
+ Mobile/customer_app/lib/config/api_config.dart     |  42 [32m+[m[31m--[m
+ Mobile/customer_app/lib/services/api_service.dart  |  22 [32m+[m[31m-[m
+ WebAPI/Areas/Admin/Controllers/AuditController.cs  |  29 [32m+[m[31m-[m
+ .../Areas/Admin/Controllers/EmployeeController.cs  |   6 [32m+[m[31m-[m
+ WebAPI/Areas/Admin/Controllers/ExportController.cs |  10 [32m+[m[31m-[m
+ WebAPI/Areas/Admin/Controllers/ImportController.cs |  10 [32m+[m[31m-[m
+ .../Areas/Admin/Controllers/InvoiceController.cs   |  94 [32m++[m[31m----[m
+ WebAPI/Areas/Admin/Controllers/OrderController.cs  |  36 [32m+[m[31m-[m
+ WebAPI/Areas/Admin/Controllers/PartController.cs   |  23 [32m+[m[31m-[m
+ .../Admin/Controllers/PartrequestController.cs     |   8 [32m+[m[31m-[m
+ .../Areas/Admin/Controllers/ProfileController.cs   |  34 [32m+[m[31m-[m
+ WebAPI/Areas/Admin/Controllers/RoleController.cs   |   6 [32m+[m[31m-[m
+ .../Controllers/AppointmentController.cs           |  22 [32m+[m[31m-[m
+ WebAPI/Areas/Common/Controllers/OrderController.cs |  48 [32m+++[m
+ .../Public/Controllers/AppointmentController.cs    |  63 [32m+[m[31m---[m
+ .../Areas/Public/Controllers/CustomerController.cs |  28 [32m+[m[31m-[m
+ WebAPI/Areas/Public/Controllers/OrderController.cs |  62 [31m----[m
+ .../Areas/Public/Controllers/SecurityController.cs |  28 [31m--[m
+ .../Areas/Public/Controllers/VerifyController.cs   |  28 [32m+[m[31m-[m
+ WebAPI/Helpers/OracleHelper.cs                     |  58 [32m++++[m
+ WebAPI/Program.cs                                  |  13 [32m+[m[31m-[m
+ WebAPI/Services/OracleConnectionManager.cs         | 171 [32m+++++++++[m[31m-[m
+ .../key-e44cdd2f-37f4-4096-ba9b-f1e867d26736.xml   |  16 [32m+[m
+ WebAPI/bin/Debug/net8.0/WebAPI.dll                 | Bin [31m283136[m -> [32m286208[m bytes
+ WebAPI/bin/Debug/net8.0/WebAPI.exe                 | Bin [31m139264[m -> [32m139264[m bytes
+ WebAPI/bin/Debug/net8.0/WebAPI.pdb                 | Bin [31m101100[m -> [32m99912[m bytes
+ WebAPI/obj/Debug/net8.0/ApiEndpoints.json          | 372 [32m+++++++++[m[31m------------[m
+ WebAPI/obj/Debug/net8.0/EndpointInfo/WebAPI.json   | 248 [32m+++[m[31m-----------[m
+ WebAPI/obj/Debug/net8.0/WebAPI.AssemblyInfo.cs     |   2 [32m+[m[31m-[m
+ .../Debug/net8.0/WebAPI.AssemblyInfoInputs.cache   |   2 [32m+[m[31m-[m
+ .../net8.0/WebAPI.csproj.CoreCompileInputs.cache   |   2 [32m+[m[31m-[m
+ WebAPI/obj/Debug/net8.0/WebAPI.dll                 | Bin [31m283136[m -> [32m286208[m bytes
+ WebAPI/obj/Debug/net8.0/WebAPI.pdb                 | Bin [31m101100[m -> [32m99912[m bytes
+ WebAPI/obj/Debug/net8.0/WebAPI.sourcelink.json     |   2 [32m+[m[31m-[m
+ WebAPI/obj/Debug/net8.0/apphost.exe                | Bin [31m139264[m -> [32m139264[m bytes
+ WebAPI/obj/Debug/net8.0/ref/WebAPI.dll             | Bin [31m61440[m -> [32m61440[m bytes
+ WebAPI/obj/Debug/net8.0/refint/WebAPI.dll          | Bin [31m61440[m -> [32m61440[m bytes
+ WebAPI/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json |   2 [32m+[m[31m-[m
+ WebAPI/obj/Debug/net8.0/rjsmrazor.dswa.cache.json  |   2 [32m+[m[31m-[m
+ .../Admin/Controllers/AppointmentController.cs     |   2 [32m+[m[31m-[m
+ WebApp/Areas/Admin/Controllers/AuditController.cs  |   2 [32m+[m[31m-[m
+ .../Areas/Admin/Controllers/EmployeeController.cs  |   6 [32m+[m[31m-[m
+ WebApp/Areas/Admin/Controllers/ExportController.cs |  10 [32m+[m[31m-[m
+ WebApp/Areas/Admin/Controllers/ImportController.cs |  10 [32m+[m[31m-[m
+ .../Areas/Admin/Controllers/InvoiceController.cs   |   8 [32m+[m[31m-[m
+ WebApp/Areas/Admin/Controllers/OrderController.cs  |  24 [32m+[m[31m-[m
+ WebApp/Areas/Admin/Controllers/PartController.cs   |   4 [32m+[m[31m-[m
+ .../Admin/Controllers/PartrequestController.cs     |  16 [32m+[m[31m-[m
+ WebApp/Areas/Admin/Controllers/RoleController.cs   |   6 [32m+[m[31m-[m
+ .../Public/Controllers/AppointmentController.cs    |   8 [32m+[m[31m-[m
+ .../Areas/Public/Controllers/CustomerController.cs |   4 [32m+[m[31m-[m
+ WebApp/Areas/Public/Controllers/OrderController.cs |   2 [32m+[m[31m-[m
+ .../Areas/Public/Views/SecurityDemo/Index.cshtml   |  41 [31m---[m
+ WebApp/Helpers/EncryptHelper.cs                    |   2 [32m+[m
+ WebApp/Helpers/OracleClientHelper.cs               |   2 [32m+[m
+ WebApp/bin/Debug/net8.0/WebApp.dll                 | Bin [31m1139712[m -> [32m1132032[m bytes
+ WebApp/bin/Debug/net8.0/WebApp.exe                 | Bin [31m139264[m -> [32m139264[m bytes
+ WebApp/bin/Debug/net8.0/WebApp.pdb                 | Bin [31m329336[m -> [32m326284[m bytes
+ WebApp/obj/Debug/net8.0/WebApp.AssemblyInfo.cs     |   2 [32m+[m[31m-[m
+ .../Debug/net8.0/WebApp.AssemblyInfoInputs.cache   |   2 [32m+[m[31m-[m
+ ...ebApp.GeneratedMSBuildEditorConfig.editorconfig |   4 [31m-[m
+ WebApp/obj/Debug/net8.0/WebApp.dll                 | Bin [31m1139712[m -> [32m1132032[m bytes
+ WebApp/obj/Debug/net8.0/WebApp.pdb                 | Bin [31m329336[m -> [32m326284[m bytes
+ WebApp/obj/Debug/net8.0/WebApp.sourcelink.json     |   2 [32m+[m[31m-[m
+ WebApp/obj/Debug/net8.0/apphost.exe                | Bin [31m139264[m -> [32m139264[m bytes
+ WebApp/obj/Debug/net8.0/ref/WebApp.dll             | Bin [31m152576[m -> [32m151552[m bytes
+ WebApp/obj/Debug/net8.0/refint/WebApp.dll          | Bin [31m152576[m -> [32m151552[m bytes
+ WebApp/obj/Debug/net8.0/rjsmcshtml.dswa.cache.json |   2 [32m+[m[31m-[m
+ WebApp/obj/Debug/net8.0/rjsmrazor.dswa.cache.json  |   2 [32m+[m[31m-[m
+ WebApp/obj/Debug/net8.0/rpswa.dswa.cache.json      |   2 [32m+[m[31m-[m
+ 80 files changed, 828 insertions(+), 1017 deletions(-)

@@ -23,9 +23,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet]
         [Authorize]
-        public IActionResult GetAllImports()
+        public async Task<IActionResult> GetAllImports()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var result = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_PART_REQUESTS", "cur_out",
                     reader => new
@@ -42,9 +42,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("{requestId}/accept")]
         [Authorize]
-        public IActionResult AcceptPartRequest(int requestId)
+        public async Task<IActionResult> AcceptPartRequest(int requestId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 OracleHelper.ExecuteNonQuery(conn, "APP.ACCEPT_PART_REQUEST",
                     ("p_request_id", OracleDbType.Int32, requestId));
@@ -54,9 +54,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("{requestId}/deny")]
         [Authorize]
-        public IActionResult DenyPartRequest(int requestId)
+        public async Task<IActionResult> DenyPartRequest(int requestId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 OracleHelper.ExecuteNonQuery(conn, "APP.DENY_PART_REQUEST",
                     ("p_request_id", OracleDbType.Int32, requestId));
@@ -66,9 +66,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{requestId}/by-request-id")]
         [Authorize]
-        public IActionResult GetPartsByRequestId(int requestId)
+        public async Task<IActionResult> GetPartsByRequestId(int requestId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_PART_BY_REQUEST_ID", "p_cursor",
                     reader => new
@@ -93,14 +93,14 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("post")]
         [Authorize]
-        public IActionResult CreatePartRequest([FromBody] CreatePartRequestDto dto)
+        public async Task<IActionResult> CreatePartRequest([FromBody] CreatePartRequestDto dto)
         {
             if (dto.Items == null || dto.Items.Count == 0)
                 return BadRequest("No items to request");
             if (string.IsNullOrEmpty(dto.EmpUsername))
                 return BadRequest("Missing employee username");
 
-            return _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
+            return await _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
             {
                 // 1. Get EMP_ID from username
                 var empId = OracleHelper.ExecuteScalar<int>(conn, "APP.GET_EMPLOYEE_ID_BY_USERNAME", "p_emp_id", transaction,

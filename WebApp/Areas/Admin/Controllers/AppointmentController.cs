@@ -22,32 +22,61 @@ namespace WebApp.Areas.Admin.Controllers
         }
         
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, string phone = null, string appointmentDate = null, string status = null)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
 
+            const int pageSize = 10;
+
             try
             {
-                // Gọi API lấy tất cả appointment
                 var response = await _httpClient.GetAsync("api/Common/Appointment");
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
                     TempData["Error"] = $"Không thể tải danh sách lịch hẹn: {response.ReasonPhrase} - {errorContent}";
-                    return View(new List<AppointmentViewModel>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<AppointmentViewModel>.Create(
+                        new List<AppointmentViewModel>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
 
                 var list = await response.Content.ReadFromJsonAsync<List<AppointmentViewModel>>()
                            ?? new List<AppointmentViewModel>();
 
-                return View(list);
+                // Client-side filtering
+                var filtered = list;
+                
+                if (!string.IsNullOrWhiteSpace(phone))
+                    filtered = filtered.Where(a => a.CustomerPhone != null && a.CustomerPhone.Contains(phone)).ToList();
+                
+                if (!string.IsNullOrWhiteSpace(appointmentDate))
+                {
+                    if (DateTime.TryParse(appointmentDate, out var searchDate))
+                        filtered = filtered.Where(a => a.AppointmentDate.Date == searchDate.Date).ToList();
+                }
+                
+                if (!string.IsNullOrWhiteSpace(status))
+                    filtered = filtered.Where(a => a.Status != null && a.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+
+                var paginatedList = WebApp.Models.Common.PaginatedList<AppointmentViewModel>.Create(
+                    filtered, 
+                    page, 
+                    pageSize);
+
+                return View(paginatedList);
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<AppointmentViewModel>());
+                var emptyList = WebApp.Models.Common.PaginatedList<AppointmentViewModel>.Create(
+                    new List<AppointmentViewModel>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 

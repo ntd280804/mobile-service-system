@@ -53,6 +53,8 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   }
 
   Future<void> _handleLogout() async {
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -75,32 +77,49 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
       try {
         await _api.logout();
         await SignalRService().disconnect();
-        
         if (!mounted) return;
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+        nav.pushNamedAndRemoveUntil('/login', (route) => false);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Đăng xuất thất bại: ${e.toString()}')),
+        messenger.showSnackBar(
+          SnackBar(content: Text('Đăng xuất thất bại: $e')),
         );
       }
     }
   }
 
   Future<void> _openWebApp() async {
-    const webAppUrl = 'https://10.147.20.199:7158/admin';
-    final uri = Uri.parse(webAppUrl);
+    const webAppUrl = 'https://10.147.20.199:7158/Admin/';
+    final messenger = ScaffoldMessenger.of(context);
     
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không thể mở ứng dụng web'),
-          backgroundColor: Colors.red,
-        ),
+    try {
+      final uri = Uri.parse(webAppUrl);
+      
+      // Thử mở URL trực tiếp
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
       );
+      
+      if (!launched) {
+        if (mounted) {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Không thể mở ứng dụng web'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khi mở ứng dụng web: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -153,9 +172,10 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               final newPass = newController.text.trim();
               final confirmPass = confirmController.text.trim();
 
+              final messenger = ScaffoldMessenger.of(context);
+              final nav = Navigator.of(ctx);
               if (newPass != confirmPass) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Mật khẩu mới không khớp')),
                 );
                 return;
@@ -164,16 +184,15 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
               try {
                 await _api.changePasswordEmployee(oldPass, newPass);
                 if (!mounted) return;
-                Navigator.of(ctx).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
+                nav.pop();
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Đổi mật khẩu thành công')),
                 );
               } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lỗi: $e')),
-                  );
-                }
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Lỗi: $e')),
+                );
               }
             },
             child: const Text('Đổi mật khẩu'),

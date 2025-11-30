@@ -1,4 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using WebApp.Helpers;
 using WebApp.Models.Appointment;
 
@@ -35,7 +41,7 @@ namespace WebApp.Areas.Public.Controllers
             try
             {
                 // Gọi đúng API public
-                var response = await _httpClient.PostAsJsonAsync("api/Public/Appointment/Create", dto);
+                var response = await _httpClient.PostAsJsonAsync("api/Public/Appointment", dto);
 
                 if (!response.IsSuccessStatusCode)
                 {

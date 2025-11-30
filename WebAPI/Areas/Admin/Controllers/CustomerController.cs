@@ -24,9 +24,9 @@ namespace WebAPI.Areas.Admin.Controllers
         // =====================
         [HttpGet]
         [Authorize]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(
                     conn,
@@ -47,12 +47,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("unlock")]
         [Authorize]
-        public IActionResult UnlockUser([FromBody] UnlockCustomerDto dto)
+        public async Task<IActionResult> UnlockUser([FromBody] UnlockCustomerDto dto)
         {
             if (dto == null || string.IsNullOrEmpty(dto.Phone))
                 return BadRequest(new { message = "Username không hợp lệ." });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 OracleHelper.ExecuteNonQuery(conn, "APP.UNLOCK_DB_USER",
                     ("p_username", OracleDbType.Varchar2, dto.Phone));
@@ -63,12 +63,12 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("lock")]
         [Authorize]
-        public IActionResult LockUser([FromBody] UnlockCustomerDto dto)
+        public async Task<IActionResult> LockUser([FromBody] UnlockCustomerDto dto)
         {
             if (dto == null || string.IsNullOrEmpty(dto.Phone))
                 return BadRequest(new { message = "Username không hợp lệ." });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 OracleHelper.ExecuteNonQuery(conn, "APP.LOCK_DB_USER",
                     ("p_username", OracleDbType.Varchar2, dto.Phone));

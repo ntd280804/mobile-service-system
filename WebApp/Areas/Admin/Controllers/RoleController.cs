@@ -79,7 +79,7 @@ namespace WebApp.Areas.Admin.Controllers
                 return redirect;
             try
             {
-                
+
 
                 var response = await _httpClient.PostAsync($"api/Admin/Role/{Uri.EscapeDataString(roleName)}/create", null);
 
@@ -112,7 +112,7 @@ namespace WebApp.Areas.Admin.Controllers
                 return redirect;
             try
             {
-                
+
 
                 var response = await _httpClient.DeleteAsync($"api/Admin/Role/{Uri.EscapeDataString(roleName)}");
 

@@ -7,7 +7,6 @@ using System.Text;
 using System.Text.Json.Serialization;
 using WebApp.Helpers;
 using WebApp.Models.Part;
-using WebApp.Models.Export;
 using WebApp.Services;
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -24,45 +23,25 @@ namespace WebApp.Areas.Admin.Controllers
             _OracleClientHelper = _oracleClientHelper;
             _securityClient = securityClient;
         }
-
-        // GET: /Admin/Export/Verifysign/5
         [HttpGet]
-        public async Task<IActionResult> Verifysign(int id)
+        public async Task<IActionResult> DownloadPdf(int id)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
 
             try
             {
-                // Gọi WebAPI endpoint verify chữ ký
-                var response = await _httpClient.GetAsync($"api/admin/Export/{id}/verify");
+                var response = await _httpClient.GetAsync($"api/admin/Invoice/{id}/pdf");
                 if (!response.IsSuccessStatusCode)
                 {
-                    var errorMsg = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = $"Xác thực thất bại: {response.ReasonPhrase} - {errorMsg}";
+                    var error = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Không thể tải PDF hóa đơn: {response.ReasonPhrase} - {error}";
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Giả sử API trả về JSON { "StockInId": 14, "IsValid": true }
-                var result = await response.Content.ReadFromJsonAsync<VerifySignResult>();
-
-                if (result == null)
-                {
-                    TempData["Error"] = "Không nhận được kết quả từ API";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                // Thông báo kết quả
-                if (result.IsValid)
-                {
-                    TempData["Success"] = $"Chữ ký StockOut ID {result.StockInId} là hợp lệ ✅";
-                }
-                else
-                {
-                    TempData["Error"] = $"Chữ ký StockOut ID {result.StockInId} không hợp lệ ❌";
-                }
-
-                return RedirectToAction(nameof(Index));
+                var stream = await response.Content.ReadAsStreamAsync();
+                var fileName = $"Invoice_{id}.pdf";
+                return File(stream, "application/pdf", fileName);
             }
             catch (Exception ex)
             {
@@ -71,31 +50,84 @@ namespace WebApp.Areas.Admin.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Verify(int id)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return Json(new { success = false, message = "Vui lòng đăng nhập lại" });
+
+            try
+            {
+                // Gọi WebAPI endpoint verify chữ ký
+                var response = await _httpClient.GetAsync($"api/admin/Export/{id}/verify");
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMsg = await response.Content.ReadAsStringAsync();
+                    return Json(new { success = false, message = $"Xác thực thất bại: {response.ReasonPhrase} - {errorMsg}" });
+                }
+
+                // Giả sử API trả về JSON { "StockInId": 14, "IsValid": true }
+                var result = await response.Content.ReadFromJsonAsync<VerifySignResult>();
+
+                if (result == null)
+                {
+                    return Json(new { success = false, message = "Không nhận được kết quả từ API" });
+                }
+
+                // Thông báo kết quả
+                if (result.IsValid)
+                {
+                    return Json(new { success = true, message = $"Chữ ký StockOut ID {result.StockInId} là hợp lệ ✅", isValid = true, stockOutId = result.StockInId });
+                }
+                else
+                {
+                    return Json(new { success = true, message = $"Chữ ký StockOut ID {result.StockInId} không hợp lệ ❌", isValid = false, stockOutId = result.StockInId });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Lỗi kết nối API: " + ex.Message });
+            }
+        }
+
         // GET: /Admin/Export
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+            
+            const int pageSize = 10;
+            
             try
             {
-                
                 var response = await _httpClient.GetAsync("api/admin/Export");
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Try to read error details from API response
                     var errorContent = await response.Content.ReadAsStringAsync();
                     TempData["Error"] = $"Không thể tải danh sách export: {response.ReasonPhrase} - {errorContent}";
-                    return View(new List<ExportViewModel>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<ExportViewModel>.Create(
+                        new List<ExportViewModel>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
 
                 var list = await response.Content.ReadFromJsonAsync<List<ExportViewModel>>() ?? new List<ExportViewModel>();
-                return View(list);
+                var paginatedList = WebApp.Models.Common.PaginatedList<ExportViewModel>.Create(
+                    list, 
+                    page, 
+                    pageSize);
+                return View(paginatedList);
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<ExportViewModel>());
+                var emptyList = WebApp.Models.Common.PaginatedList<ExportViewModel>.Create(
+                    new List<ExportViewModel>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 
@@ -188,7 +220,6 @@ namespace WebApp.Areas.Admin.Controllers
                 // Lấy private key từ session
                 string? existingPrivateKeyPem = null;
                 var privateKeyBase64 = HttpContext.Session.GetString("PrivateKeyBase64");
-                
                 if (string.IsNullOrWhiteSpace(privateKeyBase64))
                 {
                     TempData["Error"] = "Vui lòng upload private key trước khi sử dụng chức năng này.";
@@ -219,7 +250,7 @@ namespace WebApp.Areas.Admin.Controllers
                     OrderId = (int)model.orderid,
                     CertificatePfxBase64 = model.CertificatePfxBase64,
                     CertificatePassword = model.CertificatePassword,
-                    PrivateKey =model.PrivateKey
+                    PrivateKey = model.PrivateKey
                 };
 
                 // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
@@ -234,17 +265,21 @@ namespace WebApp.Areas.Admin.Controllers
                         // Ưu tiên trả về Invoice PDF nếu có, nếu không thì Export PDF
                         if (!string.IsNullOrWhiteSpace(responseObj.InvoicePdfBase64))
                         {
-                            byte[] pdfBytes = Convert.FromBase64String(responseObj.InvoicePdfBase64);
-                            string fileName = responseObj.InvoiceFileName ?? $"Invoice_{responseObj.InvoiceId}.pdf";
+                            // Lưu PDF vào TempData để download sau khi redirect
+                            TempData["PdfBase64"] = responseObj.InvoicePdfBase64;
+                            TempData["PdfFileName"] = responseObj.InvoiceFileName ?? $"Invoice_{responseObj.InvoiceId}.pdf";
                             TempData["Success"] = $"Đã tạo export và invoice thành công. Invoice ID: {responseObj.InvoiceId}";
-                            return File(pdfBytes, "application/pdf", fileName);
+                            TempData["ShouldDownloadPdf"] = "true";
+                            return RedirectToAction("Index", "Order", new { area = "Admin" });
                         }
                         else if (!string.IsNullOrWhiteSpace(responseObj.ExportPdfBase64))
                         {
-                            byte[] pdfBytes = Convert.FromBase64String(responseObj.ExportPdfBase64);
-                            string fileName = responseObj.ExportFileName ?? $"ExportInvoice_{responseObj.StockOutId}.pdf";
+                            // Lưu PDF vào TempData để download sau khi redirect
+                            TempData["PdfBase64"] = responseObj.ExportPdfBase64;
+                            TempData["PdfFileName"] = responseObj.ExportFileName ?? $"ExportInvoice_{responseObj.StockOutId}.pdf";
                             TempData["Success"] = $"Đã tạo export thành công. StockOut ID: {responseObj.StockOutId}";
-                            return File(pdfBytes, "application/pdf", fileName);
+                            TempData["ShouldDownloadPdf"] = "true";
+                            return RedirectToAction("Index", "Order", new { area = "Admin" });
                         }
                     }
                     
@@ -292,6 +327,20 @@ namespace WebApp.Areas.Admin.Controllers
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
                 return RedirectToAction(nameof(Index));
             }
+        }
+
+        // DTOs for encrypted response
+        public class ExportSecureResponse
+        {
+            public bool Success { get; set; }
+            public string? Type { get; set; } // "pdf" or null
+            public string? ExportPdfBase64 { get; set; }
+            public string? ExportFileName { get; set; }
+            public string? InvoicePdfBase64 { get; set; }
+            public string? InvoiceFileName { get; set; }
+            public int? InvoiceId { get; set; }
+            public int? StockOutId { get; set; }
+            public string? Message { get; set; }
         }
     }
 }

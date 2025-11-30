@@ -1,6 +1,7 @@
 ﻿using Oracle.ManagedDataAccess.Client;
 using System.Collections.Concurrent;
 using System.Data;
+using System.Linq;
 using Microsoft.AspNetCore.SignalR;
 using WebAPI.Hubs;
 using Microsoft.Extensions.Logging;
@@ -140,7 +141,19 @@ namespace WebAPI.Services
         {
             var key = (username, platform, sessionId);
             
-            // Kill Oracle session bằng procedure trước khi remove connection
+            // Dùng TryRemove để đảm bảo atomic - chỉ có 1 luồng có thể remove connection
+            // Nếu connection đã bị remove rồi, return ngay
+            if (!_connections.TryRemove(key, out var info))
+            {
+                // Connection đã được remove rồi bởi luồng khác, không cần làm gì
+                _logger.LogDebug(
+                    "Connection already removed for user {Username}, platform {Platform}, session {SessionId}",
+                    username, platform, sessionId);
+                return;
+            }
+            
+            // Chỉ kill session nếu thực sự remove được connection từ dictionary
+            // Kill Oracle session bằng procedure trước khi dispose connection
             try
             {
                 using var defaultConn = CreateDefaultConnection();
@@ -166,35 +179,33 @@ namespace WebAPI.Services
                 _logger.LogWarning(ex,
                     "Failed to kill Oracle session for user {Username}, platform {Platform}, session {SessionId}. Error: {Error}",
                     username, platform, sessionId, ex.Message);
-                // Continue with removal even if kill failed
+                // Continue with disposal even if kill failed
             }
 
-            if (_connections.TryRemove(key, out var info))
+            // Dispose connection
+            var conn = info.Conn;
+            try
             {
-                var conn = info.Conn;
-                try
-                {
-                    if (conn.State == ConnectionState.Open)
-                        conn.Close();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex,
-                        "Error closing connection for user {Username}, platform {Platform}, session {SessionId}",
-                        username, platform, sessionId);
-                }
-                finally
-                {
-                    try { OracleConnection.ClearPool(conn); } catch { }
-                    conn.Dispose();
-                    _logger.LogInformation(
-                        "Closed and disposed connection for user {Username}, platform {Platform}, session {SessionId}, Oracle SID: {OracleSid}",
-                        username, platform, sessionId, info.OracleSid);
-                }
-
-                // Send SignalR logout message to group (sessionId)
-                await _hubContext.Clients.Group(sessionId).SendAsync("ForceLogout", "Your session has been logged out.");
+                if (conn.State == ConnectionState.Open)
+                    conn.Close();
             }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Error closing connection for user {Username}, platform {Platform}, session {SessionId}",
+                    username, platform, sessionId);
+            }
+            finally
+            {
+                try { OracleConnection.ClearPool(conn); } catch { }
+                conn.Dispose();
+                _logger.LogInformation(
+                    "Closed and disposed connection for user {Username}, platform {Platform}, session {SessionId}, Oracle SID: {OracleSid}",
+                    username, platform, sessionId, info.OracleSid);
+            }
+
+            // Send SignalR logout message to group (sessionId)
+            await _hubContext.Clients.Group(sessionId).SendAsync("ForceLogout", "Your session has been logged out.");
         }
         public OracleConnection CreateDefaultConnection()
         {
@@ -229,6 +240,17 @@ namespace WebAPI.Services
                         key.username, key.platform, key.sessionId);
                 }
             }
+        }
+
+        /// <summary>
+        /// Kiểm tra xem sessionId có tồn tại trong manager không (bất kể username/platform)
+        /// </summary>
+        public bool SessionIdExists(string sessionId)
+        {
+            if (string.IsNullOrEmpty(sessionId))
+                return false;
+
+            return _connections.Keys.Any(k => k.sessionId == sessionId);
         }
 
         /// <summary>

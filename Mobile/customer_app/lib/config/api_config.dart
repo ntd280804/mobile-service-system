@@ -6,7 +6,7 @@ class ApiConfig {
   // Public endpoints (Customer)
   static const String login = '/api/Public/Customer/login';
   static const String register = '/api/Public/Customer/register';
-  static const String ChangePass = '/api/Public/Customer/change-password';
+  static const String changePassword = '/api/Public/Customer/change-password';
   static const String logout = '/api/Public/Customer/logout';
   static const String getOrders = '/api/Common/Order';
   static const String getAppointments = '/api/Common/Appointment';
@@ -40,5 +40,5 @@ class ApiConfig {
   static const String getPartsByOrderId = '/api/admin/Part';
   static const String getPartsByPartRequest = '/api/admin/Part';
   static const String getPartsByRequestId = '/api/admin/Partrequest';
-  static const String getOrderDetails = '/api/admin/Order';
+  static const String getOrderDetails = '/api/Common/Order';
 }

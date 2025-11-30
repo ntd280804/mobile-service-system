@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Json.Serialization;
 using WebApp.Helpers;
 using WebApp.Models.Part;
-using WebApp.Models.Import;
 using WebApp.Services;
 namespace WebApp.Areas.Admin.Controllers
 {
@@ -24,12 +23,11 @@ namespace WebApp.Areas.Admin.Controllers
             _securityClient = securityClient;
         }
 
-        // GET: /Admin/Import/Verifysign/5
         [HttpGet]
-        public async Task<IActionResult> Verifysign(int id)
+        public async Task<IActionResult> Verify(int id)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
-                return redirect;
+                return Json(new { success = false, message = "Vui lòng đăng nhập lại" });
 
             try
             {
@@ -38,8 +36,7 @@ namespace WebApp.Areas.Admin.Controllers
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = $"Xác thực thất bại: {response.ReasonPhrase} - {errorMsg}";
-                    return RedirectToAction(nameof(Index));
+                    return Json(new { success = false, message = $"Xác thực thất bại: {response.ReasonPhrase} - {errorMsg}" });
                 }
 
                 // Giả sử API trả về JSON { "StockInId": 14, "IsValid": true }
@@ -47,54 +44,63 @@ namespace WebApp.Areas.Admin.Controllers
 
                 if (result == null)
                 {
-                    TempData["Error"] = "Không nhận được kết quả từ API";
-                    return RedirectToAction(nameof(Index));
+                    return Json(new { success = false, message = "Không nhận được kết quả từ API" });
                 }
 
                 // Thông báo kết quả
                 if (result.IsValid)
                 {
-                    TempData["Success"] = $"Chữ ký StockIn ID {result.StockInId} là hợp lệ ✅";
+                    return Json(new { success = true, message = $"Chữ ký StockIn ID {result.StockInId} là hợp lệ ✅", isValid = true, stockInId = result.StockInId });
                 }
                 else
                 {
-                    TempData["Error"] = $"Chữ ký StockIn ID {result.StockInId} không hợp lệ ❌";
+                    return Json(new { success = true, message = $"Chữ ký StockIn ID {result.StockInId} không hợp lệ ❌", isValid = false, stockInId = result.StockInId });
                 }
-
-                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Lỗi kết nối API: " + ex.Message });
             }
         }
 
         // GET: /Admin/Import
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+            
+            const int pageSize = 10;
+            
             try
             {
-                
-                var response = await _httpClient.GetAsync("api/admin/Import");
+                var response = await _httpClient.GetAsync("api/admin/import");
                 if (!response.IsSuccessStatusCode)
                 {
-                    // Try to read error details from API response
                     var errorContent = await response.Content.ReadAsStringAsync();
                     TempData["Error"] = $"Không thể tải danh sách import: {response.ReasonPhrase} - {errorContent}";
-                    return View(new List<ImportViewModel>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<ImportViewModel>.Create(
+                        new List<ImportViewModel>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
 
                 var list = await response.Content.ReadFromJsonAsync<List<ImportViewModel>>() ?? new List<ImportViewModel>();
-                return View(list);
+                var paginatedList = WebApp.Models.Common.PaginatedList<ImportViewModel>.Create(
+                    list, 
+                    page, 
+                    pageSize);
+                return View(paginatedList);
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<ImportViewModel>());
+                var emptyList = WebApp.Models.Common.PaginatedList<ImportViewModel>.Create(
+                    new List<ImportViewModel>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 
@@ -108,7 +114,7 @@ namespace WebApp.Areas.Admin.Controllers
             try
             {
                 // Gọi WebAPI để lấy chi tiết import
-                var response = await _httpClient.GetAsync($"api/admin/Import/{id}/details");
+                var response = await _httpClient.GetAsync($"api/admin/import/{id}/details");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();
@@ -168,7 +174,7 @@ namespace WebApp.Areas.Admin.Controllers
                 // Lấy private key từ session
                 string? existingPrivateKeyPem = null;
                 var privateKeyBase64 = HttpContext.Session.GetString("PrivateKeyBase64");
-                model.PrivateKey= HttpContext.Session.GetString("PrivateKeyBase");
+                model.PrivateKey = HttpContext.Session.GetString("PrivateKeyBase");
                 if (string.IsNullOrWhiteSpace(privateKeyBase64))
                 {
                     TempData["Error"] = "Vui lòng upload private key trước khi sử dụng chức năng này.";
@@ -194,19 +200,25 @@ namespace WebApp.Areas.Admin.Controllers
 
                 // Sử dụng endpoint mới: gửi encrypted request và nhận encrypted response
                 var responseObj = await _securityClient.PostEncryptedAndGetEncryptedAsync<ImportStockDto, ImportSecureResponse>(
-                    "api/admin/Import/create/secure", model);
+                    "api/admin/import/create/secure", model);
 
                 // Xử lý response
                 if (responseObj != null)
                 {
                     if (responseObj.Type == "pdf" && !string.IsNullOrWhiteSpace(responseObj.PdfBase64))
                     {
-                        // Nếu là PDF, giải mã và trả về file
-                        byte[] pdfBytes = Convert.FromBase64String(responseObj.PdfBase64);
-                        string fileName = responseObj.FileName ?? "ImportInvoice.pdf";
-                        return File(pdfBytes, "application/pdf", fileName);
+                        // Lưu PDF vào TempData để download sau khi redirect
+                        TempData["PdfBase64"] = responseObj.PdfBase64;
+                        TempData["PdfFileName"] = responseObj.FileName ?? "ImportInvoice.pdf";
+                        TempData["Success"] = "Import thành công";
+                        TempData["ShouldDownloadPdf"] = "true";
+                        return RedirectToAction(nameof(Index));
                     }
-                    
+                    else if (responseObj.Success)
+                    {
+                        TempData["Success"] = "Import thành công";
+                        return RedirectToAction(nameof(Index));
+                    }
                 }
 
                 // Nếu có error message
@@ -230,7 +242,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/Import/{id}/invoice");
+                var response = await _httpClient.GetAsync($"api/admin/import/{id}/invoice");
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorMsg = await response.Content.ReadAsStringAsync();
@@ -248,7 +260,44 @@ namespace WebApp.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
+        [HttpGet]
+        public async Task<IActionResult> DownloadPdf(int id)
+        {
+            if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
+                return redirect;
+
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/admin/Invoice/{id}/pdf");
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    TempData["Error"] = $"Không thể tải PDF hóa đơn: {response.ReasonPhrase} - {error}";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var stream = await response.Content.ReadAsStreamAsync();
+                var fileName = $"Invoice_{id}.pdf";
+                return File(stream, "application/pdf", fileName);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
 
         // GET: /Admin/Import/Invoice/5 - PDF đã được lưu trong DB, không cần certificate
+
+        // DTOs for encrypted response
+        public class ImportSecureResponse
+        {
+            public bool Success { get; set; }
+            public string? Type { get; set; } // "pdf" or null
+            public string? PdfBase64 { get; set; }
+            public string? FileName { get; set; }
+            public string? Message { get; set; }
+        }
     }
 }

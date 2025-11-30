@@ -112,19 +112,43 @@ namespace WebApp.Areas.Admin.Controllers
         }
         // --- Index: lấy danh sách nhân viên ---
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, string fullName = null, string username = null, string role = null, string status = null)
         {
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
+            
+            const int pageSize = 10; // 10 dòng mỗi trang
+            
             try
             {
-
                 var response = await _httpClient.GetAsync("api/Admin/Employee");
 
                 if (response.IsSuccessStatusCode)
                 {
                     var employees = await response.Content.ReadFromJsonAsync<List<EmployeeDto>>();
-                    return View(employees);
+                    
+                    // Client-side filtering
+                    var filtered = employees ?? new List<EmployeeDto>();
+                    
+                    if (!string.IsNullOrWhiteSpace(fullName))
+                        filtered = filtered.Where(e => e.FullName != null && e.FullName.Contains(fullName, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(username))
+                        filtered = filtered.Where(e => e.Username != null && e.Username.Contains(username, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(role))
+                        filtered = filtered.Where(e => e.Roles != null && e.Roles.Contains(role, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    if (!string.IsNullOrWhiteSpace(status))
+                        filtered = filtered.Where(e => e.Status != null && e.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+                    
+                    // Tạo paginated list
+                    var paginatedList = WebApp.Models.Common.PaginatedList<EmployeeDto>.Create(
+                        filtered, 
+                        page, 
+                        pageSize);
+                    
+                    return View(paginatedList);
                 }
                 else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
@@ -136,13 +160,21 @@ namespace WebApp.Areas.Admin.Controllers
                 else
                 {
                     TempData["Error"] = "Không thể tải danh sách nhân viên: " + response.ReasonPhrase;
-                    return View(new List<EmployeeDto>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<EmployeeDto>.Create(
+                        new List<EmployeeDto>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<EmployeeDto>());
+                var emptyList = WebApp.Models.Common.PaginatedList<EmployeeDto>.Create(
+                    new List<EmployeeDto>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 
@@ -222,7 +254,6 @@ namespace WebApp.Areas.Admin.Controllers
                         TempData["ShowUploadPrivateKeyModal"] = "true";
                     }
 
-                    TempData["Message"] = $"Login thành công! ({apiResult.Roles})";
                     return RedirectToAction("Index", "Home", new { area = "Admin" });
                 }
                 ModelState.AddModelError("", $"Login thất bại: {apiResult.Result} - {apiResult.Message}");
@@ -634,6 +665,16 @@ namespace WebApp.Areas.Admin.Controllers
             {
                 return Json(new { success = false, message = $"Lỗi: {ex.Message}" });
             }
+        }
+
+        // --- DTOs ---
+        public class RegisterSecureResponse
+        {
+            public bool Success { get; set; }
+            public string? Type { get; set; } // "file" or null
+            public string? PrivateKeyBase64 { get; set; }
+            public string? FileName { get; set; }
+            public string? Message { get; set; }
         }
     }
 }

@@ -45,11 +45,11 @@ namespace WebAPI.Helpers
         
         /// Xử lý session bị kill hoặc terminate, xóa connection khỏi manager.
         
-        public  void HandleSessionKilled(HttpContext httpContext,
+        public async Task HandleSessionKilled(HttpContext httpContext,
             OracleConnectionManager connManager, string username, string platform, string sessionId)
         {
             httpContext.Session.Clear();
-            connManager.RemoveConnection(username, platform, sessionId);
+            await connManager.RemoveConnection(username, platform, sessionId);
             Console.WriteLine($"[OracleSessionHelper] Session killed for {username}-{platform}-{sessionId}");
         }
 

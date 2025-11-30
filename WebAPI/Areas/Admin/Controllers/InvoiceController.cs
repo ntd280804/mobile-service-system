@@ -28,9 +28,9 @@ namespace WebAPI.Areas.Admin.Controllers
         }
         [HttpGet("{invoiceId}/verify")]
         [Authorize]
-        public IActionResult VerifyInvoiceSignature(int invoiceId)
+        public async Task<IActionResult> VerifyInvoiceSignature(int invoiceId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 // 1. lấy chữ ký từ INVOICE
                 string? signature = OracleHelper.ExecuteClobOutput(
@@ -79,9 +79,9 @@ namespace WebAPI.Areas.Admin.Controllers
         }
         [HttpGet]
         [Authorize]
-        public IActionResult GetAllInvoices()
+        public async Task<IActionResult> GetAllInvoices()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var result = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_INVOICES", "cur_out",
                     reader => new
@@ -101,9 +101,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{invoiceId}/details")]
         [Authorize]
-        public IActionResult GetInvoiceDetails(int invoiceId)
+        public async Task<IActionResult> GetInvoiceDetails(int invoiceId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var invoice = InvoiceDataHelper.LoadInvoiceData(conn, invoiceId);
                 if (invoice == null)
@@ -115,9 +115,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{invoiceId}/pdf")]
         [Authorize]
-        public IActionResult GetInvoicePdf(int invoiceId)
+        public async Task<IActionResult> GetInvoicePdf(int invoiceId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 byte[]? pdfBytes = OracleHelper.ExecuteBlobOutput(
                     conn,

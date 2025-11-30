@@ -22,9 +22,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet]
         [Authorize]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_PART", "p_cursor",
                     reader => MapPart(reader));
@@ -34,9 +34,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("in-stock")]
         [Authorize]
-        public IActionResult GetPartsInStock()
+        public async Task<IActionResult> GetPartsInStock()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_PART_IN_STOCK", "p_cursor",
                     reader => MapPart(reader));
@@ -46,9 +46,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{serial}/details")]
         [Authorize]
-        public IActionResult GetPartBySerial(string serial)
+        public async Task<IActionResult> GetPartBySerial(string serial)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_PART_BY_SERIAL", "p_cursor",
                     reader => MapPart(reader),
@@ -63,9 +63,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{orderId}/by-order-id")]
         [Authorize]
-        public IActionResult GetPartsByOrderId(int orderId)
+        public async Task<IActionResult> GetPartsByOrderId(int orderId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_PART_BY_ORDERID", "p_cursor",
                     reader => MapPart(reader),
@@ -76,9 +76,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{orderId}/by-part-request")]
         [Authorize]
-        public IActionResult GetPartsByPartRequest(int orderId)
+        public async Task<IActionResult> GetPartsByPartRequest(int orderId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_PART_BY_PARTREQUEST", "p_cursor",
                     reader => MapPartWithRequest(reader),

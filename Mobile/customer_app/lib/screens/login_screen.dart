@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../services/api_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/gradient_button.dart';
+import '../widgets/gradient_form_field.dart';
+import '../widgets/error_banner.dart';
+import '../providers/auth_provider.dart';
 import '../services/signalr_service.dart';
-import 'web_qr_login_sheet.dart';
+import '../services/api_service.dart';
+import '../services/storage_service.dart';
 import 'qr_scan_screen.dart';
-
 enum LoginType { customer, employee }
 
 class LoginScreen extends StatefulWidget {
@@ -15,134 +20,41 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _phoneCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  final _usernameCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
   LoginType _loginType = LoginType.customer;
+  String? _errorMessage;
 
-  final _api = ApiService();
   final _signalR = SignalRService();
 
   @override
   void dispose() {
-    _phoneCtrl.dispose();
+    _usernameCtrl.dispose();
     _passwordCtrl.dispose();
     super.dispose();
   }
-
-  Future<void> _handleLogin() async {
-    final phone = _phoneCtrl.text.trim();
-    final password = _passwordCtrl.text;
-
-    if (phone.isEmpty || password.isEmpty) {
-      _showSnack('Vui lòng nhập Số điện thoại và Mật khẩu');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      Map<String, dynamic> res;
-
-      if (_loginType == LoginType.customer) {
-        res = await _api.login(phone, password);
-
-        final roles = (res['roles'] ?? '').toString().toLowerCase();
-        if (!roles.contains('role_khachhang')) {
-          _showSnack('Chỉ dành cho khách hàng');
-          return;
-        }
-      } else {
-        res = await _api.loginEmployee(phone, password);
-
-        final roles = (res['roles'] ?? '').toString().toLowerCase();
-        if (!roles.contains('role_nhanvien') &&
-            !roles.contains('role_admin')) {
-          _showSnack('Chỉ dành cho nhân viên');
-          return;
-        }
-      }
-
-      // --- SignalR connect ---
-      final sessionId = res['sessionId'] ?? '';
-      if (sessionId is String && sessionId.isNotEmpty) {
-        await _signalR.connect(sessionId);
-      }
-
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/home');
-    } catch (e) {
-      _showSnack(e.toString());
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _handleWebQrLogin(String code, {VoidCallback? onSuccess}) async {
-    final platform = 'MOBILE';
-
-    try {
-      final res = await _api.loginViaWebQr(code, platform: platform);
-      final sessionId = res['sessionId'] ?? '';
-
-      if (sessionId is String && sessionId.isNotEmpty) {
-        await _signalR.connect(sessionId);
-      }
-
-      if (!mounted) return;
-
-      // Đảm bảo token đã được lưu vào storage trước khi navigate
-      // Sử dụng một chút delay để đảm bảo mọi thứ đã hoàn tất
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      // Gọi callback để đóng bottom sheet trước khi navigate
-      onSuccess?.call();
-
-      // Đợi một chút để bottom sheet đóng hoàn toàn
-      await Future.delayed(const Duration(milliseconds: 200));
-
-      if (!mounted) return;
-
-      // Sử dụng pushNamedAndRemoveUntil để clear navigation stack và navigate đến home
-      // Điều này đảm bảo user không thể quay lại màn hình login
-      Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-    } catch (e) {
-      // Re-throw để web_qr_login_sheet có thể hiển thị lỗi
-      // Không hiển thị lỗi ở đây để tránh duplicate
-      rethrow;
-    }
-  }
-
-  void _openWebQrLoginSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: true,
-      builder: (sheetContext) => WebQrLoginSheet(
-        onSubmit: (code) async {
-          // Xử lý login
-          await _handleWebQrLogin(code, onSuccess: () {
-            // Đóng bottom sheet sau khi login thành công, trước khi navigate
-            if (sheetContext.mounted) {
-              Navigator.of(sheetContext).pop();
-            }
-          });
-        },
-      ),
-    );
-  }
-
   Future<void> _openQrScanner() async {
     if (_isLoading) return;
-    await Navigator.of(context).push(
+    
+    final code = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (_) => QrScanScreen(
           submitButtonLabel: 'Đăng nhập bằng mã QR',
           successMessage: 'Đăng nhập thành công. Đang chuyển hướng...',
-          onSubmit: (code) => _handleWebQrLogin(code),
+          onSubmit: (code) async {
+            // Xử lý đăng nhập - sẽ tự động navigate đến home screen
+            await _handleWebQrLogin(code);
+          },
         ),
       ),
     );
+    
+    // Nếu có code trả về nhưng chưa login (trường hợp không dùng onSubmit)
+    if (mounted && code != null) {
+      await _handleWebQrLogin(code);
+    }
   }
 
   void _showSnack(String msg) {
@@ -150,158 +62,339 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(content: Text(msg)),
     );
   }
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _errorMessage = null);
+
+    final authProvider = context.read<AuthProvider>();
+    final nav = Navigator.of(context);
+    final username = _usernameCtrl.text.trim();
+    final password = _passwordCtrl.text;
+
+    Map<String, dynamic> result;
+
+    if (_loginType == LoginType.customer) {
+      result = await authProvider.loginCustomer(
+        phone: username,
+        password: password,
+      );
+    } else {
+      result = await authProvider.loginEmployee(
+        username: username,
+        password: password,
+      );
+    }
+
+    if (result['success'] == true) {
+      // Lấy sessionId từ storage sau khi login thành công
+      final storage = StorageService();
+      final sessionId = await storage.getSessionId();
+      if (sessionId != null && sessionId.isNotEmpty) {
+        try {
+          await _signalR.connect(sessionId);
+        } catch (_) {}
+      }
+      nav.pushReplacementNamed('/home');
+    } else {
+      setState(() {
+        _errorMessage = result['message'] ?? 'Đăng nhập thất bại';
+      });
+    }
+  }
+
+  Future<void> _handleWebQrLogin(String code, {VoidCallback? onSuccess}) async {
+    if (_isLoading) return;
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final api = ApiService();
+      final result = await api.loginViaWebQr(code);
+      
+      if (!mounted) return;
+
+      // Update auth provider with the login result
+      final authProvider = context.read<AuthProvider>();
+      // The API service already saved token to storage, so we just need to update provider state
+      await authProvider.initialize();
+
+      // Connect SignalR với sessionId thực tế
+      final storage = StorageService();
+      final sessionId = await storage.getSessionId();
+      if (sessionId != null && sessionId.isNotEmpty) {
+        try {
+          await _signalR.connect(sessionId);
+        } catch (_) {}
+      }
+
+      if (mounted) {
+        // Pop QR screen nếu đang mở
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+        // Navigate đến home screen
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString();
+      });
+      _showSnack('Đăng nhập thất bại: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+            }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = context.watch<AuthProvider>();
+
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // --- Login type switch ---
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () => setState(
-                                () => _loginType = LoginType.customer),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _loginType == LoginType.customer
-                                ? Theme.of(context).primaryColor
-                                : Colors.transparent,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(8),
-                              bottomLeft: Radius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'Khách hàng',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _loginType == LoginType.customer
-                                  ? Colors.white
-                                  : Colors.black,
-                              fontWeight: _loginType == LoginType.customer
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _isLoading
-                            ? null
-                            : () => setState(
-                                () => _loginType = LoginType.employee),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: _loginType == LoginType.employee
-                                ? Theme.of(context).primaryColor
-                                : Colors.transparent,
-                            borderRadius: const BorderRadius.only(
-                              topRight: Radius.circular(8),
-                              bottomRight: Radius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'Nhân viên',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _loginType == LoginType.employee
-                                  ? Colors.white
-                                  : Colors.black,
-                              fontWeight: _loginType == LoginType.employee
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // --- Input fields ---
-              TextField(
-                controller: _phoneCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Số điện thoại',
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Password',
-                ),
-                obscureText: true,
-              ),
-
-              const SizedBox(height: 24),
-
-              // --- Main login button ---
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(
-                          _loginType == LoginType.customer
-                              ? 'Đăng nhập'
-                              : 'Đăng nhập nhân viên',
-                        ),
-                ),
-              ),
-
-              // --- Customer extra buttons ---
-              if (_loginType == LoginType.customer) ...[
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () => Navigator.pushNamed(context, '/register'),
-                    child: const Text('Đăng ký'),
+      backgroundColor: AppTheme.background,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppTheme.spacing24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.primaryGradient,
+                    shape: BoxShape.circle,
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: const Icon(
+                    Icons.phone_android,
+                    size: 50,
+                    color: Colors.white,
                   ),
                 ),
-              ],
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
+                const SizedBox(height: AppTheme.spacing32),
+                Text(
+                  'Mobile Service System',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppTheme.spacing8),
+                Text(
+                  'Đăng nhập để tiếp tục',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: AppTheme.spacing32),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.cardBackground,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                    border: Border.all(color: AppTheme.borderLight),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _loginType = LoginType.customer);
+                          },
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(AppTheme.radiusSmall),
+                            bottomLeft: Radius.circular(AppTheme.radiusSmall),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppTheme.spacing12,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: _loginType == LoginType.customer
+                                  ? AppTheme.primaryGradient
+                                  : null,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(AppTheme.radiusSmall),
+                                bottomLeft: Radius.circular(AppTheme.radiusSmall),
+                              ),
+                            ),
+                            child: Text(
+                              'Khách hàng',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _loginType == LoginType.customer
+                                    ? Colors.white
+                                    : AppTheme.textPrimary,
+                                fontWeight: _loginType == LoginType.customer
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 40,
+                        color: AppTheme.borderLight,
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _loginType = LoginType.employee);
+                          },
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(AppTheme.radiusSmall),
+                            bottomRight: Radius.circular(AppTheme.radiusSmall),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppTheme.spacing12,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: _loginType == LoginType.employee
+                                  ? AppTheme.primaryGradient
+                                  : null,
+                              borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(AppTheme.radiusSmall),
+                                bottomRight: Radius.circular(AppTheme.radiusSmall),
+                              ),
+                            ),
+                            child: Text(
+                              'Nhân viên',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _loginType == LoginType.employee
+                                    ? Colors.white
+                                    : AppTheme.textPrimary,
+                                fontWeight: _loginType == LoginType.employee
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacing24),
+                if (_errorMessage != null) ...[
+                  ErrorBanner(
+                    message: _errorMessage!,
+                    onDismiss: () {
+                      setState(() => _errorMessage = null);
+                    },
+                  ),
+                  const SizedBox(height: AppTheme.spacing16),
+                ],
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      GradientFormField(
+                        controller: _usernameCtrl,
+                        label: _loginType == LoginType.customer
+                            ? 'Số điện thoại'
+                            : 'Tên đăng nhập',
+                        hint: _loginType == LoginType.customer
+                            ? 'Nhập số điện thoại'
+                            : 'Nhập tên đăng nhập',
+                        prefixIcon: _loginType == LoginType.customer
+                            ? Icons.phone
+                            : Icons.person,
+                        keyboardType: _loginType == LoginType.customer
+                            ? TextInputType.phone
+                            : TextInputType.text,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Vui lòng nhập ${_loginType == LoginType.customer ? "số điện thoại" : "tên đăng nhập"}';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppTheme.spacing16),
+                      PasswordFormField(
+                        controller: _passwordCtrl,
+                        label: 'Mật khẩu',
+                        hint: 'Nhập mật khẩu',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Vui lòng nhập mật khẩu';
+                          }
+                          return null;
+                        },
+                        onSubmitted: (_) => _handleLogin(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppTheme.spacing24),
+                GradientButton(
+                  text: 'Đăng nhập',
+                  onPressed: authProvider.isLoading ? null : _handleLogin,
+                  isLoading: authProvider.isLoading,
+                  width: double.infinity,
+                  icon: Icons.login,
+                ),
+                const SizedBox(height: AppTheme.spacing16),
+                  OutlinedButton.icon(
                   onPressed: _isLoading ? null : _openQrScanner,
                   icon: const Icon(Icons.qr_code_scanner),
-                  label: const Text('Quét mã QR bằng camera'),
-                ),
-              ),
-            ],
+                  label: const Text('Quét QR đăng nhập'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.primary,
+                      side: const BorderSide(color: AppTheme.primary, width: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppTheme.spacing24,
+                        vertical: AppTheme.spacing12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                      ),
+                      minimumSize: const Size(double.infinity, 48),
+                    ),
+                  ),
+                  const SizedBox(height: AppTheme.spacing16),
+                if (_loginType == LoginType.customer) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Chưa có tài khoản? ',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pushNamed('/register');
+                        },
+                        child: const Text(
+                          'Đăng ký ngay',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+

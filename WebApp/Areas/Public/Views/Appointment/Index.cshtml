@@ -1,15 +1,128 @@
 ﻿@model List<WebApp.Models.Appointment.AppointmentViewModel>
 
-<h2>Lịch hẹn của bạn</h2>
-
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
+@{
+    ViewData["Title"] = "Lịch hẹn của bạn";
 }
 
-@if (Model.Any())
-{
-    <table class="table table-bordered mt-3">
+<style>
+    .appointment-page {
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(139,92,246,0.05) 100%);
+        min-height: 100vh;
+    }
+
+    .appointment-header {
+        background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .appointment-header h2 {
+        color: #1e40af;
+        font-weight: 600;
+        margin: 0;
+        font-size: 1.75rem;
+    }
+
+    .appointment-table {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.08);
+        border: 1px solid rgba(59,130,246,0.2);
+    }
+
+    .appointment-table thead {
+        background: linear-gradient(135deg, rgba(59,130,246,0.8) 0%, rgba(139,92,246,0.8) 100%);
+        color: white;
+    }
+
+    .appointment-table thead th {
+        font-weight: 600;
+        border: none;
+        padding: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .appointment-table tbody tr {
+        border-bottom: 1px solid rgba(59,130,246,0.1);
+        transition: all 0.2s ease;
+    }
+
+    .appointment-table tbody tr:hover {
+        background: linear-gradient(135deg, rgba(59,130,246,0.03) 0%, rgba(139,92,246,0.03) 100%);
+    }
+
+    .appointment-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+    }
+
+    .alert {
+        border-radius: 8px;
+        border: none;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(220,38,38,0.1) 100%);
+        color: #dc2626;
+        border-left: 4px solid #ef4444;
+    }
+
+    @@media (max-width: 768px) {
+        .appointment-page {
+            padding: 1rem;
+            min-height: calc(100vh - 60px);
+        }
+        .appointment-header {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .appointment-header h2 {
+            font-size: 1.5rem;
+        }
+        .appointment-table {
+            font-size: 0.9rem;
+        }
+        .appointment-table th,
+        .appointment-table td {
+            padding: 0.5rem;
+        }
+    }
+    
+    @@media (max-width: 576px) {
+        .appointment-page {
+            padding: 0.5rem;
+            min-height: calc(100vh - 50px);
+        }
+        .appointment-table {
+            font-size: 0.85rem;
+        }
+        .appointment-table th,
+        .appointment-table td {
+            padding: 0.3rem;
+        }
+    }
+</style>
+
+<div class="appointment-page">
+    <div class="appointment-header">
+        <h2>Lịch hẹn của bạn</h2>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger mb-3">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+        </div>
+    }
+
+    @if (Model.Any())
+    {
+        <div class="appointment-table">
+            <table class="table mb-0">
         <thead>
             <tr>
                 <th>ID</th>
@@ -30,10 +143,14 @@
                     <td>@item.Description</td>
                 </tr>
             }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>Không có lịch hẹn nào.</p>
-}
+            </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert" style="background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(139,92,246,0.1) 100%); color: #1e40af; border-left: 4px solid #3b82f6;">
+            <i class="bi bi-info-circle-fill me-2"></i>Bạn chưa có lịch hẹn nào.
+        </div>
+    }
+</div>

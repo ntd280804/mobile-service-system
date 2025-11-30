@@ -28,9 +28,9 @@ namespace WebAPI.Areas.Admin.Controllers
         }
         [HttpGet("trigger")]
         [Authorize]
-        public IActionResult GetAllAuditLog()
+        public async Task<IActionResult> GetAllAuditLog()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
@@ -63,9 +63,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("standard")]
         [Authorize]
-        public IActionResult GetStandardAudit()
+        public async Task<IActionResult> GetStandardAudit()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
@@ -89,9 +89,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("fga")]
         [Authorize]
-        public IActionResult GetFgaAudit()
+        public async Task<IActionResult> GetFgaAudit()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
@@ -142,33 +142,33 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("trigger/enable")]
         [Authorize]
-        public IActionResult EnableTriggerAudit() => ExecuteAuditToggle("APP.TRIGGER_ENABLE_ALL", "Đã bật trigger audit.");
+        public async Task<IActionResult> EnableTriggerAudit() => await ExecuteAuditToggle("APP.TRIGGER_ENABLE_ALL", "Đã bật trigger audit.");
 
         [HttpPost("trigger/disable")]
         [Authorize]
-        public IActionResult DisableTriggerAudit() => ExecuteAuditToggle("APP.TRIGGER_DISABLE_ALL", "Đã tắt trigger audit.");
+        public async Task<IActionResult> DisableTriggerAudit() => await ExecuteAuditToggle("APP.TRIGGER_DISABLE_ALL", "Đã tắt trigger audit.");
 
         [HttpPost("standard/enable")]
         [Authorize]
-        public IActionResult EnableStandardAudit() => ExecuteAuditToggle("APP.AUDIT_STD_ENABLE_ALL", "Đã bật standard audit.");
+        public async Task<IActionResult> EnableStandardAudit() => await ExecuteAuditToggle("APP.AUDIT_STD_ENABLE_ALL", "Đã bật standard audit.");
 
         [HttpPost("standard/disable")]
         [Authorize]
-        public IActionResult DisableStandardAudit() => ExecuteAuditToggle("APP.AUDIT_STD_DISABLE_ALL", "Đã tắt standard audit.");
+        public async Task<IActionResult> DisableStandardAudit() => await ExecuteAuditToggle("APP.AUDIT_STD_DISABLE_ALL", "Đã tắt standard audit.");
 
         [HttpPost("fga/enable")]
         [Authorize]
-        public IActionResult EnableFgaAudit() => ExecuteAuditToggle("APP.ENABLE_ALL_FGA", "Đã bật FGA audit.");
+        public async Task<IActionResult> EnableFgaAudit() => await ExecuteAuditToggle("APP.ENABLE_ALL_FGA", "Đã bật FGA audit.");
 
         [HttpPost("fga/disable")]
         [Authorize]
-        public IActionResult DisableFgaAudit() => ExecuteAuditToggle("APP.DISABLE_ALL_FGA", "Đã tắt FGA audit.");
+        public async Task<IActionResult> DisableFgaAudit() => await ExecuteAuditToggle("APP.DISABLE_ALL_FGA", "Đã tắt FGA audit.");
 
         [HttpGet("status")]
         [Authorize]
-        public IActionResult GetAuditStatus()
+        public async Task<IActionResult> GetAuditStatus()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {
@@ -225,9 +225,9 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Lỗi khi lấy trạng thái audit");
         }
 
-        private IActionResult ExecuteAuditToggle(string procedureName, string successMessage)
+        private async Task<IActionResult> ExecuteAuditToggle(string procedureName, string successMessage)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 if (!TryEnsureAdminRole(conn, out var failureResult))
                 {

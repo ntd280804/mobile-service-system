@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/order.dart';
+import '../widgets/status_chip.dart';
+import 'order_detail_screen.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -108,21 +110,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     ? order.receivedDate!.toLocal().toString().split(' ').first
                     : 'Không rõ ngày';
 
-                // Xác định icon và màu dựa trên trạng thái
-                IconData statusIcon;
-                Color statusColor;
-                if (order.status?.toUpperCase().contains('CANCELLED') == true ||
-                    order.status?.toUpperCase().contains('HỦY') == true) {
-                  statusIcon = Icons.cancel;
-                  statusColor = Colors.red;
-                } else if (order.status?.toUpperCase().contains('COMPLETED') == true ||
-                    order.status?.toUpperCase().contains('HOÀN THÀNH') == true) {
-                  statusIcon = Icons.check_circle;
-                  statusColor = Colors.green;
-                } else {
-                  statusIcon = Icons.schedule;
-                  statusColor = Colors.blue;
-                }
+                final statusText = order.status;
 
                 return Card(
                   elevation: 2,
@@ -132,7 +120,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   child: ListTile(
                     leading: CircleAvatar(
                       backgroundColor: Colors.green,
-                      radius: 28,
+                      radius: 24,
                       child: Text(
                         order.orderId,
                         style: const TextStyle(
@@ -155,28 +143,31 @@ class _OrderListScreenState extends State<OrderListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Ngày nhận: $date'),
-                          if (order.customerPhone != null)
+                          if (order.customerPhone.isNotEmpty)
                             Text('SĐT: ${order.customerPhone}'),
-                          if (order.receiverEmpName != null)
+                          if (order.receiverEmpName.isNotEmpty)
                             Text('Người nhận: ${order.receiverEmpName}'),
-                          if (order.handlerEmpName != null)
+                          if (order.handlerEmpName.isNotEmpty)
                             Text('Người xử lý: ${order.handlerEmpName}'),
-                          if (order.orderType != null)
+                          if (order.orderType.isNotEmpty)
                             Text('Loại: ${order.orderType}'),
-                          if (order.status != null)
+                          if (statusText.isNotEmpty)
                             Row(
                               children: [
-                                Icon(statusIcon, size: 16, color: statusColor),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Trạng thái: ${order.status}',
-                                  style: TextStyle(color: statusColor),
-                                ),
+                                const Text('Trạng thái: '),
+                                StatusChip(status: statusText),
                               ],
                             ),
                         ],
                       ),
                     ),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => OrderDetailScreen(orderId: int.tryParse(order.orderId) ?? 0),
+                        ),
+                      );
+                    },
                     isThreeLine: true,
                   ),
                 );

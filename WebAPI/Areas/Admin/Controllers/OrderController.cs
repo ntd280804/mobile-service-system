@@ -20,9 +20,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("services")]
         [Authorize]
-        public IActionResult GetServices()
+        public async Task<IActionResult> GetServices()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_SERVICES", "p_service_cursor",
                     reader => new ServiceDto
@@ -37,12 +37,12 @@ namespace WebAPI.Areas.Admin.Controllers
             }
         [HttpGet("by-order-type")]
         [Authorize]
-        public IActionResult GetByOrderType([FromQuery] string orderType)
+        public async Task<IActionResult> GetByOrderType([FromQuery] string orderType)
         {
             if (string.IsNullOrEmpty(orderType))
                 return BadRequest(new { message = "orderType không được để trống." });
 
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_BY_ORDER_TYPE", "cur_out",
                     reader => MapOrder(reader),
@@ -53,9 +53,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost]
         [Authorize]
-        public IActionResult CreateOrder([FromBody] CreateOrderRequest request)
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
         {
-            return _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
+            return await _helper.ExecuteWithTransaction(HttpContext, (conn, transaction) =>
             {
                 // 1. Tạo đơn hàng và lấy ORDER_ID
                 var orderId = OracleHelper.ExecuteScalar<int>(conn, "APP.CREATE_ORDER", "p_order_id", transaction,
@@ -88,9 +88,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{orderId}/details")]
         [Authorize]
-        public IActionResult GetOrderDetails(int orderId)
+        public async Task<IActionResult> GetOrderDetails(int orderId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var list = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ORDER_BY_ID", "cur_out",
                     reader => MapOrder(reader),
@@ -105,9 +105,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("{orderId}/services")]
         [Authorize]
-        public IActionResult GetOrderServices(int orderId)
+        public async Task<IActionResult> GetOrderServices(int orderId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var services = OracleHelper.ExecuteRefCursor(conn, "APP.GET_SERVICES_BY_ORDER_ID", "p_cursor",
                     reader => new OrderServiceDto
@@ -125,9 +125,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("customer-phones")]
         [Authorize]
-        public IActionResult GetCustomerPhones()
+        public async Task<IActionResult> GetCustomerPhones()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var phones = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_CUSTOMERS", "p_cursor",
                     reader => reader.GetString(0));
@@ -137,9 +137,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpGet("handler-usernames")]
         [Authorize]
-        public IActionResult GetHandlerUsernames()
+        public async Task<IActionResult> GetHandlerUsernames()
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var usernames = OracleHelper.ExecuteRefCursor(conn, "APP.GET_ALL_EMPLOYEES", "p_cursor",
                     reader => reader.GetString(2));
@@ -149,9 +149,9 @@ namespace WebAPI.Areas.Admin.Controllers
 
         [HttpPost("{orderId}/cancel")]
         [Authorize]
-        public IActionResult CancelOrder(int orderId)
+        public async Task<IActionResult> CancelOrder(int orderId)
         {
-            return _helper.ExecuteWithConnection(HttpContext, conn =>
+            return await _helper.ExecuteWithConnection(HttpContext, conn =>
             {
                 var result = OracleHelper.ExecuteScalar<string>(
                     conn,

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import '../services/api_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/gradient_button.dart';
+import '../widgets/gradient_form_field.dart';
+import '../widgets/error_banner.dart';
+import '../providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -10,157 +15,310 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _nameCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _fullNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
-  final _pwdCtrl = TextEditingController();
-  final _pwd2Ctrl = TextEditingController();
-
-  bool _isLoading = false;
-  final _api = ApiService();
+  final _passwordCtrl = TextEditingController();
+  final _confirmPasswordCtrl = TextEditingController();
+  
+  String? _errorMessage;
+  String? _successMessage;
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
+    _fullNameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
     _addressCtrl.dispose();
-    _pwdCtrl.dispose();
-    _pwd2Ctrl.dispose();
+    _passwordCtrl.dispose();
+    _confirmPasswordCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _handleRegister() async {
-    final name = _nameCtrl.text.trim();
-    final phone = _phoneCtrl.text.trim();
-    final email = _emailCtrl.text.trim();
-    final address = _addressCtrl.text.trim();
-    final pwd = _pwdCtrl.text;
-    final pwd2 = _pwd2Ctrl.text;
-
-    // Validation
-    if (name.isEmpty) {
-      _showSnack('Vui lòng nhập họ tên');
-      return;
-    }
-    if (phone.isEmpty) {
-      _showSnack('Vui lòng nhập số điện thoại');
-      return;
-    }
-    if (email.isEmpty) {
-      _showSnack('Vui lòng nhập email');
-      return;
-    }
-    if (!email.contains('@')) {
-      _showSnack('Email không hợp lệ');
-      return;
-    }
-    if (pwd.isEmpty) {
-      _showSnack('Vui lòng nhập mật khẩu');
-      return;
-    }
-    if (pwd.length < 6) {
-      _showSnack('Mật khẩu phải ít nhất 6 ký tự');
-      return;
-    }
-    if (pwd != pwd2) {
-      _showSnack('Mật khẩu xác nhận không khớp');
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() => _isLoading = true);
-    try {
-      await _api.register(
-        fullName: name,
-        phone: phone,
-        email: email,
-        password: pwd,
-        address: address.isEmpty ? null : address,
-      );
+    setState(() {
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    final authProvider = context.read<AuthProvider>();
+    final result = await authProvider.registerCustomer(
+      fullName: _fullNameCtrl.text.trim(),
+      phone: _phoneCtrl.text.trim(),
+      email: _emailCtrl.text.trim(),
+      password: _passwordCtrl.text,
+      address: _addressCtrl.text.trim().isEmpty ? null : _addressCtrl.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      setState(() {
+        _successMessage = 'Đăng ký thành công! Vui lòng đăng nhập.';
+      });
+      // Clear form
+      _formKey.currentState!.reset();
+      _fullNameCtrl.clear();
+      _phoneCtrl.clear();
+      _emailCtrl.clear();
+      _addressCtrl.clear();
+      _passwordCtrl.clear();
+      _confirmPasswordCtrl.clear();
       
-      if (!mounted) return;
-      _showSnack('Đăng ký thành công! Vui lòng đăng nhập.');
-      
-      // Quay về màn hình login sau 1 giây
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
-      Navigator.pop(context);
-    } catch (e) {
-      _showSnack(e.toString());
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      // Navigate to login after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/login');
+        }
+      });
+    } else {
+      setState(() {
+        _errorMessage = result['message'] ?? 'Đăng ký thất bại';
+      });
     }
   }
 
-  void _showSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
+  String? _validateFullName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập họ tên';
+    }
+    if (value.trim().length < 3) {
+      return 'Họ tên phải có ít nhất 3 ký tự';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập số điện thoại';
+    }
+    final phoneRegex = RegExp(r'^\d{10,11}$');
+    if (!phoneRegex.hasMatch(value.trim())) {
+      return 'Số điện thoại không hợp lệ (10-11 chữ số)';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập email';
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Email không hợp lệ';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập mật khẩu';
+    }
+    if (value.length < 6) {
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+    return null;
+  }
+
+  String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng xác nhận mật khẩu';
+    }
+    if (value != _passwordCtrl.text) {
+      return 'Mật khẩu xác nhận không khớp';
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Đăng ký')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameCtrl,
-              decoration: const InputDecoration(labelText: 'Họ tên *'),
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _phoneCtrl,
-              decoration: const InputDecoration(labelText: 'Số điện thoại *'),
-              keyboardType: TextInputType.phone,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _emailCtrl,
-              decoration: const InputDecoration(labelText: 'Email *'),
-              keyboardType: TextInputType.emailAddress,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _addressCtrl,
-              decoration: const InputDecoration(labelText: 'Địa chỉ'),
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _pwdCtrl,
-              decoration: const InputDecoration(labelText: 'Mật khẩu *'),
-              obscureText: true,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _pwd2Ctrl,
-              decoration: const InputDecoration(labelText: 'Xác nhận mật khẩu *'),
-              obscureText: true,
-              enabled: !_isLoading,
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleRegister,
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Tạo tài khoản'),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.headerGradient,
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo/Icon
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.person_add_rounded,
+                      size: 64,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Đăng ký tài khoản',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      shadows: [
+                        Shadow(
+                          offset: Offset(0, 2),
+                          blurRadius: 4,
+                          color: Colors.black26,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Tạo tài khoản mới để sử dụng dịch vụ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Form Card
+                  Card(
+                    elevation: 8,
+                    shadowColor: Colors.black.withValues(alpha: 0.3),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Error/Success banners
+                            if (_errorMessage != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: ErrorBanner(
+                                  message: _errorMessage!,
+                                ),
+                              ),
+                            if (_successMessage != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: SuccessBanner(
+                                  message: _successMessage!,
+                                ),
+                              ),
+
+                            // Full Name
+                            GradientFormField(
+                              controller: _fullNameCtrl,
+                              label: 'Họ và tên',
+                              prefixIcon: Icons.person_outline,
+                              validator: _validateFullName,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Phone
+                            GradientFormField(
+                              controller: _phoneCtrl,
+                              label: 'Số điện thoại',
+                              prefixIcon: Icons.phone_outlined,
+                              keyboardType: TextInputType.phone,
+                              validator: _validatePhone,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Email
+                            GradientFormField(
+                              controller: _emailCtrl,
+                              label: 'Email',
+                              prefixIcon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              validator: _validateEmail,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Address (Optional)
+                            GradientFormField(
+                              controller: _addressCtrl,
+                              label: 'Địa chỉ (Không bắt buộc)',
+                              prefixIcon: Icons.location_on_outlined,
+                              keyboardType: TextInputType.streetAddress,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Password
+                            PasswordFormField(
+                              controller: _passwordCtrl,
+                              label: 'Mật khẩu',
+                              validator: _validatePassword,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Confirm Password
+                            PasswordFormField(
+                              controller: _confirmPasswordCtrl,
+                              label: 'Xác nhận mật khẩu',
+                              validator: _validateConfirmPassword,
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Register Button
+                            Consumer<AuthProvider>(
+                              builder: (context, authProvider, _) {
+                                return GradientButton(
+                                  text: authProvider.isLoading ? 'Đang xử lý...' : 'Đăng ký',
+                                  onPressed: authProvider.isLoading ? null : _handleRegister,
+                                  isLoading: authProvider.isLoading,
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Already have account
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Đã có tài khoản? ',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    Navigator.of(context).pushReplacementNamed('/login');
+                                  },
+                                  child: ShaderMask(
+                                    shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+                                    child: const Text(
+                                      'Đăng nhập',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

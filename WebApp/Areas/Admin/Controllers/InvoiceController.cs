@@ -23,7 +23,7 @@ namespace WebApp.Areas.Admin.Controllers
         public async Task<IActionResult> Verify(int id)
         {
             if (!_oracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
-                return redirect;
+                return Json(new { success = false, message = "Vui lòng đăng nhập lại" });
 
             try
             {
@@ -31,55 +31,82 @@ namespace WebApp.Areas.Admin.Controllers
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
-                    TempData["Error"] = $"Xác thực thất bại: {response.ReasonPhrase} - {error}";
-                    return RedirectToAction(nameof(Index));
+                    return Json(new { success = false, message = $"Xác thực thất bại: {response.ReasonPhrase} - {error}" });
                 }
 
                 var result = await response.Content.ReadFromJsonAsync<VerifyInvoiceResultViewModel>();
                 if (result == null)
                 {
-                    TempData["Error"] = "Không nhận được kết quả xác thực";
+                    return Json(new { success = false, message = "Không nhận được kết quả xác thực" });
                 }
-                else if (result.IsValid)
+                
+                if (result.IsValid)
                 {
-                    TempData["Success"] = $"Chữ ký hóa đơn #{result.InvoiceId} hợp lệ ✅";
+                    return Json(new { success = true, message = $"Chữ ký hóa đơn #{result.InvoiceId} hợp lệ ✅", isValid = true, invoiceId = result.InvoiceId });
                 }
                 else
                 {
-                    TempData["Error"] = $"Chữ ký hóa đơn #{result.InvoiceId} không hợp lệ ❌";
+                    return Json(new { success = true, message = $"Chữ ký hóa đơn #{result.InvoiceId} không hợp lệ ❌", isValid = false, invoiceId = result.InvoiceId });
                 }
-
-                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Lỗi kết nối API: " + ex.Message });
             }
         }
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, string invoiceId = null, string customerPhone = null, string dateFrom = null, string dateTo = null)
         {
             if (!_oracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
                 return redirect;
 
+            const int pageSize = 10;
+
             try
             {
-                var response = await _httpClient.GetAsync("api/admin/Invoice");
+                var response = await _httpClient.GetAsync("api/admin/invoice");
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();
                     TempData["Error"] = $"Không thể tải danh sách hóa đơn: {response.ReasonPhrase} - {error}";
-                    return View(new List<InvoiceSummaryViewModel>());
+                    var emptyList = WebApp.Models.Common.PaginatedList<InvoiceSummaryViewModel>.Create(
+                        new List<InvoiceSummaryViewModel>(), 
+                        page, 
+                        pageSize);
+                    return View(emptyList);
                 }
 
                 var list = await response.Content.ReadFromJsonAsync<List<InvoiceSummaryViewModel>>() ?? new List<InvoiceSummaryViewModel>();
-                return View(list);
+                
+                // Client-side filtering
+                var filtered = list;
+                
+                if (!string.IsNullOrWhiteSpace(invoiceId) && int.TryParse(invoiceId, out var invId))
+                    filtered = filtered.Where(i => i.InvoiceId == invId).ToList();
+                
+                if (!string.IsNullOrWhiteSpace(customerPhone))
+                    filtered = filtered.Where(i => i.CustomerPhone != null && i.CustomerPhone.Contains(customerPhone)).ToList();
+                
+                if (!string.IsNullOrWhiteSpace(dateFrom) && DateTime.TryParse(dateFrom, out var fromDate))
+                    filtered = filtered.Where(i => i.InvoiceDate.Date >= fromDate.Date).ToList();
+                
+                if (!string.IsNullOrWhiteSpace(dateTo) && DateTime.TryParse(dateTo, out var toDate))
+                    filtered = filtered.Where(i => i.InvoiceDate.Date <= toDate.Date).ToList();
+                
+                var paginatedList = WebApp.Models.Common.PaginatedList<InvoiceSummaryViewModel>.Create(
+                    filtered, 
+                    page, 
+                    pageSize);
+                return View(paginatedList);
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(new List<InvoiceSummaryViewModel>());
+                var emptyList = WebApp.Models.Common.PaginatedList<InvoiceSummaryViewModel>.Create(
+                    new List<InvoiceSummaryViewModel>(), 
+                    page, 
+                    pageSize);
+                return View(emptyList);
             }
         }
 
