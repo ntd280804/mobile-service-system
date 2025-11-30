@@ -113,7 +113,7 @@ namespace WebAPI.Areas.Admin.Controllers
             }, "Internal Server Error");
         }
 
-        [HttpGet("{invoiceId}/pdf")]
+        [HttpGet("{invoiceId}/invoice")]
         [Authorize]
         public async Task<IActionResult> GetInvoicePdf(int invoiceId)
         {

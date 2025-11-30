@@ -268,7 +268,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/Invoice/{id}/pdf");
+                var response = await _httpClient.GetAsync($"api/admin/Import/{id}/invoice");
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync();

@@ -1328,7 +1328,7 @@
         }
       }
     },
-    "/api/admin/Invoice/{invoiceId}/pdf": {
+    "/api/admin/Invoice/{invoiceId}/invoice": {
       "get": {
         "tags": [
           "Invoice"

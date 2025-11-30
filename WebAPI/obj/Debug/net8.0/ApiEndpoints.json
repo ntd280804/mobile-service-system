@@ -584,7 +584,7 @@
   {
     "ContainingType": "WebAPI.Areas.Admin.Controllers.InvoiceController",
     "Method": "GetInvoicePdf",
-    "RelativePath": "api/admin/Invoice/{invoiceId}/pdf",
+    "RelativePath": "api/admin/Invoice/{invoiceId}/invoice",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
