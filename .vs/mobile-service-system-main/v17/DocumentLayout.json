@@ -71,8 +71,7 @@
               "RelativeToolTip": "WebApp\\Areas\\Admin\\Controllers\\InvoiceController.cs",
               "ViewState": "AgIAAHgAAAAAAAAAAAAAwJgAAABaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-30T15:58:14.632Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-30T15:58:14.632Z"
             },
             {
               "$type": "Document",
@@ -84,8 +83,7 @@
               "RelativeToolTip": "WebApp\\Areas\\Admin\\Controllers\\ImportController.cs",
               "ViewState": "AgIAAO4AAAAAAAAAAAAAwA4BAABTAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-30T15:57:20.143Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-30T15:57:20.143Z"
             },
             {
               "$type": "Document",
@@ -97,8 +95,7 @@
               "RelativeToolTip": "WebApp\\Areas\\Admin\\Controllers\\ExportController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAABZAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-30T15:56:57.573Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-30T15:56:57.573Z"
             }
           ]
         }
