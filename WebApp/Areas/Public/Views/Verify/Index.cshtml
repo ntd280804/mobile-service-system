@@ -144,8 +144,14 @@
 
                 @if (ViewData["Result"] != null)
                 {
-                    <div class="alert alert-success mt-3">
-                        <i class="bi bi-check-circle-fill me-2"></i>@ViewData["Result"]
+                    var resultText = ViewData["Result"]?.ToString() ?? string.Empty;
+                    var isMismatch = resultText.Contains("không trùng");
+
+                    var alertClass = isMismatch ? "alert-danger" : "alert-success";
+                    var iconClass = isMismatch ? "bi-x-circle-fill" : "bi-check-circle-fill";
+
+                    <div class="alert @alertClass mt-3">
+                        <i class="bi @iconClass me-2"></i>@resultText
                     </div>
                 }
 

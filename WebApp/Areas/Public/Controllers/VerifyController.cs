@@ -68,7 +68,11 @@ namespace WebApp.Areas.Public.Controllers
                     return View();
                 }
 
-                ViewData["Result"] = apiResult.Data == true
+                // Gắn cờ cho View để hiển thị đúng màu/icon theo kết quả kiểm tra
+                var isMatch = apiResult.Data == true;
+                ViewData["IsMatch"] = isMatch;
+
+                ViewData["Result"] = isMatch
                     ? "PDF trùng khớp với bản lưu trong hệ thống."
                     : "PDF không trùng với bản lưu trong hệ thống.";
             }
