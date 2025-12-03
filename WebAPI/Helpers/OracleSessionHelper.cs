@@ -41,8 +41,6 @@ namespace WebAPI.Helpers
 
             return conn;
         }
-
-        
         /// Xử lý session bị kill hoặc terminate, xóa connection khỏi manager.
         
         public async Task HandleSessionKilled(HttpContext httpContext,

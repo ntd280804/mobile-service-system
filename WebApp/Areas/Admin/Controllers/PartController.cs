@@ -97,7 +97,7 @@ namespace WebApp.Areas.Admin.Controllers
 
             try
             {
-                var response = await _httpClient.GetAsync($"api/admin/part/details/{serial}");
+                var response = await _httpClient.GetAsync($"api/admin/part/{serial}/details");
                 if (!response.IsSuccessStatusCode)
                 {
                     if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)

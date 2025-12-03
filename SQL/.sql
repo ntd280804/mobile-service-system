@@ -4546,9 +4546,7 @@ BEGIN
         INTO v_db_hash
         FROM EMPLOYEE
         WHERE USERNAME = p_username;
-
         p_out_username := p_username;
-
         -- Lấy trạng thái từ DBA_USERS
         BEGIN
             SELECT ACCOUNT_STATUS

@@ -288,6 +288,16 @@
                 </div>
                 <div class="profile-table-container">
                     <table class="profile-table">
+                        <thead>
+                            <tr>
+                                <th>Profile Name</th>
+                                <th>Idle Time</th>
+                                <th>Connect Time</th>
+                                <th>Failed Login</th>
+                                <th>Lock Time</th>
+                                <th>Inactive Account Time</th>
+                            </tr>
+                        </thead>
                         <tbody id="profile-list">
                             @if (Model.Profiles.Any())
                             {

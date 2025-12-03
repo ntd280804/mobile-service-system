@@ -33,14 +33,12 @@ namespace WebAPI.Areas.Public.Controllers
             {
                 return BadRequest(ApiResponse<bool>.Fail("File không hợp lệ."));
             }
-
             byte[] uploadedBytes;
             using (var ms = new MemoryStream())
             {
                 await request.File.CopyToAsync(ms);
                 uploadedBytes = ms.ToArray();
             }
-
             var invoiceId = request.InvoiceId;
             if (invoiceId <= 0)
             {
@@ -48,12 +46,8 @@ namespace WebAPI.Areas.Public.Controllers
                             TryExtractInvoiceIdFromFileName(request.File.FileName) ??
                             0;
             }
-
-            if (invoiceId <= 0)
-            {
-                return BadRequest(ApiResponse<bool>.Fail("Không xác định được mã hóa đơn từ nội dung PDF."));
-            }
-
+            if (invoiceId <= 0){
+                return BadRequest(ApiResponse<bool>.Fail("Không xác định được mã hóa đơn từ nội dung PDF."));}
             // Note: VerifyController cần connection với role ROLE_VERIFY, không dùng session thông thường
             // Nên tạo connection riêng và bọc trong try-catch để xử lý lỗi
             try
@@ -66,16 +60,13 @@ namespace WebAPI.Areas.Public.Controllers
                         "SELECT PDF FROM APP.INVOICE WHERE INVOICE_ID = :p_id",
                         ("p_id", OracleDbType.Decimal, invoiceId));
                 }
-
                 if (dbBytes == null || dbBytes.Length == 0)
                         {
                     return NotFound(ApiResponse<bool>.Fail("Không tìm thấy dữ liệu INVOICE hoặc PDF rỗng."));
             }
-
             var uploadedHash = ComputeSha256(uploadedBytes);
             var dbHash = ComputeSha256(dbBytes);
             var isMatch = uploadedHash.SequenceEqual(dbHash);
-
             return Ok(ApiResponse<bool>.Ok(isMatch));
             }
             catch (OracleException ex)

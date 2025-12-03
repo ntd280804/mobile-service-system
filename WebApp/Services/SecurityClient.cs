@@ -48,14 +48,12 @@ namespace WebApp.Services
         public async Task InitializeAsync(string baseApiUrl, string clientId, string? existingPrivateKeyPem = null)
         {
             _clientId = clientId;
-            _httpClient.BaseAddress = new Uri(baseApiUrl);
-            
+            _httpClient.BaseAddress = new Uri(baseApiUrl); 
             // 1) Get server public key
             var keyResp = await _httpClient.GetFromJsonAsync<ApiResponse<string>>("api/public/security/server-public-key");
             if (keyResp == null || !keyResp.Success || string.IsNullOrWhiteSpace(keyResp.Data))
                 throw new InvalidOperationException(keyResp?.Error ?? "Cannot get server public key");
             _serverPublicKeyBase64 = keyResp.Data;
-
             // 2) Sử dụng private key có sẵn hoặc generate mới
             if (!string.IsNullOrWhiteSpace(existingPrivateKeyPem))
             {
@@ -67,9 +65,7 @@ namespace WebApp.Services
                         rsa.ImportFromPem(existingPrivateKeyPem);
                         string publicKeyBase64 = Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo());
                         _clientPrivateKeyBase64 = Convert.ToBase64String(rsa.ExportPkcs8PrivateKey());
-
-                        var reg = await _httpClient.PostAsJsonAsync("api/public/security/register-client-key", new
-                        {
+                        var reg = await _httpClient.PostAsJsonAsync("api/public/security/register-client-key", new{
                             clientId = _clientId,
                             clientPublicKeyBase64 = publicKeyBase64
                         });
@@ -157,27 +153,22 @@ namespace WebApp.Services
         {
             if (_serverPublicKeyBase64 == null || _clientPrivateKeyBase64 == null)
                 throw new InvalidOperationException("SecurityClient is not initialized.");
-
             // 1. Mã hóa request
             string json = JsonSerializer.Serialize(request);
             var encrypted = EncryptHelper.HybridEncrypt(json, _serverPublicKeyBase64);
-
             // 2. Gửi request
             var res = await _httpClient.PostAsJsonAsync(path, new
             {
                 encryptedKeyBlockBase64 = encrypted.EncryptedKeyBlock,
                 cipherDataBase64 = encrypted.CipherData
             });
-
             // 3. Kiểm tra status code trước
             if (!res.IsSuccessStatusCode)
             {
                 var content = await res.Content.ReadAsStringAsync();
                 // Nếu response rỗng, trả về thông báo lỗi từ status code
-                if (string.IsNullOrWhiteSpace(content))
-                {
-                    throw new InvalidOperationException($"HTTP {(int)res.StatusCode} {res.ReasonPhrase}");
-                }
+                if (string.IsNullOrWhiteSpace(content)){
+                    throw new InvalidOperationException($"HTTP {(int)res.StatusCode} {res.ReasonPhrase}");}
                 // Thử deserialize nếu có content
                 try
                 {
@@ -189,7 +180,6 @@ namespace WebApp.Services
                     throw new InvalidOperationException(content ?? $"HTTP {(int)res.StatusCode} {res.ReasonPhrase}");
                 }
             }
-
             // 4. Nhận encrypted response
             var api = await res.Content.ReadFromJsonAsync<ApiResponse<Envelope>>();
             if (api == null)
@@ -198,13 +188,8 @@ namespace WebApp.Services
                 var rawContent = await res.Content.ReadAsStringAsync();
                 throw new InvalidOperationException($"Cannot deserialize response. Raw content: {rawContent?.Substring(0, Math.Min(200, rawContent?.Length ?? 0))}");
             }
-            
-            if (!api.Success)
-                throw new InvalidOperationException(api.Error ?? "Request failed");
-            
-            if (api.Data == null)
-                throw new InvalidOperationException("Response envelope data is null");
-
+            if (!api.Success) throw new InvalidOperationException(api.Error ?? "Request failed");
+            if (api.Data == null) throw new InvalidOperationException("Response envelope data is null");
             // 6. Giải mã response
             string decryptedJson = EncryptHelper.HybridDecrypt(
                 api.Data.EncryptedKeyBlockBase64!, 
@@ -213,14 +198,8 @@ namespace WebApp.Services
 
             // 7. Deserialize thành ApiResponse<TRes> (vì server trả về ApiResponse<TRes> đã được mã hóa)
             var apiResponse = JsonSerializer.Deserialize<ApiResponse<TRes>>(decryptedJson);
-            if (apiResponse == null)
-            {
-                throw new InvalidOperationException($"Cannot deserialize decrypted response. Decrypted JSON: {decryptedJson?.Substring(0, Math.Min(500, decryptedJson?.Length ?? 0))}");
-            }
-            
-            if (!apiResponse.Success)
-                throw new InvalidOperationException(apiResponse.Error ?? "Request failed");
-            
+            if (apiResponse == null) {throw new InvalidOperationException($"Cannot deserialize decrypted response. Decrypted JSON: {decryptedJson?.Substring(0, Math.Min(500, decryptedJson?.Length ?? 0))}");}
+            if (!apiResponse.Success) throw new InvalidOperationException(apiResponse.Error ?? "Request failed");
             if (apiResponse.Data == null)
             {
                 // Có thể response không phải là ApiResponse<TRes> mà là TRes trực tiếp
@@ -237,7 +216,6 @@ namespace WebApp.Services
                 }
                 throw new InvalidOperationException($"Response data is null. Decrypted JSON: {decryptedJson?.Substring(0, Math.Min(500, decryptedJson?.Length ?? 0))}");
             }
-            
             return apiResponse.Data;
         }
 

@@ -1,0 +1,41 @@
+{
+  "faqs": [
+    {
+      "question": "Làm thế nào để đăng nhập?",
+      "answer": "Bạn có thể đăng nhập bằng username và password, hoặc sử dụng mã QR từ ứng dụng mobile."
+    },
+    {
+      "question": "Làm sao để đặt lịch hẹn?",
+      "answer": "Sau khi đăng nhập, vào menu 'Đặt lịch' và chọn thời gian phù hợp với bạn."
+    },
+    {
+      "question": "Làm thế nào để xem trạng thái đơn hàng?",
+      "answer": "Vào menu 'Xem đơn hàng' để xem danh sách và trạng thái các đơn hàng của bạn."
+    },
+    {
+      "question": "Tôi quên mật khẩu thì làm sao?",
+      "answer": "Vui lòng liên hệ với bộ phận hỗ trợ qua trang 'Trợ giúp' để được hỗ trợ đặt lại mật khẩu."
+    },
+    {
+      "question": "Làm sao để đăng nhập mobile bằng mã QR?",
+      "answer": "Sau khi đăng nhập web, vào 'Tạo mã đăng nhập Mobile' để lấy mã QR, sau đó mở app mobile và quét mã này."
+    },
+    {
+        "question": "Làm sao để đăng nhập web bằng mã QR?",
+        "answer": "Sau khi đăng nhập mobile, sau đó mở app mobile và quét mã trên form đăng nhập trên web."
+      },
+    {
+      "question": "Làm thế nào để xác thực hóa đơn PDF?",
+      "answer": "Vào menu 'Xác thực PDF hóa đơn đã ký' và upload file PDF để kiểm tra tính toàn vẹn và chữ ký số."
+    },
+    {
+      "question": "Thời gian xử lý đơn hàng là bao lâu?",
+      "answer": "Thời gian xử lý tùy thuộc vào loại dịch vụ. Bạn có thể theo dõi trạng thái đơn hàng trong phần 'Xem đơn hàng'."
+    },
+    {
+      "question": "Tôi có thể hủy đơn hàng không?",
+      "answer": "Vui lòng liên hệ bộ phận hỗ trợ qua trang 'Trợ giúp' để được hỗ trợ về việc hủy đơn hàng."
+    }
+  ]
+}
+

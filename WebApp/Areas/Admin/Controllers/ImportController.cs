@@ -154,7 +154,7 @@ namespace WebApp.Areas.Admin.Controllers
             if (model.Items == null || !model.Items.Any())
             {
                 TempData["Error"] = "Vui lòng nhập ít nhất 1 item";
-                return View(model);
+                return RedirectToAction(nameof(Index));
             }
 
             if (!_OracleClientHelper.TrySetHeaders(_httpClient, out var redirect))
@@ -167,7 +167,7 @@ namespace WebApp.Areas.Admin.Controllers
                 if (string.IsNullOrWhiteSpace(username))
                 {
                     TempData["Error"] = "Vui lòng đăng nhập trước.";
-                    return View(model);
+                    return RedirectToAction(nameof(Index));
                 }
                 string client_id = "admin-"+username + platform;
 
@@ -178,7 +178,7 @@ namespace WebApp.Areas.Admin.Controllers
                 if (string.IsNullOrWhiteSpace(privateKeyBase64))
                 {
                     TempData["Error"] = "Vui lòng upload private key trước khi sử dụng chức năng này.";
-                    return View(model);
+                    return RedirectToAction(nameof(Index));
                 }
                 existingPrivateKeyPem = Encoding.UTF8.GetString(Convert.FromBase64String(privateKeyBase64));
 
@@ -194,7 +194,7 @@ namespace WebApp.Areas.Admin.Controllers
                 if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(sessionId))
                 {
                     TempData["Error"] = "Vui lòng đăng nhập trước.";
-                    return View(model);
+                    return RedirectToAction(nameof(Index));
                 }
                 _securityClient.SetHeaders(token, username, platform, sessionId);
 
@@ -223,12 +223,12 @@ namespace WebApp.Areas.Admin.Controllers
 
                 // Nếu có error message
                 TempData["Error"] = $"Import thất bại: {responseObj?.Message ?? "Response không hợp lệ"}";
-                return View(model);
+                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 TempData["Error"] = "Lỗi kết nối API: " + ex.Message;
-                return View(model);
+                return RedirectToAction(nameof(Index));
             }
         }
         // GET: /Admin/Import/Verifysign/5
@@ -277,7 +277,7 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 var stream = await response.Content.ReadAsStreamAsync();
-                var fileName = $"Invoice_{id}.pdf";
+                var fileName = $"ImportInvoice_{id}.pdf";
                 return File(stream, "application/pdf", fileName);
             }
             catch (Exception ex)

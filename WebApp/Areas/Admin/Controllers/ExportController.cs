@@ -40,7 +40,7 @@ namespace WebApp.Areas.Admin.Controllers
                 }
 
                 var stream = await response.Content.ReadAsStreamAsync();
-                var fileName = $"Invoice_{id}.pdf";
+                var fileName = $"ExportInvoice_{id}.pdf";
                 return File(stream, "application/pdf", fileName);
             }
             catch (Exception ex)

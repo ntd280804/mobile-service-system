@@ -56,19 +56,14 @@ namespace WebAPI.Areas.Public.Controllers
             {
                 return BadRequest(ApiResponse<string>.Fail("Code is required."));
             }
-
             var session = _qrLoginStore.GetByCode(request.Code);
             if (session == null || session.Status != Services.QrLoginStatus.Pending)
             {
                 return BadRequest(ApiResponse<string>.Fail("Code không hợp lệ hoặc đã hết hạn."));
             }
-
             var username = User?.Identity?.Name;
             if (string.IsNullOrWhiteSpace(username))
-            {
-                return Unauthorized(ApiResponse<string>.Fail("Không xác định được username từ JWT."));
-            }
-
+            {return Unauthorized(ApiResponse<string>.Fail("Không xác định được username từ JWT."));}
             try
             {
                 var isCustomer = HasCustomerRole(User.Claims);

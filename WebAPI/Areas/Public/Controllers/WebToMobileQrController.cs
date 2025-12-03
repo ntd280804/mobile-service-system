@@ -82,13 +82,9 @@ namespace WebAPI.Areas.Public.Controllers
             {
                 return BadRequest(ApiResponse<WebToMobileQrConfirmResponse>.Fail("Code is required."));
             }
-
             var session = _store.GetByCode(request.Code);
             if (session == null || session.Status != WebToMobileQrStatus.Pending)
-            {
-                return BadRequest(ApiResponse<WebToMobileQrConfirmResponse>.Fail("Code không hợp lệ hoặc đã hết hạn."));
-            }
-
+            {return BadRequest(ApiResponse<WebToMobileQrConfirmResponse>.Fail("Code không hợp lệ hoặc đã hết hạn."));}
             try
             {
                 var platform = string.IsNullOrWhiteSpace(request.Platform)

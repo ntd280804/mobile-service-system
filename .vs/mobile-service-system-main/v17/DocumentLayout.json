@@ -3,8 +3,24 @@
   "WorkspaceRootPath": "D:\\DOCUMENT\\mobile-service-system\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\areas\\public\\controllers\\verifycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\areas\\public\\controllers\\verifycontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\helpers\\jwthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\helpers\\jwthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\areas\\public\\controllers\\webtomobileqrcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\areas\\public\\controllers\\webtomobileqrcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|d:\\document\\mobile-service-system\\webapi\\helpers\\securepayloadhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F123A89A-67D0-4472-A57E-469F3FB1942E}|WebAPI\\WebAPI.csproj|solutionrelative:webapi\\helpers\\securepayloadhelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\services\\securityclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\services\\securityclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|d:\\document\\mobile-service-system\\webapp\\helpers\\encrypthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{39FA43DE-4BD3-47A4-9F3D-D9C13D8A00F6}|WebApp\\WebApp.csproj|solutionrelative:webapp\\helpers\\encrypthelper.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -14,21 +30,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 5,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "VerifyController.cs",
-              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\VerifyController.cs",
-              "RelativeDocumentMoniker": "WebApp\\Areas\\Public\\Controllers\\VerifyController.cs",
-              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Areas\\Public\\Controllers\\VerifyController.cs",
-              "RelativeToolTip": "WebApp\\Areas\\Public\\Controllers\\VerifyController.cs",
-              "ViewState": "AgIAACAAAAAAAAAAAAAiwFgAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-01T16:30:12.081Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
@@ -48,6 +51,71 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{eefa5220-e298-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "JwtHelper.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Helpers\\JwtHelper.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Helpers\\JwtHelper.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Helpers\\JwtHelper.cs",
+              "RelativeToolTip": "WebAPI\\Helpers\\JwtHelper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T11:12:30.609Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "WebToMobileQrController.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\WebToMobileQrController.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Areas\\Public\\Controllers\\WebToMobileQrController.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Areas\\Public\\Controllers\\WebToMobileQrController.cs",
+              "RelativeToolTip": "WebAPI\\Areas\\Public\\Controllers\\WebToMobileQrController.cs",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T10:27:35.434Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "SecurityClient.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Services\\SecurityClient.cs",
+              "RelativeDocumentMoniker": "WebApp\\Services\\SecurityClient.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Services\\SecurityClient.cs",
+              "RelativeToolTip": "WebApp\\Services\\SecurityClient.cs",
+              "ViewState": "AgIAAJIAAAAAAAAAAAAwwJ8AAAA6AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T09:47:10.89Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "EncryptHelper.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Helpers\\EncryptHelper.cs",
+              "RelativeDocumentMoniker": "WebApp\\Helpers\\EncryptHelper.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebApp\\Helpers\\EncryptHelper.cs",
+              "RelativeToolTip": "WebApp\\Helpers\\EncryptHelper.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAoAAABEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T09:47:04.016Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "SecurePayloadHelper.cs",
+              "DocumentMoniker": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Helpers\\SecurePayloadHelper.cs",
+              "RelativeDocumentMoniker": "WebAPI\\Helpers\\SecurePayloadHelper.cs",
+              "ToolTip": "D:\\DOCUMENT\\mobile-service-system\\WebAPI\\Helpers\\SecurePayloadHelper.cs",
+              "RelativeToolTip": "WebAPI\\Helpers\\SecurePayloadHelper.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-12-03T09:36:31.476Z",
+              "EditorCaption": ""
             }
           ]
         }

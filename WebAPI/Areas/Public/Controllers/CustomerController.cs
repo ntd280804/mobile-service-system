@@ -185,18 +185,15 @@ namespace WebAPI.Areas.Public.Controllers
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.OldPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
                 return BadRequest(ApiResponse<string>.Fail("Thiếu mật khẩu cũ hoặc mật khẩu mới."));
-
             var headerUsername = HttpContext.Request.Headers["X-Oracle-Username"].ToString();
             if (string.IsNullOrWhiteSpace(headerUsername))
                 return Unauthorized(ApiResponse<string>.Fail("Missing Oracle user header."));
-
             var conn = _oracleSessionHelper.GetConnectionOrUnauthorized(HttpContext, _connManager, out var unauthorized);
             if (conn == null)
             {
                 var message = unauthorized is ObjectResult obj ? ControllerResponseHelper.ExtractMessage(obj.Value) : "Unauthorized";
                 return Unauthorized(ApiResponse<string>.Fail(message ?? "Unauthorized"));
             }
-
                 try
                 {
                     OracleHelper.ExecuteNonQuery(

@@ -140,7 +140,6 @@ namespace WebAPI.Services
         public async Task RemoveConnection(string username, string platform, string sessionId)
         {
             var key = (username, platform, sessionId);
-            
             // Dùng TryRemove để đảm bảo atomic - chỉ có 1 luồng có thể remove connection
             // Nếu connection đã bị remove rồi, return ngay
             if (!_connections.TryRemove(key, out var info))
@@ -151,7 +150,6 @@ namespace WebAPI.Services
                     username, platform, sessionId);
                 return;
             }
-            
             // Chỉ kill session nếu thực sự remove được connection từ dictionary
             // Kill Oracle session bằng procedure trước khi dispose connection
             try
@@ -181,7 +179,6 @@ namespace WebAPI.Services
                     username, platform, sessionId, ex.Message);
                 // Continue with disposal even if kill failed
             }
-
             // Dispose connection
             var conn = info.Conn;
             try

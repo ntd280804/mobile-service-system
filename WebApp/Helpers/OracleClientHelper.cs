@@ -26,15 +26,12 @@ namespace WebApp.Helpers
         {
             redirectToLogin = null;
             var httpContext = _httpContextAccessor.HttpContext;
-
             // Prefix key: "" cho Admin, "C" cho Public
             string prefix = isAdmin ? "" : "C";
-
             var token = httpContext.Session.GetString($"{prefix}JwtToken");
             var username = httpContext.Session.GetString($"{prefix}Username");
             var platform = httpContext.Session.GetString($"{prefix}Platform");
             var sessionId = httpContext.Session.GetString($"{prefix}SessionId");
-
             if (string.IsNullOrEmpty(token) ||
                 string.IsNullOrEmpty(username) ||
                 string.IsNullOrEmpty(platform) ||
@@ -45,11 +42,8 @@ namespace WebApp.Helpers
                     redirectToLogin = new RedirectToActionResult("Login", "Employee", new { area = "Admin" });
                 else
                     redirectToLogin = new RedirectToActionResult("Login", "Customer", new { area = "Public" });
-
                 return false;
             }
-
-            // TEST: Thêm 1 ký tự ở cuối token để test JWT middleware
             var testToken = token;
             httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", testToken);
 
@@ -60,7 +54,6 @@ namespace WebApp.Helpers
             httpClient.DefaultRequestHeaders.Add("X-Oracle-Username", username);
             httpClient.DefaultRequestHeaders.Add("X-Oracle-Platform", platform);
             httpClient.DefaultRequestHeaders.Add("X-Oracle-SessionId", sessionId);
-
             return true;
         }
 
